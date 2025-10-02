@@ -7,6 +7,7 @@ def main() -> None:
     cap = cv2.VideoCapture(0)
     detector = hand.HandGestureDetector()  # Single reusable instance
     client_esp32 = esp32.TCPSender(ip='esp32.local', port=1234)
+    client_esp32.connect()
     while True:
         ret, frame = cap.read()
         if not ret:
