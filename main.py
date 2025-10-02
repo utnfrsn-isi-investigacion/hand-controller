@@ -31,7 +31,8 @@ def main() -> None:
 
                 # Set label position based on hand type
                 x_label = 50 if detector.hand_type() == hand.HandType.LEFT else 350
-                client_esp32.send_action(detector)
+                if client_esp32.is_connected():
+                    client_esp32.send_action(detector)
                 # Draw info on the frame
                 detector.draw_hand_info(frame, hand_landmarks, x_label, action)
 

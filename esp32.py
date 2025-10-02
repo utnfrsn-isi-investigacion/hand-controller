@@ -2,7 +2,7 @@
 import socket
 from typing import Optional
 from hand import HandGestureDetector
-
+from functools import lru_cache
 
 class TCPSender:
     def __init__(self, ip: str = "192.168.1.50", port: int = 5000) -> None:
@@ -14,7 +14,7 @@ class TCPSender:
         self.ip = ip
         self.port = port
         self.sock: Optional[socket.socket] = None
-        self.connect()
+        # self.connect()
 
     def connect(self) -> None:
         """Create and connect the TCP socket."""
@@ -36,3 +36,14 @@ class TCPSender:
             self.sock.close()
             self.sock = None
             print("[TCP] Connection closed")
+
+    @lru_cache()
+    def is_connected(self) -> bool:
+        if not self.sock:
+            return False
+        try:
+            # Check connection without sending data
+            self.sock.send(b'')  # Sending empty bytes; will raise if disconnected
+            return True
+        except (socket.error, BrokenPipeError):
+            return False
