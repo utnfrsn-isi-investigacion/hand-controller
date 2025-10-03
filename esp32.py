@@ -7,8 +7,8 @@ from datetime import datetime
 class TCPSender:
     def __init__(
         self, 
-        ip: str = "192.168.1.50", 
-        port: int = 5000, 
+        ip: str = "esp32.local", 
+        port: int = 1234, 
         action_cooldown: int = 2, 
         connection_timeout: int = 5
     ) -> None:
