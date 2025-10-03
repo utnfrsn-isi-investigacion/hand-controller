@@ -1,0 +1,23 @@
+{
+  "esp32": {
+    "ip": "esp32.local",
+    "port": 1234,
+    "connection_timeout": 5,
+    "action_cooldown": 2
+  },
+  "camera": {
+    "index": 0,
+    "width": 640,
+    "height": 480
+  },
+  "hand_detection": {
+    "max_hands": 2,
+    "min_detection_confidence": 0.5,
+    "min_tracking_confidence": 0.5
+  },
+  "display": {
+    "show_landmarks": true,
+    "show_fps": false,
+    "window_name": "Hand Gesture Recognition"
+  }
+}
