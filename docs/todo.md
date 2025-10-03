@@ -3,3 +3,5 @@
   - [ ] Use a state machine
 - [ ] Create a draw module
 - [ ] Allow mapping hand commands
+- [ ] Use a config file
+  - [ ] Remove hardcoded values
