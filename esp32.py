@@ -1,33 +1,44 @@
 import socket
-from typing import Optional
+from typing import Optional, Union
 from hand import HandGestureDetector
 from datetime import datetime
 
 
 class TCPSender:
-    def __init__(self, ip: str = "192.168.1.50", port: int = 5000) -> None:
+    def __init__(
+        self, 
+        ip: str = "esp32.local", 
+        port: int = 1234, 
+        action_cooldown: int = 2, 
+        connection_timeout: int = 5
+    ) -> None:
         """
-        TCP sender that sends Action commands to Arduino.
-        :param ip: Arduino IP address
-        :param port: Arduino TCP port
+        TCP sender that sends Action commands to ESP32/Arduino.
+        :param ip: ESP32/Arduino IP address
+        :param port: TCP port
+        :param action_cooldown: Minimum seconds between actions
+        :param connection_timeout: Connection timeout in seconds
         """
         self.ip = ip
         self.port = port
+        self.action_cooldown = action_cooldown
+        self.connection_timeout = connection_timeout
         self.sock: Optional[socket.socket] = None
         self.__last_action: int = int(datetime.now().timestamp())
-        # self.connect()
 
     def connect(self) -> None:
+        """Create and connect the TCP socket."""
         try:
-            """Create and connect the TCP socket."""
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.sock.settimeout(self.connection_timeout)
             self.sock.connect((self.ip, self.port))
             print(f"[TCP] Connected to {self.ip}:{self.port}")
-        except Exception:
+        except Exception as e:
+            print(f"[TCP] Connection failed: {e}")
             return
 
     def send_action(self, hand: HandGestureDetector) -> None:
-        if int(datetime.now().timestamp()) - self.__last_action <= 2:
+        if int(datetime.now().timestamp()) - self.__last_action <= self.action_cooldown:
             return
 
         self.__last_action = int(datetime.now().timestamp())
