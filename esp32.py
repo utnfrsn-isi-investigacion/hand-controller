@@ -27,8 +27,8 @@ class TCPSender:
         self.__last_action: int = int(datetime.now().timestamp())
 
     def connect(self) -> None:
+        """Create and connect the TCP socket."""
         try:
-            """Create and connect the TCP socket."""
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.sock.settimeout(self.connection_timeout)
             self.sock.connect((self.ip, self.port))
