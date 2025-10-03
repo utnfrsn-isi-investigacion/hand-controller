@@ -1,10 +1,8 @@
-# tcp_sender.py
 import socket
 from typing import Optional
 from hand import HandGestureDetector
-from functools import lru_cache
-import time
 from datetime import datetime
+
 
 class TCPSender:
     def __init__(self, ip: str = "192.168.1.50", port: int = 5000) -> None:
@@ -31,6 +29,7 @@ class TCPSender:
     def send_action(self, hand: HandGestureDetector) -> None:
         if int(datetime.now().timestamp()) - self.__last_action <= 2:
             return
+
         self.__last_action = int(datetime.now().timestamp())
         """Send the given action to Arduino."""
         if not self.sock:
@@ -47,7 +46,6 @@ class TCPSender:
             self.sock = None
             print("[TCP] Connection closed")
 
-    @lru_cache()
     def is_connected(self) -> bool:
         if not self.sock:
             return False

@@ -44,6 +44,7 @@ def main() -> None:
 
     cap.release()
     cv2.destroyAllWindows()
+    client_esp32.close()
 
 
 if __name__ == "__main__":
