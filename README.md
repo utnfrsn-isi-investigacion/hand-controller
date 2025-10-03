@@ -35,6 +35,9 @@ cd hand-controller
 
 **Install pyenv** (if not already installed):
 
+> ⚠️ **Security Warning:** Downloading and executing scripts directly from the internet using `curl | bash` poses security risks. You should always review the script before running it.  
+> You can inspect the script at [https://pyenv.run](https://pyenv.run) before executing.  
+> Alternatively, consider installing pyenv using your system's package manager or following the [manual installation instructions](https://github.com/pyenv/pyenv#installation).
 ```bash
 # Install pyenv
 curl https://pyenv.run | bash
