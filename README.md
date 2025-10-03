@@ -88,6 +88,7 @@ The following packages will be installed:
 - `opencv-python==4.10.0.84` - Core OpenCV library (compatible version)
 - `mediapipe==0.10.21` - Google's MediaPipe for hand tracking
 
+> **ℹ️ Note**: Previously, this project required both `opencv-python` and `opencv-contrib-python`. We have removed `opencv-contrib-python` because the current codebase does not use contributed modules (such as SIFT, SURF, etc.). If you need advanced OpenCV features from the contrib package, you may need to install `opencv-contrib-python` manually. This change reduces dependency size and avoids potential compatibility issues, but contributed modules will not be available by default.
 > **💡 Note**: We use specific versions to ensure compatibility between OpenCV and MediaPipe with Python 3.12.
 
 ### 5. Configure the Application
