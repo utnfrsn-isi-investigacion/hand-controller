@@ -17,14 +17,6 @@ class IndexOrientation(Enum):
     STRAIGHT = "Straight"
 
 
-class Action(Enum):
-    ACCELERATE = "Accelerate"
-    STOP = "Stop"
-    DIRECTION_LEFT = "Direction-Left"
-    DIRECTION_RIGHT = "Direction-Right"
-    DIRECTION_STRAIGHT = "Direction-Straight"
-
-
 class HandGestureDetector:
     # Class-level MediaPipe objects
     mp_draw = mp.solutions.drawing_utils
@@ -96,27 +88,11 @@ class HandGestureDetector:
         else:
             return IndexOrientation.STRAIGHT
 
-    def get_action(self) -> Action:
-        """Return the Action for this hand based on type and gesture."""
-        hand_type = self.hand_type()
-        if hand_type == HandType.LEFT:
-            return Action.ACCELERATE if self.is_open() else Action.STOP
-        elif hand_type == HandType.RIGHT:
-            orientation = self.index_orientation()
-            if orientation == IndexOrientation.LEFT:
-                return Action.DIRECTION_LEFT
-            elif orientation == IndexOrientation.RIGHT:
-                return Action.DIRECTION_RIGHT
-            else:
-                return Action.DIRECTION_STRAIGHT
-        else:
-            raise ValueError("Cannot determine action for unknown hand type")
-
     @classmethod
-    def draw_hand_info(cls, frame: Any, hand_landmarks: Any, label_position: int, action: Action) -> None:
+    def draw_hand_info(cls, frame: Any, hand_landmarks: Any, label_position: int, action: Enum) -> None:
         """Draw landmarks and action text on the frame."""
         cls.mp_draw.draw_landmarks(frame, hand_landmarks, cls.mp_hands.HAND_CONNECTIONS)
-        cv2.putText(frame, action.value, (label_position, 50),
+        cv2.putText(frame, action.name, (label_position, 50),
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-        cv2.putText(frame, action.value, (label_position, 50),
+        cv2.putText(frame, action.name, (label_position, 50),
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
