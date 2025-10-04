@@ -1,13 +1,8 @@
 import hand
 import cv2
 import esp32
-import numpy as np
-import numpy.typing as npt
 from config import Config
 from typing import Any
-
-# Type alias for OpenCV images
-CVImage = npt.NDArray[np.uint8]
 
 
 def main() -> None:
