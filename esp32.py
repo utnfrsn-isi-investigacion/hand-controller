@@ -20,6 +20,7 @@ class Esp32(abc.ABC):
     def send_action(self, action: str) -> typing.Any:
         pass
 
+    @abc.abstractmethod
     def is_connected(self) -> bool:
         pass
 
