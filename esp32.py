@@ -13,6 +13,7 @@ class Esp32(abc.ABC):
         self._ip = ip
         self._port = port
 
+    @abc.abstractmethod
     def connect(self) -> None:
         pass
 
