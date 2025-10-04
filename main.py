@@ -48,8 +48,6 @@ def main() -> None:
                 detector.reload(handedness, hand_landmarks)
 
                 # Skip if hand is not fully visible
-                #if not detector.is_hand_fully_visible():
-                #    continue
 
                 # Set label position based on hand type
                 x_label: int = 50 if detector.hand_type() == hand.HandType.LEFT else 350
