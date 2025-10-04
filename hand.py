@@ -2,7 +2,17 @@ import cv2
 import mediapipe as mp
 import math
 from enum import Enum
-from typing import Any, Optional
+from typing import Any, Optional, List
+
+# MediaPipe solutions (Pylance may show warnings but these work at runtime)
+mp_drawing = mp.solutions.drawing_utils  # type: ignore[attr-defined]
+mp_hands = mp.solutions.hands  # type: ignore[attr-defined]
+
+# Type aliases for MediaPipe types
+# These are runtime types that Pylance can't fully resolve, so we use Any with documentation
+HandLandmarkList = Any  # mediapipe.framework.formats.landmark_pb2.NormalizedLandmarkList
+Handedness = Any  # mediapipe.framework.formats.classification_pb2.ClassificationList
+NormalizedLandmark = Any  # mediapipe.framework.formats.landmark_pb2.NormalizedLandmark
 
 
 class HandType(Enum):
@@ -26,23 +36,22 @@ class Action(Enum):
 
 
 class HandGestureDetector:
-    # Class-level MediaPipe objects
-    mp_draw = mp.solutions.drawing_utils
-    mp_hands = mp.solutions.hands
-    hands = mp_hands.Hands()
+    # Class-level MediaPipe hands object
+    hands: Any = mp_hands.Hands()  # type: ignore[attr-defined]
 
-    def __init__(self, handedness: Optional[Any] = None, hand_landmarks: Optional[Any] = None) -> None:
+    def __init__(self, handedness: Optional[Handedness] = None, hand_landmarks: Optional[HandLandmarkList] = None) -> None:
         """Optional instance initialization with handedness and landmarks."""
-        self.__handedness = handedness
-        self.__hand_landmarks = hand_landmarks
+        self.__handedness: Optional[Handedness] = handedness
+        self.__hand_landmarks: Optional[HandLandmarkList] = hand_landmarks
 
-    def reload(self, handedness: Any, hand_landmarks: Any) -> None:
+    def reload(self, handedness: Handedness, hand_landmarks: HandLandmarkList) -> None:
         """Reload instance data."""
         self.__handedness = handedness
         self.__hand_landmarks = hand_landmarks
 
     @staticmethod
-    def calculate_3d_distance(landmark1: Any, landmark2: Any) -> float:
+    def calculate_3d_distance(landmark1: NormalizedLandmark, landmark2: NormalizedLandmark) -> float:
+        """Calculate 3D Euclidean distance between two landmarks."""
         return math.sqrt(
             (landmark2.x - landmark1.x) ** 2 +
             (landmark2.y - landmark1.y) ** 2 +
@@ -59,17 +68,18 @@ class HandGestureDetector:
         """Check if this hand instance is open."""
         if not self.__hand_landmarks:
             raise ValueError("Hand landmarks not set for this instance.")
-        distances = [
-            self.calculate_3d_distance(self.__hand_landmarks.landmark[self.mp_hands.HandLandmark.THUMB_TIP],
-                                       self.__hand_landmarks.landmark[self.mp_hands.HandLandmark.THUMB_CMC]),
-            self.calculate_3d_distance(self.__hand_landmarks.landmark[self.mp_hands.HandLandmark.INDEX_FINGER_TIP],
-                                       self.__hand_landmarks.landmark[self.mp_hands.HandLandmark.INDEX_FINGER_MCP]),
-            self.calculate_3d_distance(self.__hand_landmarks.landmark[self.mp_hands.HandLandmark.MIDDLE_FINGER_TIP],
-                                       self.__hand_landmarks.landmark[self.mp_hands.HandLandmark.MIDDLE_FINGER_MCP]),
-            self.calculate_3d_distance(self.__hand_landmarks.landmark[self.mp_hands.HandLandmark.RING_FINGER_TIP],
-                                       self.__hand_landmarks.landmark[self.mp_hands.HandLandmark.RING_FINGER_MCP]),
-            self.calculate_3d_distance(self.__hand_landmarks.landmark[self.mp_hands.HandLandmark.PINKY_TIP],
-                                       self.__hand_landmarks.landmark[self.mp_hands.HandLandmark.PINKY_MCP]),
+        
+        distances: List[float] = [
+            self.calculate_3d_distance(self.__hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_TIP],
+                                       self.__hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_CMC]),
+            self.calculate_3d_distance(self.__hand_landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP],
+                                       self.__hand_landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_MCP]),
+            self.calculate_3d_distance(self.__hand_landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_TIP],
+                                       self.__hand_landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_MCP]),
+            self.calculate_3d_distance(self.__hand_landmarks.landmark[mp_hands.HandLandmark.RING_FINGER_TIP],
+                                       self.__hand_landmarks.landmark[mp_hands.HandLandmark.RING_FINGER_MCP]),
+            self.calculate_3d_distance(self.__hand_landmarks.landmark[mp_hands.HandLandmark.PINKY_TIP],
+                                       self.__hand_landmarks.landmark[mp_hands.HandLandmark.PINKY_MCP]),
         ]
         return all(d > threshold for d in distances)
 
@@ -86,8 +96,9 @@ class HandGestureDetector:
         """Get index finger orientation of this hand instance."""
         if not self.__hand_landmarks:
             raise ValueError("Hand landmarks not set for this instance.")
-        index_tip = self.__hand_landmarks.landmark[self.mp_hands.HandLandmark.INDEX_FINGER_TIP]
-        index_base = self.__hand_landmarks.landmark[self.mp_hands.HandLandmark.INDEX_FINGER_MCP]
+        
+        index_tip: NormalizedLandmark = self.__hand_landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP]
+        index_base: NormalizedLandmark = self.__hand_landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_MCP]
         diff = index_tip.x - index_base.x
         if diff > threshold:
             return IndexOrientation.LEFT
@@ -112,11 +123,18 @@ class HandGestureDetector:
         else:
             raise ValueError("Cannot determine action for unknown hand type")
 
-    @classmethod
-    def draw_hand_info(cls, frame: Any, hand_landmarks: Any, label_position: int, action: Action) -> None:
-        """Draw landmarks and action text on the frame."""
-        cls.mp_draw.draw_landmarks(frame, hand_landmarks, cls.mp_hands.HAND_CONNECTIONS)
-        cv2.putText(frame, action.value, (label_position, 50),
+    @staticmethod
+    def draw_hand_info(cv_frame: Any, hand_landmarks: HandLandmarkList, label_position: int, action: Action) -> None:
+        """Draw landmarks and action text on the frame.
+        
+        Args:
+            cv_frame: OpenCV image (cv2.typing.MatLike)
+            hand_landmarks: MediaPipe hand landmarks
+            label_position: X-coordinate for text label
+            action: Action to display
+        """
+        mp_drawing.draw_landmarks(cv_frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
+        cv2.putText(cv_frame, action.value, (label_position, 50),
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-        cv2.putText(frame, action.value, (label_position, 50),
+        cv2.putText(cv_frame, action.value, (label_position, 50),
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
