@@ -2,6 +2,8 @@
 
 A real-time hand gesture recognition system that detects hand movements and sends control commands to an ESP32 microcontroller via TCP/IP. This project uses computer vision and MediaPipe to track hand gestures and translate them into actionable commands.
 
+> **⚠️ IMPORTANT**: This project requires **Python 3.12.x** and **pyenv** for proper dependency management. MediaPipe 0.10.21 is not compatible with Python 3.13+. Please follow the installation instructions carefully.
+
 ## 🚀 Features
 
 - **Real-time Hand Tracking**: Uses MediaPipe for accurate hand landmark detection
@@ -12,10 +14,13 @@ A real-time hand gesture recognition system that detects hand movements and send
 
 ## 📋 Prerequisites
 
-- Python 3.13 or higher
+- **Python 3.12.x** (Required for MediaPipe compatibility)
+- **pyenv** (Required for Python version management)
 - Webcam for hand detection
 - ESP32 board (optional, for hardware control)
 - Linux/macOS/Windows operating system
+
+> **⚠️ Important**: This project requires Python 3.12.x due to MediaPipe compatibility. Python 3.13+ is not supported by MediaPipe 0.10.21. We use pyenv to manage the correct Python version.
 
 ## 🔧 Installation
 
@@ -26,36 +31,70 @@ git clone https://github.com/utnfrsn-isi-investigacion/hand-controller.git
 cd hand-controller
 ```
 
-### 2. Create Virtual Environment
+### 2. Install and Configure pyenv
 
-Create and activate a Python virtual environment:
+**Install pyenv** (if not already installed):
 
+> ⚠️ **Security Warning:** Downloading and executing scripts directly from the internet using `curl | bash` poses security risks. You should always review the script before running it.  
+> You can inspect the script at [https://pyenv.run](https://pyenv.run) before executing.  
+> Alternatively, consider installing pyenv using your system's package manager or following the [manual installation instructions](https://github.com/pyenv/pyenv#installation).
 ```bash
-# Create virtual environment
-python3 -m venv .venv
+# Install pyenv
+curl https://pyenv.run | bash
 
-# Activate virtual environment
-# On Linux/macOS:
-source .venv/bin/activate
+# Add pyenv to your shell (add to ~/.bashrc or ~/.zshrc)
+echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc
+echo 'command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bashrc
+echo 'eval "$(pyenv init -)"' >> ~/.bashrc
 
-# On Windows:
-# .venv\Scripts\activate
+# Reload shell configuration
+source ~/.bashrc
 ```
 
-### 3. Install Dependencies
+### 3. Install Python 3.12 and Create Virtual Environment
 
-Install the required Python packages:
+**Install Python 3.12.11** using pyenv:
 
 ```bash
+# Install Python 3.12.11 (may take several minutes)
+pyenv install 3.12.11
+
+# Set Python 3.12.11 as local version for this project
+pyenv local 3.12.11
+
+# Verify correct Python version
+python --version  # Should output: Python 3.12.11
+
+# Create virtual environment with Python 3.12
+python -m venv .venv
+
+# Activate virtual environment
+source .venv/bin/activate
+```
+
+### 4. Install Dependencies
+
+**Ensure you're using Python 3.12** and install the required packages:
+
+```bash
+# Verify Python version before installing
+python --version  # Must be 3.12.x
+
+# Upgrade pip
+pip install --upgrade pip
+
+# Install project dependencies
 pip install -r requirements.txt
 ```
 
 The following packages will be installed:
-- `opencv-contrib-python==4.11.0.86` - OpenCV with extra modules
-- `opencv-python==4.12.0.88` - Core OpenCV library
+- `opencv-python==4.10.0.84` - Core OpenCV library (compatible version)
 - `mediapipe==0.10.21` - Google's MediaPipe for hand tracking
 
-### 4. Configure the Application
+> **ℹ️ Note**: Previously, this project required both `opencv-python` and `opencv-contrib-python`. We have removed `opencv-contrib-python` because the current codebase does not use contributed modules (such as SIFT, SURF, etc.). If you need advanced OpenCV features from the contrib package, you may need to install `opencv-contrib-python` manually. This change reduces dependency size and avoids potential compatibility issues, but contributed modules will not be available by default.
+> **💡 Note**: We use specific versions to ensure compatibility between OpenCV and MediaPipe with Python 3.12.
+
+### 5. Configure the Application
 
 Create your configuration file from the example:
 
@@ -217,9 +256,17 @@ hand-controller/
 
 ### Import Errors
 
-- Make sure the virtual environment is activated
+- Make sure the virtual environment is activated: `source .venv/bin/activate`
+- Verify Python version: `python --version` (must be 3.12.x)
+- If wrong Python version, reinstall using pyenv:
+  ```bash
+  pyenv local 3.12.11
+  rm -rf .venv
+  python -m venv .venv
+  source .venv/bin/activate
+  pip install -r requirements.txt
+  ```
 - Reinstall dependencies: `pip install -r requirements.txt`
-- Check Python version: `python --version` (should be 3.13+)
 
 ## 🤝 Contributing
 
