@@ -28,9 +28,6 @@ class IndexOrientation(Enum):
 
 
 class HandGestureDetector:
-    # Class-level MediaPipe hands object
-    hands: Any = mp_hands.Hands()  # type: ignore[attr-defined]
-
     def __init__(self, handedness: Optional[Handedness] = None, hand_landmarks: Optional[HandLandmarkList] = None) -> None:
         """Optional instance initialization with handedness and landmarks."""
         self.__handedness: Optional[Handedness] = handedness
