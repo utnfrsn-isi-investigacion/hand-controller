@@ -3,6 +3,7 @@ import cv2
 import esp32
 import handlers
 from config import Config
+from typing import Any
 
 
 def main() -> None:
@@ -20,7 +21,7 @@ def main() -> None:
     detector = hand.HandGestureDetector()
 
     # Initialize ESP32 client with config
-    client_esp32 = esp32.TCPSender(
+    client_esp32: esp32.TCPSender = esp32.TCPSender(
         ip=config.esp32.ip,
         port=config.esp32.port)
     client_esp32.connect()
@@ -29,16 +30,19 @@ def main() -> None:
     handler = handlers.CarHandler(client_esp32)
 
     while True:
+        ret: bool
+        frame: Any  # cv2.typing.MatLike
         ret, frame = cap.read()
         if not ret:
             break
 
-        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        results = detector.hands.process(rgb_frame)
+        rgb_frame: Any = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)  # cv2.typing.MatLike
+        results: Any = detector.hands.process(rgb_frame)
 
         if results.multi_hand_landmarks:
+            hand_landmarks: Any
             for idx, hand_landmarks in enumerate(results.multi_hand_landmarks):
-                handedness = results.multi_handedness[idx]
+                handedness: Any = results.multi_handedness[idx]
 
                 # Reload detector instance with new hand data
                 detector.reload(handedness, hand_landmarks)
@@ -48,7 +52,7 @@ def main() -> None:
                 #    continue
 
                 # Set label position based on hand type
-                x_label = 50 if detector.hand_type() == hand.HandType.LEFT else 350
+                x_label: int = 50 if detector.hand_type() == hand.HandType.LEFT else 350
                 if client_esp32.is_connected():
                     handler.detect_action(detector)
                 # Draw info on the frame
