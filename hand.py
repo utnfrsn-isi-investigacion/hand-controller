@@ -123,18 +123,18 @@ class HandGestureDetector:
         else:
             raise ValueError("Cannot determine action for unknown hand type")
 
-    @classmethod
-    def draw_hand_info(cls, frame: Any, hand_landmarks: HandLandmarkList, label_position: int, action: Action) -> None:
+    @staticmethod
+    def draw_hand_info(cv_frame: Any, hand_landmarks: HandLandmarkList, label_position: int, action: Action) -> None:
         """Draw landmarks and action text on the frame.
         
         Args:
-            frame: OpenCV image (cv2.typing.MatLike)
+            cv_frame: OpenCV image (cv2.typing.MatLike)
             hand_landmarks: MediaPipe hand landmarks
             label_position: X-coordinate for text label
             action: Action to display
         """
-        mp_drawing.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
-        cv2.putText(frame, action.value, (label_position, 50),
+        mp_drawing.draw_landmarks(cv_frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
+        cv2.putText(cv_frame, action.value, (label_position, 50),
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-        cv2.putText(frame, action.value, (label_position, 50),
+        cv2.putText(cv_frame, action.value, (label_position, 50),
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
