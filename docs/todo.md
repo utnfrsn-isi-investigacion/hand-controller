@@ -1,7 +1,0 @@
-- [ ] Handle network packages
-- [ ] Only push the direction if changes
-  - [ ] Use a state machine
-- [ ] Create a draw module
-- [ ] Allow mapping hand commands
-- [ ] Use a config file
-  - [ ] Remove hardcoded values
