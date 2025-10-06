@@ -13,6 +13,48 @@ const uint16_t tcpPort = 1234;
 WiFiServer tcpServer(tcpPort);
 
 //////////////////////
+// ACTIONS
+//////////////////////
+struct Action {
+  const char* code;
+  void (*handler)(WiFiClient&);
+};
+
+// Action handlers
+void accelerate(WiFiClient& client) {
+  digitalWrite(2, HIGH);
+  client.println("ACCELERATE (LED ON)");
+}
+
+void stopAction(WiFiClient& client) {
+  digitalWrite(2, LOW);
+  client.println("STOP (LED OFF)");
+}
+
+void directionLeft(WiFiClient& client) {
+  client.println("DIRECTION LEFT");
+}
+
+void directionRight(WiFiClient& client) {
+  client.println("DIRECTION RIGHT");
+}
+
+void directionStraight(WiFiClient& client) {
+  client.println("DIRECTION STRAIGHT");
+}
+
+// Action mapping table
+Action actions[] = {
+  {"001", accelerate},
+  {"000", stopAction},
+  {"101", directionLeft},
+  {"110", directionRight},
+  {"111", directionStraight}
+};
+
+const int numActions = sizeof(actions) / sizeof(actions[0]);
+
+//////////////////////
 // SETUP
 //////////////////////
 void setup() {
@@ -48,24 +90,24 @@ void setup() {
 // LOOP
 //////////////////////
 void loop() {
-  // Check for incoming TCP client
   WiFiClient client = tcpServer.available();
   if (client) {
     Serial.println("Client connected!");
     while (client.connected()) {
       if (client.available()) {
         String command = client.readStringUntil('\n');
-        command.trim(); // Remove whitespace/newline
+        command.trim(); // strip \r \n and spaces
         Serial.printf("Received command: %s\n", command.c_str());
 
-        // Example commands
-        if (command == "Accelerate") {
-          digitalWrite(2, HIGH);
-          client.println("LED turned ON");
-        } else if (command == "Stop") {
-          digitalWrite(2, LOW);
-          client.println("LED turned OFF");
-        } else {
+        bool matched = false;
+        for (int i = 0; i < numActions; i++) {
+          if (command.equals(actions[i].code)) {
+            actions[i].handler(client);
+            matched = true;
+            break;
+          }
+        }
+        if (!matched) {
           client.println("Unknown command");
         }
       }
