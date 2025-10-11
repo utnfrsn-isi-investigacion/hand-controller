@@ -107,7 +107,7 @@ Edit `config.json` to customize settings:
 ```json
 {
   "esp32": {
-    "ip": "esp32.local",           // ESP32 IP or hostname
+    "ip": "esp32.local",            // ESP32 IP or hostname
     "port": 1234,                   // TCP port
     "connection_timeout": 5,        // Connection timeout in seconds
     "action_cooldown": 2            // Minimum seconds between actions
