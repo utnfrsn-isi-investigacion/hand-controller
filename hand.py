@@ -1,3 +1,4 @@
+import logging
 import cv2
 import mediapipe as mp
 import math
@@ -85,6 +86,7 @@ class HandGestureDetector:
         
         hand_size = self.__hand_size_cache
         if hand_size < 1e-6:  # Safety check (use epsilon for floating-point)
+            logging.warning(f"Hand size too small ({hand_size}), cannot determine if open")
             return False
 
         distances: List[float] = [
