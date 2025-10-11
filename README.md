@@ -272,13 +272,11 @@ hand-controller/
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-## 📝 License
+## �📝 License
 
-This project is part of the UTN FRSN ISI research project.
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
 
-## 👥 Authors
-
-- UTN FRSN ISI Investigation Team
+Copyright 2025 UTN FRSN ISI Investigation Team
 
 ## 🙏 Acknowledgments
 
