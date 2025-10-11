@@ -5,3 +5,7 @@ __pycache__
 config.json
 *.pyc
 .DS_Store
+
+# ESP32 Secrets
+_esp32/main/secrets.h
+secrets.h

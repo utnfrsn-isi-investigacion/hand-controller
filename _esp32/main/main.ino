@@ -1,16 +1,9 @@
+#include "secrets.h"
+#include "config.h"
 #include <WiFi.h>
 #include <ESPmDNS.h>
 
-//////////////////////
-// CONFIGURATION
-//////////////////////
-const char* ssid = "Echo";
-const char* password = "personalputo01";
-
-const char* mdnsName = "esp32"; // Access with http://esp32.local
-const uint16_t tcpPort = 1234;
-
-WiFiServer tcpServer(tcpPort);
+WiFiServer tcpServer(TCP_PORT);
 
 //////////////////////
 // ACTIONS
@@ -22,12 +15,12 @@ struct Action {
 
 // Action handlers
 void accelerate(WiFiClient& client) {
-  digitalWrite(2, HIGH);
+  digitalWrite(LED_PIN, HIGH);
   client.println("ACCELERATE (LED ON)");
 }
 
 void stopAction(WiFiClient& client) {
-  digitalWrite(2, LOW);
+  digitalWrite(LED_PIN, LOW);
   client.println("STOP (LED OFF)");
 }
 
@@ -45,11 +38,11 @@ void directionStraight(WiFiClient& client) {
 
 // Action mapping table
 Action actions[] = {
-  {"001", accelerate},
-  {"000", stopAction},
-  {"101", directionLeft},
-  {"110", directionRight},
-  {"111", directionStraight}
+  {ACTION_ACCELERATE, accelerate},
+  {ACTION_STOP, stopAction},
+  {ACTION_LEFT, directionLeft},
+  {ACTION_RIGHT, directionRight},
+  {ACTION_STRAIGHT, directionStraight}
 };
 
 const int numActions = sizeof(actions) / sizeof(actions[0]);
@@ -58,14 +51,14 @@ const int numActions = sizeof(actions) / sizeof(actions[0]);
 // SETUP
 //////////////////////
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(SERIAL_BAUD);
   delay(1000);
 
-  pinMode(2, OUTPUT);
+  pinMode(LED_PIN, OUTPUT);
 
-  // Connect to Wi-Fi
-  Serial.printf("Connecting to %s ...\n", ssid);
-  WiFi.begin(ssid, password);
+  // Connect to Wi-Fi using secrets
+  Serial.printf("Connecting to %s ...\n", WIFI_SSID);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
@@ -75,15 +68,15 @@ void setup() {
   Serial.println(WiFi.localIP());
 
   // Start mDNS
-  if (!MDNS.begin(mdnsName)) {
+  if (!MDNS.begin(MDNS_NAME)) {
     Serial.println("Error starting mDNS");
   } else {
-    Serial.printf("mDNS started: %s.local\n", mdnsName);
+    Serial.printf("mDNS started: %s.local\n", MDNS_NAME);
   }
 
   // Start TCP server
   tcpServer.begin();
-  Serial.printf("TCP server listening on port %d\n", tcpPort);
+  Serial.printf("TCP server listening on port %d\n", TCP_PORT);
 }
 
 //////////////////////
