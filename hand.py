@@ -57,10 +57,31 @@ class HandGestureDetector:
             return False
         return all(margin <= l.x <= 1 - margin and margin <= l.y <= 1 - margin for l in self.__hand_landmarks.landmark)
 
-    def is_open(self, threshold: float = 0.06) -> bool:
-        """Check if this hand instance is open."""
+    def is_open(self, threshold_ratio: float = 0.6) -> bool:
+        """Check if hand is open by measuring normalized finger extension.
+        
+        Measures distance from each fingertip to its base, normalizes by hand size
+        (wrist to middle finger MCP), and checks if all fingers exceed the threshold.
+        This approach is independent of hand size and camera distance.
+        
+        Args:
+            threshold_ratio: Minimum ratio for extended finger (default 0.6 = 60%).
+                           Lower values (0.4-0.5) are more sensitive.
+        
+        Returns:
+            True if all five fingers are extended above threshold, False otherwise.
+        """
         if not self.__hand_landmarks:
             raise ValueError("Hand landmarks not set for this instance.")
+
+        # Calculate hand size reference (wrist to middle finger base)
+        hand_size = self.calculate_3d_distance(
+            self.__hand_landmarks.landmark[mp_hands.HandLandmark.WRIST],
+            self.__hand_landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_MCP]
+        )
+        
+        if hand_size == 0:  # Safety check
+            return False
 
         distances: List[float] = [
             self.calculate_3d_distance(self.__hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_TIP],
@@ -74,7 +95,11 @@ class HandGestureDetector:
             self.calculate_3d_distance(self.__hand_landmarks.landmark[mp_hands.HandLandmark.PINKY_TIP],
                                        self.__hand_landmarks.landmark[mp_hands.HandLandmark.PINKY_MCP]),
         ]
-        return all(d > threshold for d in distances)
+        
+        # Normalize distances by hand size
+        normalized_distances = [d / hand_size for d in distances]
+        
+        return all(d > threshold_ratio for d in normalized_distances)
 
     def hand_type(self) -> HandType:
         """Get this hand instance's type."""
