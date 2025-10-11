@@ -23,23 +23,34 @@ struct Action {
 // Action handlers
 void accelerate(WiFiClient& client) {
   digitalWrite(2, HIGH);
+  digitalWrite(17, LOW);
+  digitalWrite(16, HIGH);
   client.println("ACCELERATE (LED ON)");
 }
 
 void stopAction(WiFiClient& client) {
   digitalWrite(2, LOW);
+  digitalWrite(17, HIGH);
+  digitalWrite(16, LOW);
   client.println("STOP (LED OFF)");
 }
 
 void directionLeft(WiFiClient& client) {
+  digitalWrite(4, HIGH);
+  digitalWrite(5, LOW);
   client.println("DIRECTION LEFT");
 }
 
 void directionRight(WiFiClient& client) {
+  digitalWrite(5, HIGH);
+  digitalWrite(4, LOW);
+
   client.println("DIRECTION RIGHT");
 }
 
 void directionStraight(WiFiClient& client) {
+  digitalWrite(5, LOW);
+  digitalWrite(4, LOW);
   client.println("DIRECTION STRAIGHT");
 }
 
@@ -62,6 +73,11 @@ void setup() {
   delay(1000);
 
   pinMode(2, OUTPUT);
+  pinMode(4, OUTPUT);
+  pinMode(5, OUTPUT);
+  pinMode(16, OUTPUT);
+  pinMode(17, OUTPUT);
+
 
   // Connect to Wi-Fi
   Serial.printf("Connecting to %s ...\n", ssid);
