@@ -36,11 +36,13 @@ class HandGestureDetector:
         """Optional instance initialization with handedness and landmarks."""
         self.__handedness: Optional[Handedness] = handedness
         self.__hand_landmarks: Optional[HandLandmarkList] = hand_landmarks
+        self.__hand_size_cache: Optional[float] = None
 
     def reload(self, handedness: Handedness, hand_landmarks: HandLandmarkList) -> None:
         """Reload instance data."""
         self.__handedness = handedness
         self.__hand_landmarks = hand_landmarks
+        self.__hand_size_cache = None  # Invalidate cache on reload
 
     @staticmethod
     def calculate_3d_distance(landmark1: NormalizedLandmark, landmark2: NormalizedLandmark) -> float:
@@ -74,12 +76,14 @@ class HandGestureDetector:
         if not self.__hand_landmarks:
             raise ValueError("Hand landmarks not set for this instance.")
 
-        # Calculate hand size reference (wrist to middle finger base)
-        hand_size = self.calculate_3d_distance(
-            self.__hand_landmarks.landmark[mp_hands.HandLandmark.WRIST],
-            self.__hand_landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_MCP]
-        )
+        # Calculate hand size reference (cached to avoid repeated calculation)
+        if self.__hand_size_cache is None:
+            self.__hand_size_cache = self.calculate_3d_distance(
+                self.__hand_landmarks.landmark[mp_hands.HandLandmark.WRIST],
+                self.__hand_landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_MCP]
+            )
         
+        hand_size = self.__hand_size_cache
         if hand_size == 0:  # Safety check
             return False
 
