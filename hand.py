@@ -84,7 +84,7 @@ class HandGestureDetector:
             )
         
         hand_size = self.__hand_size_cache
-        if hand_size == 0:  # Safety check
+        if hand_size < 1e-6:  # Safety check (use epsilon for floating-point)
             return False
 
         distances: List[float] = [
