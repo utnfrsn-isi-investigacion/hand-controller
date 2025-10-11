@@ -3,7 +3,7 @@
 #include <WiFi.h>
 #include <ESPmDNS.h>
 
-WiFiServer* tcpServer = nullptr;
+WiFiServer tcpServer(TCP_PORT);
 
 //////////////////////
 // ACTIONS
@@ -75,8 +75,7 @@ void setup() {
   }
 
   // Start TCP server
-  tcpServer = new WiFiServer(TCP_PORT);
-  tcpServer->begin();
+  tcpServer.begin();
   Serial.printf("TCP server listening on port %d\n", TCP_PORT);
 }
 
@@ -84,9 +83,7 @@ void setup() {
 // LOOP
 //////////////////////
 void loop() {
-  if (!tcpServer) return;
-  
-  WiFiClient client = tcpServer->available();
+  WiFiClient client = tcpServer.available();
   if (client) {
     Serial.println("Client connected!");
     while (client.connected()) {
