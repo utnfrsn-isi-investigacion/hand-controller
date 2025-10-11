@@ -47,14 +47,11 @@ def main() -> None:
                 # Reload detector instance with new hand data
                 detector.reload(handedness, hand_landmarks)
 
-                # Skip if hand is not fully visible
-
                 # Set label position based on hand type
-                x_label: int = 50 if detector.hand_type() == hand.HandType.LEFT else 350
                 if client_esp32.is_connected():
                     handler.detect_action(detector)
                 # Draw info on the frame
-                detector.draw_hand_info(frame, hand_landmarks, x_label, handler.get_action(detector))
+                detector.draw_hand_info(frame, handler.get_action(detector))
 
         cv2.imshow(config.display.window_name, frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):

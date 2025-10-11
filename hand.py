@@ -31,7 +31,8 @@ class HandGestureDetector:
     # Class-level MediaPipe hands object
     hands: Any = mp_hands.Hands()  # type: ignore[attr-defined]
 
-    def __init__(self, handedness: Optional[Handedness] = None, hand_landmarks: Optional[HandLandmarkList] = None) -> None:
+    def __init__(self, handedness: Optional[Handedness] = None,
+                 hand_landmarks: Optional[HandLandmarkList] = None) -> None:
         """Optional instance initialization with handedness and landmarks."""
         self.__handedness: Optional[Handedness] = handedness
         self.__hand_landmarks: Optional[HandLandmarkList] = hand_landmarks
@@ -60,7 +61,7 @@ class HandGestureDetector:
         """Check if this hand instance is open."""
         if not self.__hand_landmarks:
             raise ValueError("Hand landmarks not set for this instance.")
-        
+
         distances: List[float] = [
             self.calculate_3d_distance(self.__hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_TIP],
                                        self.__hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_CMC]),
@@ -81,6 +82,8 @@ class HandGestureDetector:
             return HandType.UNKNOWN
         if not self.is_hand_fully_visible():
             return HandType.UNKNOWN
+        if self.__handedness.classification[0].score < 0.7:
+            return HandType.UNKNOWN
         label = self.__handedness.classification[0].label
         return HandType.LEFT if label == 'Left' else HandType.RIGHT
 
@@ -88,7 +91,7 @@ class HandGestureDetector:
         """Get index finger orientation of this hand instance."""
         if not self.__hand_landmarks:
             raise ValueError("Hand landmarks not set for this instance.")
-        
+
         index_tip: NormalizedLandmark = self.__hand_landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP]
         index_base: NormalizedLandmark = self.__hand_landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_MCP]
         diff = index_tip.x - index_base.x
@@ -99,18 +102,19 @@ class HandGestureDetector:
         else:
             return IndexOrientation.STRAIGHT
 
-    @staticmethod
-    def draw_hand_info(cv_frame: Any, hand_landmarks: HandLandmarkList, label_position: int, action: Enum) -> None:
+    def draw_hand_info(self, cv_frame: Any, action: Enum) -> None:
         """Draw landmarks and action text on the frame.
         
         Args:
             cv_frame: OpenCV image (cv2.typing.MatLike)
-            hand_landmarks: MediaPipe hand landmarks
-            label_position: X-coordinate for text label
             action: Action to display
         """
-        mp_drawing.draw_landmarks(cv_frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
-        cv2.putText(cv_frame, action.value, (label_position, 50),
-                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-        cv2.putText(cv_frame, action.value, (label_position, 50),
-                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        if self.hand_type() == HandType.UNKNOWN:
+            return
+        elif self.hand_type() == HandType.LEFT:
+            cv2.putText(cv_frame, action.name, (50, 50),
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+        else:
+            cv2.putText(cv_frame, action.name, (350, 50),
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        mp_drawing.draw_landmarks(cv_frame, self.__hand_landmarks, mp_hands.HAND_CONNECTIONS)
