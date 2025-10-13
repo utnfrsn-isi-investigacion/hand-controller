@@ -4,8 +4,6 @@ import typing
 from typing import Optional, Union
 from datetime import datetime
 
-from hand import HandGestureDetector
-
 
 class Esp32(abc.ABC):
 
