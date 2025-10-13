@@ -1,67 +1,69 @@
 import abc
-import typing
 from enum import Enum
+from typing import Dict, Optional, List
 
 from esp32 import Esp32
-from hand import HandGestureDetector, HandType, IndexOrientation
+from hand import Hand, HandType, IndexOrientation
 
 
 class Handler(abc.ABC):
     def __init__(self, esp32: Esp32):
         self._esp32_connector = esp32
-        self._last_actions: typing.Dict[HandType, typing.Optional[Enum]] = {
+        self._last_actions: Dict[HandType, Optional[Enum]] = {
             HandType.LEFT: None,
             HandType.RIGHT: None,
         }
 
-    def detect_action(self, hand_detector: HandGestureDetector):
-        action = self._get_action(hand_detector)
-        hand_type = hand_detector.hand_type()
-        if hand_type == HandType.UNKNOWN:
-            self._esp32_connector.send_action(action.value)
-            self.__reset_last_actions()
-            return
-        # Only send if action changed for this hand type
-        if self._last_actions[hand_type] is None or self._last_actions[hand_type] != action:
+    def process_hands(self, hands: List[Hand]) -> None:
+        """Process a list of detected hands and send actions."""
+
+        # Get the action for each detected hand
+        current_actions = {hand.get_hand_type(): self.get_action(hand) for hand in hands}
+
+        # Determine action for left hand (throttle)
+        left_action = current_actions.get(HandType.LEFT, CarHandler.Action.STOP)
+        if self._last_actions[HandType.LEFT] != left_action:
+            self._send_action(HandType.LEFT, left_action)
+
+        # Determine action for right hand (direction)
+        right_action = current_actions.get(HandType.RIGHT, CarHandler.Action.DIRECTION_STRAIGHT)
+        if self._last_actions[HandType.RIGHT] != right_action:
+            self._send_action(HandType.RIGHT, right_action)
+
+    def _send_action(self, hand_type: HandType, action: 'CarHandler.Action'):
+        """Sends the action and updates the last action for the given hand type."""
+        if self._esp32_connector.is_connected():
             self._esp32_connector.send_action(action.value)
             self._last_actions[hand_type] = action
 
-    def __reset_last_actions(self) -> None:
-        self._last_actions: typing.Dict[HandType, typing.Optional[Enum]] = {
-            HandType.LEFT: None,
-            HandType.RIGHT: None,
-        }
-
-    def get_action(self, hand_detector: HandGestureDetector) -> Enum:
-        return self._get_action(hand_detector)
-
     @abc.abstractmethod
-    def _get_action(self, hand_detector: HandGestureDetector) -> Enum:
+    def get_action(self, hand: Hand) -> Enum:
         pass
 
 
 class CarHandler(Handler):
-    class Action(Enum):
+    class Action(str, Enum):
         ACCELERATE = "001"
         STOP = "000"
         DIRECTION_LEFT = "101"
         DIRECTION_RIGHT = "110"
         DIRECTION_STRAIGHT = "111"
 
-    def _get_action(self, hand_detector: HandGestureDetector) -> Action:
+    def get_action(self, hand: Hand) -> Action:
         """Return the Action for this hand based on type and gesture."""
-        hand_type = hand_detector.hand_type()
-        if hand_type == HandType.UNKNOWN:
-            return self.Action.STOP
+        hand_type = hand.get_hand_type()
+
         if hand_type == HandType.LEFT:
-            return self.Action.ACCELERATE if hand_detector.is_open() else self.Action.STOP
+            return self.Action.ACCELERATE if hand.is_open() else self.Action.STOP
+
         elif hand_type == HandType.RIGHT:
-            orientation = hand_detector.index_orientation()
+            orientation = hand.get_index_orientation()
             if orientation == IndexOrientation.LEFT:
                 return self.Action.DIRECTION_LEFT
             elif orientation == IndexOrientation.RIGHT:
                 return self.Action.DIRECTION_RIGHT
             else:
                 return self.Action.DIRECTION_STRAIGHT
-        else:
-            raise ValueError("Cannot determine action for unknown hand type")
+
+        # This part should ideally not be reached if hands are filtered correctly
+        return self.Action.STOP

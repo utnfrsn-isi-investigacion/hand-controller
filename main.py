@@ -1,8 +1,8 @@
-import hand
 import cv2
 import esp32
 import handlers
 from config import Config
+from hand import HandProcessor
 from typing import Any
 
 
@@ -12,46 +12,44 @@ def main() -> None:
 
     # Initialize video capture with config
     cap = cv2.VideoCapture(config.camera.index)
-
-    # Set camera resolution
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, config.camera.width)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, config.camera.height)
 
-    # Initialize hand detector
-    detector = hand.HandGestureDetector()
+    # Initialize hand processor
+    hand_processor = HandProcessor(
+        min_detection_confidence=config.hand_detection.min_detection_confidence,
+        min_tracking_confidence=config.hand_detection.min_tracking_confidence,
+        max_hands=config.hand_detection.max_hands
+    )
 
     # Initialize ESP32 client with config
-    client_esp32: esp32.TCPSender = esp32.TCPSender(
+    client_esp32 = esp32.TCPSender(
         ip=config.esp32.ip,
-        port=config.esp32.port)
+        port=config.esp32.port,
+        connection_timeout=config.esp32.connection_timeout
+    )
     client_esp32.connect()
 
     # Init Handler
     handler = handlers.CarHandler(client_esp32)
 
     while True:
-        ret: bool
-        frame: Any  # cv2.typing.MatLike
         ret, frame = cap.read()
         if not ret:
             break
 
-        rgb_frame: Any = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)  # cv2.typing.MatLike
-        results: Any = detector.hands.process(rgb_frame)
+        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-        if results.multi_hand_landmarks:
-            hand_landmarks: Any
-            for idx, hand_landmarks in enumerate(results.multi_hand_landmarks):
-                handedness: Any = results.multi_handedness[idx]
+        # Process the frame to find hands
+        detected_hands = hand_processor.process_frame(rgb_frame)
 
-                # Reload detector instance with new hand data
-                detector.reload(handedness, hand_landmarks)
+        # Let the handler determine and send actions
+        handler.process_hands(detected_hands)
 
-                # Set label position based on hand type
-                if client_esp32.is_connected():
-                    handler.detect_action(detector)
-                # Draw info on the frame
-                detector.draw_hand_info(frame, handler.get_action(detector))
+        # Draw info on the frame
+        for hand in detected_hands:
+            action = handler.get_action(hand)
+            hand.draw_info(frame, action)
 
         cv2.imshow(config.display.window_name, frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -60,6 +58,7 @@ def main() -> None:
     cap.release()
     cv2.destroyAllWindows()
     client_esp32.close()
+    hand_processor.close()
 
 
 if __name__ == "__main__":

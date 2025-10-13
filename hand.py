@@ -5,15 +5,14 @@ import math
 from enum import Enum
 from typing import Any, Optional, List
 
-# MediaPipe solutions (Pylance may show warnings but these work at runtime)
-mp_drawing = mp.solutions.drawing_utils  # type: ignore[attr-defined]
-mp_hands = mp.solutions.hands  # type: ignore[attr-defined]
+# MediaPipe solutions
+mp_drawing = mp.solutions.drawing_utils
+mp_hands = mp.solutions.hands
 
 # Type aliases for MediaPipe types
-# These are runtime types that Pylance can't fully resolve, so we use Any with documentation
-HandLandmarkList = Any  # mediapipe.framework.formats.landmark_pb2.NormalizedLandmarkList
-Handedness = Any  # mediapipe.framework.formats.classification_pb2.ClassificationList
-NormalizedLandmark = Any  # mediapipe.framework.formats.landmark_pb2.NormalizedLandmark
+HandLandmarkList = Any
+Handedness = Any
+NormalizedLandmark = Any
 
 
 class HandType(Enum):
@@ -28,25 +27,16 @@ class IndexOrientation(Enum):
     STRAIGHT = "Straight"
 
 
-class HandGestureDetector:
-    # Class-level MediaPipe hands object
-    hands: Any = mp_hands.Hands()  # type: ignore[attr-defined]
+class Hand:
+    """Represents a single detected hand and its properties."""
 
-    def __init__(self, handedness: Optional[Handedness] = None,
-                 hand_landmarks: Optional[HandLandmarkList] = None) -> None:
-        """Optional instance initialization with handedness and landmarks."""
-        self.__handedness: Optional[Handedness] = handedness
-        self.__hand_landmarks: Optional[HandLandmarkList] = hand_landmarks
-        self.__hand_size_cache: Optional[float] = None
-
-    def reload(self, handedness: Handedness, hand_landmarks: HandLandmarkList) -> None:
-        """Reload instance data."""
-        self.__handedness = handedness
-        self.__hand_landmarks = hand_landmarks
-        self.__hand_size_cache = None  # Invalidate cache on reload
+    def __init__(self, handedness: Handedness, landmarks: HandLandmarkList):
+        self.handedness = handedness
+        self.landmarks = landmarks
+        self._hand_size_cache: Optional[float] = None
 
     @staticmethod
-    def calculate_3d_distance(landmark1: NormalizedLandmark, landmark2: NormalizedLandmark) -> float:
+    def _calculate_3d_distance(landmark1: NormalizedLandmark, landmark2: NormalizedLandmark) -> float:
         """Calculate 3D Euclidean distance between two landmarks."""
         return math.sqrt(
             (landmark2.x - landmark1.x) ** 2 +
@@ -54,78 +44,69 @@ class HandGestureDetector:
             (landmark2.z - landmark1.z) ** 2
         )
 
-    def is_hand_fully_visible(self, margin: float = 0.01) -> bool:
-        """Check if all landmarks of this hand instance are within normalized image bounds."""
-        if not self.__hand_landmarks:
+    def is_fully_visible(self, margin: float = 0.01) -> bool:
+        """Check if all landmarks are within normalized image bounds."""
+        if not self.landmarks:
             return False
-        return all(margin <= l.x <= 1 - margin and margin <= l.y <= 1 - margin for l in self.__hand_landmarks.landmark)
+        return all(margin <= lm.x <= 1 - margin and margin <= lm.y <= 1 - margin for lm in self.landmarks.landmark)
+
+    def get_hand_type(self) -> HandType:
+        """Get this hand's type (LEFT or RIGHT)."""
+        if not self.handedness or not self.is_fully_visible():
+            return HandType.UNKNOWN
+        if self.handedness.classification[0].score < 0.7:
+            return HandType.UNKNOWN
+        label = self.handedness.classification[0].label
+        return HandType[label.upper()]
 
     def is_open(self, threshold_ratio: float = 0.6) -> bool:
-        """Check if hand is open by measuring normalized finger extension.
-        
-        Measures distance from each fingertip to its base, normalizes by hand size
-        (wrist to middle finger MCP), and checks if all fingers exceed the threshold.
-        This approach is independent of hand size and camera distance.
-        
-        Args:
-            threshold_ratio: Minimum ratio for extended finger (default 0.6 = 60%).
-                           Lower values (0.4-0.5) are more sensitive.
-        
-        Returns:
-            True if all five fingers are extended above threshold, False otherwise.
-        """
-        if not self.__hand_landmarks:
-            raise ValueError("Hand landmarks not set for this instance.")
-
-        # Calculate hand size reference (cached to avoid repeated calculation)
-        if self.__hand_size_cache is None:
-            self.__hand_size_cache = self.calculate_3d_distance(
-                self.__hand_landmarks.landmark[mp_hands.HandLandmark.WRIST],
-                self.__hand_landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_MCP]
-            )
-        
-        hand_size = self.__hand_size_cache
-        if hand_size < 1e-6:  # Safety check (use epsilon for floating-point)
-            logging.warning(f"Hand size too small ({hand_size}), cannot determine if open")
+        """Check if the hand is open by measuring finger extension."""
+        if not self.landmarks:
             return False
 
-        distances: List[float] = [
-            self.calculate_3d_distance(self.__hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_TIP],
-                                       self.__hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_CMC]),
-            self.calculate_3d_distance(self.__hand_landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP],
-                                       self.__hand_landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_MCP]),
-            self.calculate_3d_distance(self.__hand_landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_TIP],
-                                       self.__hand_landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_MCP]),
-            self.calculate_3d_distance(self.__hand_landmarks.landmark[mp_hands.HandLandmark.RING_FINGER_TIP],
-                                       self.__hand_landmarks.landmark[mp_hands.HandLandmark.RING_FINGER_MCP]),
-            self.calculate_3d_distance(self.__hand_landmarks.landmark[mp_hands.HandLandmark.PINKY_TIP],
-                                       self.__hand_landmarks.landmark[mp_hands.HandLandmark.PINKY_MCP]),
+        if self._hand_size_cache is None:
+            self._hand_size_cache = self._calculate_3d_distance(
+                self.landmarks.landmark[mp_hands.HandLandmark.WRIST],
+                self.landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_MCP]
+            )
+
+        hand_size = self._hand_size_cache
+        if hand_size < 1e-6:
+            logging.warning(f"Hand size too small ({hand_size}), cannot determine if open.")
+            return False
+
+        finger_tips = [
+            mp_hands.HandLandmark.THUMB_TIP,
+            mp_hands.HandLandmark.INDEX_FINGER_TIP,
+            mp_hands.HandLandmark.MIDDLE_FINGER_TIP,
+            mp_hands.HandLandmark.RING_FINGER_TIP,
+            mp_hands.HandLandmark.PINKY_TIP,
         ]
-        
-        # Normalize distances by hand size
+        finger_mcps = [
+            mp_hands.HandLandmark.THUMB_CMC,  # THUMB_IP could also be used
+            mp_hands.HandLandmark.INDEX_FINGER_MCP,
+            mp_hands.HandLandmark.MIDDLE_FINGER_MCP,
+            mp_hands.HandLandmark.RING_FINGER_MCP,
+            mp_hands.HandLandmark.PINKY_MCP,
+        ]
+
+        distances = [
+            self._calculate_3d_distance(self.landmarks.landmark[tip], self.landmarks.landmark[mcp])
+            for tip, mcp in zip(finger_tips, finger_mcps)
+        ]
+
         normalized_distances = [d / hand_size for d in distances]
-        
         return all(d > threshold_ratio for d in normalized_distances)
 
-    def hand_type(self) -> HandType:
-        """Get this hand instance's type."""
-        if not self.__handedness or not self.__hand_landmarks:
-            return HandType.UNKNOWN
-        if not self.is_hand_fully_visible():
-            return HandType.UNKNOWN
-        if self.__handedness.classification[0].score < 0.7:
-            return HandType.UNKNOWN
-        label = self.__handedness.classification[0].label
-        return HandType.LEFT if label == 'Left' else HandType.RIGHT
+    def get_index_orientation(self, threshold: float = 0.05) -> IndexOrientation:
+        """Get the orientation of the index finger."""
+        if not self.landmarks:
+            raise ValueError("Hand landmarks not available.")
 
-    def index_orientation(self, threshold: float = 0.05) -> IndexOrientation:
-        """Get index finger orientation of this hand instance."""
-        if not self.__hand_landmarks:
-            raise ValueError("Hand landmarks not set for this instance.")
-
-        index_tip: NormalizedLandmark = self.__hand_landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP]
-        index_base: NormalizedLandmark = self.__hand_landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_MCP]
+        index_tip = self.landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP]
+        index_base = self.landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_MCP]
         diff = index_tip.x - index_base.x
+
         if diff > threshold:
             return IndexOrientation.LEFT
         elif diff < -threshold:
@@ -133,19 +114,40 @@ class HandGestureDetector:
         else:
             return IndexOrientation.STRAIGHT
 
-    def draw_hand_info(self, cv_frame: Any, action: Enum) -> None:
-        """Draw landmarks and action text on the frame.
-        
-        Args:
-            cv_frame: OpenCV image (cv2.typing.MatLike)
-            action: Action to display
-        """
-        if self.hand_type() == HandType.UNKNOWN:
+    def draw_info(self, cv_frame: Any, action: Enum) -> None:
+        """Draw landmarks and action text on the frame."""
+        hand_type = self.get_hand_type()
+        if hand_type == HandType.UNKNOWN:
             return
-        elif self.hand_type() == HandType.LEFT:
-            cv2.putText(cv_frame, action.name, (50, 50),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-        else:
-            cv2.putText(cv_frame, action.name, (350, 50),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-        mp_drawing.draw_landmarks(cv_frame, self.__hand_landmarks, mp_hands.HAND_CONNECTIONS)
+
+        color = (0, 255, 0) if hand_type == HandType.LEFT else (0, 0, 255)
+        position = (50, 50) if hand_type == HandType.LEFT else (350, 50)
+
+        cv2.putText(cv_frame, action.name, position, cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
+        mp_drawing.draw_landmarks(cv_frame, self.landmarks, mp_hands.HAND_CONNECTIONS)
+
+
+class HandProcessor:
+    """Processes video frames to detect and analyze hand gestures."""
+
+    def __init__(self, min_detection_confidence: float = 0.5, min_tracking_confidence: float = 0.5, max_hands: int = 2):
+        self.hands_engine = mp_hands.Hands(
+            min_detection_confidence=min_detection_confidence,
+            min_tracking_confidence=min_tracking_confidence,
+            max_num_hands=max_hands
+        )
+
+    def process_frame(self, rgb_frame: Any) -> List[Hand]:
+        """Processes a single RGB frame to find hands."""
+        results = self.hands_engine.process(rgb_frame)
+        detected_hands: List[Hand] = []
+
+        if results.multi_hand_landmarks:
+            for handedness, landmarks in zip(results.multi_handedness, results.multi_hand_landmarks):
+                detected_hands.append(Hand(handedness=handedness, landmarks=landmarks))
+
+        return detected_hands
+
+    def close(self) -> None:
+        """Releases the MediaPipe hands engine."""
+        self.hands_engine.close()
