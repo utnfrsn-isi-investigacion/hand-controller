@@ -6,8 +6,8 @@ from enum import Enum
 from typing import Any, Optional, List
 
 # MediaPipe solutions
-mp_drawing = mp.solutions.drawing_utils
-mp_hands = mp.solutions.hands
+mp_drawing = mp.solutions.drawing_utils # type: ignore[attr-defined]
+mp_hands = mp.solutions.hands # type: ignore[attr-defined]
 
 # Type aliases for MediaPipe types
 HandLandmarkList = Any
