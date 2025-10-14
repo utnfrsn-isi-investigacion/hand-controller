@@ -83,7 +83,7 @@ class Hand:
             mp_hands.HandLandmark.PINKY_TIP,
         ]
         finger_mcps = [
-            mp_hands.HandLandmark.THUMB_CMC,  # THUMB_IP could also be used
+            mp_hands.HandLandmark.THUMB_CMC,
             mp_hands.HandLandmark.INDEX_FINGER_MCP,
             mp_hands.HandLandmark.MIDDLE_FINGER_MCP,
             mp_hands.HandLandmark.RING_FINGER_MCP,
