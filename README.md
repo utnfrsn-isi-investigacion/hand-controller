@@ -307,9 +307,9 @@ coverage html  # Generate HTML coverage report
 
 **Security scanning:**
 ```bash
-pip install bandit safety
+pip install bandit pip-audit
 bandit -r . --exclude=./_esp32,./tests
-safety check
+pip-audit --requirement requirements.txt
 ```
 
 ### Continuous Integration
@@ -317,8 +317,7 @@ safety check
 This project uses GitHub Actions for CI. On every push and pull request, the following checks run automatically:
 - ✅ Unit tests on Ubuntu, macOS, and Windows
 - ✅ Code linting with flake8
-- ✅ Coverage reporting
-- ✅ Security scans with Bandit and Safety
+- ✅ Security scans with Bandit and pip-audit
 
 See [CI Documentation](.github/CI_DOCUMENTATION.md) for more details.
 
