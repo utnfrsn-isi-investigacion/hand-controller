@@ -44,16 +44,15 @@ class TestCarHandler(unittest.TestCase):
         self.assertEqual(self.mock_esp32.send_action.call_count, 2)
 
 
-    def test_right_hand_direction(self):
-        """Test right hand direction controls."""
-        # Test RIGHT
+    def test_right_hand_direction_right(self):
+        """Test right hand direction controls: RIGHT orientation."""
         right_hand_right = self.create_mock_hand(HandType.RIGHT, is_open=True, orientation=IndexOrientation.RIGHT)
         self.handler.process_hands([right_hand_right])
         self.mock_esp32.send_action.assert_any_call(CarHandler.Action.STOP.value)
         self.mock_esp32.send_action.assert_any_call(CarHandler.Action.DIRECTION_RIGHT.value)
 
-        # Test LEFT
-        self.setUp() # Reset mock
+    def test_right_hand_direction_left(self):
+        """Test right hand direction controls: LEFT orientation."""
         right_hand_left = self.create_mock_hand(HandType.RIGHT, is_open=True, orientation=IndexOrientation.LEFT)
         self.handler.process_hands([right_hand_left])
         self.mock_esp32.send_action.assert_any_call(CarHandler.Action.STOP.value)
