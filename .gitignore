@@ -9,3 +9,18 @@ config.json
 # ESP32 Secrets
 _esp32/main/secrets.h
 secrets.h
+
+# Testing and Coverage
+.coverage
+coverage.xml
+htmlcov/
+.pytest_cache/
+*.cover
+.hypothesis/
+
+# CI artifacts
+bandit-report.json
+.tox/
+
+# Vscode settings
+.vscode/
