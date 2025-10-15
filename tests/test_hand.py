@@ -50,63 +50,63 @@ class TestHand(unittest.TestCase):
 
     def test_is_open(self):
         """Test the is_open logic with a clearly open hand."""
-        landmarks_data = [(0,0,0)] * 21
+        landmarks_data = [(0.0, 0.0, 0.0)] * 21
         # Set wrist and MCPs
-        landmarks_data[mp_hands.HandLandmark.WRIST] = (0.5, 0.9, 0)
-        landmarks_data[mp_hands.HandLandmark.MIDDLE_FINGER_MCP] = (0.5, 0.7, 0)
+        landmarks_data[mp_hands.HandLandmark.WRIST] = (0.5, 0.9, 0.0)
+        landmarks_data[mp_hands.HandLandmark.MIDDLE_FINGER_MCP] = (0.5, 0.7, 0.0)
         # Set finger tips far from MCPs
-        landmarks_data[mp_hands.HandLandmark.THUMB_TIP] = (0.3, 0.5, 0)
-        landmarks_data[mp_hands.HandLandmark.THUMB_CMC] = (0.35, 0.7, 0)
-        landmarks_data[mp_hands.HandLandmark.INDEX_FINGER_TIP] = (0.4, 0.2, 0)
-        landmarks_data[mp_hands.HandLandmark.INDEX_FINGER_MCP] = (0.4, 0.7, 0)
-        landmarks_data[mp_hands.HandLandmark.MIDDLE_FINGER_TIP] = (0.5, 0.2, 0)
-        landmarks_data[mp_hands.HandLandmark.RING_FINGER_TIP] = (0.6, 0.2, 0)
-        landmarks_data[mp_hands.HandLandmark.RING_FINGER_MCP] = (0.6, 0.7, 0)
-        landmarks_data[mp_hands.HandLandmark.PINKY_TIP] = (0.7, 0.2, 0)
-        landmarks_data[mp_hands.HandLandmark.PINKY_MCP] = (0.7, 0.7, 0)
+        landmarks_data[mp_hands.HandLandmark.THUMB_TIP] = (0.3, 0.5, 0.0)
+        landmarks_data[mp_hands.HandLandmark.THUMB_CMC] = (0.35, 0.7, 0.0)
+        landmarks_data[mp_hands.HandLandmark.INDEX_FINGER_TIP] = (0.4, 0.2, 0.0)
+        landmarks_data[mp_hands.HandLandmark.INDEX_FINGER_MCP] = (0.4, 0.7, 0.0)
+        landmarks_data[mp_hands.HandLandmark.MIDDLE_FINGER_TIP] = (0.5, 0.2, 0.0)
+        landmarks_data[mp_hands.HandLandmark.RING_FINGER_TIP] = (0.6, 0.2, 0.0)
+        landmarks_data[mp_hands.HandLandmark.RING_FINGER_MCP] = (0.6, 0.7, 0.0)
+        landmarks_data[mp_hands.HandLandmark.PINKY_TIP] = (0.7, 0.2, 0.0)
+        landmarks_data[mp_hands.HandLandmark.PINKY_MCP] = (0.7, 0.7, 0.0)
 
         hand = self.create_mock_hand(landmarks_data)
         self.assertTrue(hand.is_open())
 
     def test_is_closed(self):
         """Test the is_open logic with a clearly closed hand (fist)."""
-        landmarks_data = [(0,0,0)] * 21
+        landmarks_data = [(0.0, 0.0, 0.0)] * 21
         # Set wrist and MCPs
-        landmarks_data[mp_hands.HandLandmark.WRIST] = (0.5, 0.9, 0)
-        landmarks_data[mp_hands.HandLandmark.MIDDLE_FINGER_MCP] = (0.5, 0.7, 0)
+        landmarks_data[mp_hands.HandLandmark.WRIST] = (0.5, 0.9, 0.0)
+        landmarks_data[mp_hands.HandLandmark.MIDDLE_FINGER_MCP] = (0.5, 0.7, 0.0)
         # Set finger tips close to MCPs
-        landmarks_data[mp_hands.HandLandmark.THUMB_TIP] = (0.48, 0.72, 0)
-        landmarks_data[mp_hands.HandLandmark.THUMB_CMC] = (0.5, 0.8, 0)
-        landmarks_data[mp_hands.HandLandmark.INDEX_FINGER_TIP] = (0.4, 0.68, 0)
-        landmarks_data[mp_hands.HandLandmark.INDEX_FINGER_MCP] = (0.4, 0.7, 0)
-        landmarks_data[mp_hands.HandLandmark.MIDDLE_FINGER_TIP] = (0.5, 0.68, 0)
-        landmarks_data[mp_hands.HandLandmark.RING_FINGER_TIP] = (0.6, 0.68, 0)
-        landmarks_data[mp_hands.HandLandmark.RING_FINGER_MCP] = (0.6, 0.7, 0)
-        landmarks_data[mp_hands.HandLandmark.PINKY_TIP] = (0.7, 0.68, 0)
-        landmarks_data[mp_hands.HandLandmark.PINKY_MCP] = (0.7, 0.7, 0)
+        landmarks_data[mp_hands.HandLandmark.THUMB_TIP] = (0.48, 0.72, 0.0)
+        landmarks_data[mp_hands.HandLandmark.THUMB_CMC] = (0.5, 0.8, 0.0)
+        landmarks_data[mp_hands.HandLandmark.INDEX_FINGER_TIP] = (0.4, 0.68, 0.0)
+        landmarks_data[mp_hands.HandLandmark.INDEX_FINGER_MCP] = (0.4, 0.7, 0.0)
+        landmarks_data[mp_hands.HandLandmark.MIDDLE_FINGER_TIP] = (0.5, 0.68, 0.0)
+        landmarks_data[mp_hands.HandLandmark.RING_FINGER_TIP] = (0.6, 0.68, 0.0)
+        landmarks_data[mp_hands.HandLandmark.RING_FINGER_MCP] = (0.6, 0.7, 0.0)
+        landmarks_data[mp_hands.HandLandmark.PINKY_TIP] = (0.7, 0.68, 0.0)
+        landmarks_data[mp_hands.HandLandmark.PINKY_MCP] = (0.7, 0.7, 0.0)
 
         hand = self.create_mock_hand(landmarks_data)
         self.assertFalse(hand.is_open())
 
     def test_get_index_orientation(self):
         """Test the index finger orientation logic. MediaPipe's X-axis is inverted."""
-        landmarks_data = [(0,0,0)] * 21
+        landmarks_data = [(0.0, 0.0, 0.0)] * 21
 
         # Pointing Right (for a Right hand) -> Tip X is LESS than Base X
-        landmarks_data[mp_hands.HandLandmark.INDEX_FINGER_TIP] = (0.3, 0.5, 0)
-        landmarks_data[mp_hands.HandLandmark.INDEX_FINGER_MCP] = (0.4, 0.5, 0)
+        landmarks_data[mp_hands.HandLandmark.INDEX_FINGER_TIP] = (0.3, 0.5, 0.0)
+        landmarks_data[mp_hands.HandLandmark.INDEX_FINGER_MCP] = (0.4, 0.5, 0.0)
         hand_pointing_right = self.create_mock_hand(landmarks_data)
         self.assertEqual(hand_pointing_right.get_index_orientation(), IndexOrientation.RIGHT)
 
         # Pointing Left (for a Right hand) -> Tip X is GREATER than Base X
-        landmarks_data[mp_hands.HandLandmark.INDEX_FINGER_TIP] = (0.5, 0.5, 0)
-        landmarks_data[mp_hands.HandLandmark.INDEX_FINGER_MCP] = (0.4, 0.5, 0)
+        landmarks_data[mp_hands.HandLandmark.INDEX_FINGER_TIP] = (0.5, 0.5, 0.0)
+        landmarks_data[mp_hands.HandLandmark.INDEX_FINGER_MCP] = (0.4, 0.5, 0.0)
         hand_pointing_left = self.create_mock_hand(landmarks_data)
         self.assertEqual(hand_pointing_left.get_index_orientation(), IndexOrientation.LEFT)
 
         # Pointing Straight
-        landmarks_data[mp_hands.HandLandmark.INDEX_FINGER_TIP] = (0.4, 0.5, 0)
-        landmarks_data[mp_hands.HandLandmark.INDEX_FINGER_MCP] = (0.4, 0.5, 0)
+        landmarks_data[mp_hands.HandLandmark.INDEX_FINGER_TIP] = (0.4, 0.5, 0.0)
+        landmarks_data[mp_hands.HandLandmark.INDEX_FINGER_MCP] = (0.4, 0.5, 0.0)
         hand_pointing_straight = self.create_mock_hand(landmarks_data)
         self.assertEqual(hand_pointing_straight.get_index_orientation(), IndexOrientation.STRAIGHT)
 
