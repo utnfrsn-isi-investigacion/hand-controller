@@ -326,13 +326,6 @@ See [CI Documentation](.github/CI_DOCUMENTATION.md) for more details.
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-### Before Submitting
-
-1. Run tests: `python -m unittest discover -s tests -p "test_*.py" -v`
-2. Check code style: `flake8 . --exclude=__pycache__,_esp32`
-3. Verify coverage: `coverage run -m unittest discover -s tests && coverage report -m`
-4. Ensure CI checks will pass
-
 ## 📝 License
 
 This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
