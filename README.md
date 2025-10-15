@@ -1,5 +1,9 @@
 # Hand Controller
 
+[![CI](https://github.com/utnfrsn-isi-investigacion/hand-controller/actions/workflows/ci.yml/badge.svg)](https://github.com/utnfrsn-isi-investigacion/hand-controller/actions/workflows/ci.yml)
+[![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
+[![License](https://img.shields.io/github/license/utnfrsn-isi-investigacion/hand-controller)](LICENSE)
+
 A real-time hand gesture recognition system that detects hand movements and sends control commands to an ESP32 microcontroller via TCP/IP. This project uses computer vision and MediaPipe to track hand gestures and translate them into actionable commands.
 
 > **⚠️ IMPORTANT**: This project requires **Python 3.12.x** and **pyenv** for proper dependency management. MediaPipe 0.10.21 is not compatible with Python 3.13+. Please follow the installation instructions carefully.
@@ -268,9 +272,66 @@ hand-controller/
   ```
 - Reinstall dependencies: `pip install -r requirements.txt`
 
-## 🤝 Contributing
+## � Testing
+
+This project uses Python's `unittest` framework for testing. All tests are located in the `tests/` directory.
+
+### Running Tests
+
+**Run all tests:**
+```bash
+python -m unittest discover -s tests -p "test_*.py" -v
+```
+
+**Run a specific test file:**
+```bash
+python -m unittest tests.test_hand -v
+python -m unittest tests.test_handlers -v
+```
+
+### Code Quality Checks
+
+**Run linting with flake8:**
+```bash
+pip install flake8
+flake8 . --exclude=__pycache__,_esp32
+```
+
+**Run tests with coverage:**
+```bash
+pip install coverage
+coverage run -m unittest discover -s tests -p "test_*.py"
+coverage report -m
+coverage html  # Generate HTML coverage report
+```
+
+**Security scanning:**
+```bash
+pip install bandit safety
+bandit -r . --exclude=./_esp32,./tests
+safety check
+```
+
+### Continuous Integration
+
+This project uses GitHub Actions for CI. On every push and pull request, the following checks run automatically:
+- ✅ Unit tests on Ubuntu, macOS, and Windows
+- ✅ Code linting with flake8
+- ✅ Coverage reporting
+- ✅ Security scans with Bandit and Safety
+
+See [CI Documentation](.github/CI_DOCUMENTATION.md) for more details.
+
+## �🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+### Before Submitting
+
+1. Run tests: `python -m unittest discover -s tests -p "test_*.py" -v`
+2. Check code style: `flake8 . --exclude=__pycache__,_esp32`
+3. Verify coverage: `coverage run -m unittest discover -s tests && coverage report -m`
+4. Ensure CI checks will pass
 
 ## 📝 License
 

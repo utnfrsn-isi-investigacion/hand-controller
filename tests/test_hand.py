@@ -9,7 +9,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from hand import Hand, HandType, IndexOrientation
 import mediapipe as mp
 
-mp_hands = mp.solutions.hands
+mp_hands = mp.solutions.hands # type: ignore[attr-defined]
 
 # Mock for a single landmark
 class MockLandmark:
