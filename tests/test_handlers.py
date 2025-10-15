@@ -1,13 +1,14 @@
 import unittest
-from unittest.mock import Mock, MagicMock, call
+from unittest.mock import Mock
 import sys
 import os
 
 # Add the root directory to the Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from handlers import CarHandler
-from hand import Hand, HandType, IndexOrientation
+from handlers import CarHandler  # noqa: E402
+from hand import Hand, HandType, IndexOrientation  # noqa: E402
+
 
 class TestCarHandler(unittest.TestCase):
 
@@ -34,7 +35,6 @@ class TestCarHandler(unittest.TestCase):
         self.mock_esp32.send_action.assert_any_call(CarHandler.Action.DIRECTION_STRAIGHT.value)
         self.assertEqual(self.mock_esp32.send_action.call_count, 2)
 
-
     def test_left_hand_stop(self):
         """Test that a closed left hand triggers STOP."""
         left_hand_closed = self.create_mock_hand(HandType.LEFT, is_open=False, orientation=IndexOrientation.STRAIGHT)
@@ -42,7 +42,6 @@ class TestCarHandler(unittest.TestCase):
         self.mock_esp32.send_action.assert_any_call(CarHandler.Action.STOP.value)
         self.mock_esp32.send_action.assert_any_call(CarHandler.Action.DIRECTION_STRAIGHT.value)
         self.assertEqual(self.mock_esp32.send_action.call_count, 2)
-
 
     def test_right_hand_direction_right(self):
         """Test right hand direction controls: RIGHT orientation."""
@@ -77,6 +76,7 @@ class TestCarHandler(unittest.TestCase):
         self.handler.process_hands([left_hand_open])
         self.handler.process_hands([left_hand_open])
         self.assertEqual(self.mock_esp32.send_action.call_count, 2)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,6 +1,5 @@
 """Configuration management for Hand Controller."""
 from dataclasses import dataclass, field
-from typing import Optional
 import json
 import os
 import sys
@@ -64,7 +63,7 @@ class Config:
             print(f"Error: Configuration file '{config_path}' not found.")
             print("Please create a config.json file or copy from config.example.json")
             sys.exit(1)
-        
+
         try:
             with open(config_path, 'r') as f:
                 data = json.load(f)

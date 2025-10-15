@@ -3,7 +3,6 @@ import esp32
 import handlers
 from config import Config
 from hand import HandProcessor
-from typing import Any
 
 
 def main() -> None:

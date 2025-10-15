@@ -1,15 +1,16 @@
 import unittest
-from unittest.mock import Mock, MagicMock
+from unittest.mock import Mock
 import sys
 import os
 
 # Add the root directory to the Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from hand import Hand, HandType, IndexOrientation
-import mediapipe as mp
+from hand import Hand, HandType, IndexOrientation  # noqa: E402
+import mediapipe as mp  # noqa: E402
 
-mp_hands = mp.solutions.hands # type: ignore[attr-defined]
+mp_hands = mp.solutions.hands  # type: ignore[attr-defined]
+
 
 # Mock for a single landmark
 class MockLandmark:
@@ -18,10 +19,12 @@ class MockLandmark:
         self.y = y
         self.z = z
 
+
 # Mock for the entire landmark list
 class MockLandmarkList:
     def __init__(self, landmarks):
         self.landmark = landmarks
+
 
 class TestHand(unittest.TestCase):
 
@@ -109,6 +112,7 @@ class TestHand(unittest.TestCase):
         landmarks_data[mp_hands.HandLandmark.INDEX_FINGER_MCP] = (0.4, 0.5, 0.0)
         hand_pointing_straight = self.create_mock_hand(landmarks_data)
         self.assertEqual(hand_pointing_straight.get_index_orientation(), IndexOrientation.STRAIGHT)
+
 
 if __name__ == '__main__':
     unittest.main()
