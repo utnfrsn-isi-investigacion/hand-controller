@@ -55,17 +55,17 @@ jobs:
     - name: Setup Python environment
       uses: ./.github/actions/setup-python-env
       with:
-        extra-dependencies: 'safety bandit'
+        extra-dependencies: 'pip-audit bandit'
 
     - name: Security check with bandit
       run: |
         bandit -r . -f json -o bandit-report.json --exclude=./_esp32,./tests || true
         bandit -r . --exclude=./_esp32,./tests
 
-    - name: Check dependencies with safety
+    - name: Check dependencies with pip-audit
       run: |
-        safety scan --json || true
-        safety scan
+        pip-audit --format json || true
+        pip-audit
 
   build-status:
     runs-on: ubuntu-latest
