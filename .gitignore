@@ -21,3 +21,6 @@ htmlcov/
 # CI artifacts
 bandit-report.json
 .tox/
+
+# Vscode settings
+.vscode/
