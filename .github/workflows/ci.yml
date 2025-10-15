@@ -64,8 +64,8 @@ jobs:
 
     - name: Check dependencies with safety
       run: |
-        safety check --json || true
-        safety check
+        safety scan --json || true
+        safety scan
 
   build-status:
     runs-on: ubuntu-latest
