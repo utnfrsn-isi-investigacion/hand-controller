@@ -64,8 +64,8 @@ jobs:
 
     - name: Check dependencies with pip-audit
       run: |
-        pip-audit --format json || true
-        pip-audit
+        pip-audit --requirement requirements.txt --format json || true
+        pip-audit --requirement requirements.txt
 
   build-status:
     runs-on: ubuntu-latest
