@@ -1,0 +1,37 @@
+name: 'Setup Python Environment'
+description: 'Set up Python and install dependencies'
+inputs:
+  python-version:
+    description: 'Python version to use'
+    required: false
+    default: '3.12'
+  install-requirements:
+    description: 'Install requirements.txt dependencies'
+    required: false
+    default: 'true'
+  extra-dependencies:
+    description: 'Extra dependencies to install (space-separated)'
+    required: false
+    default: ''
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Python ${{ inputs.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+        cache: 'pip'
+
+    - name: Upgrade pip
+      shell: bash
+      run: python -m pip install --upgrade pip
+
+    - name: Install requirements.txt dependencies
+      if: inputs.install-requirements == 'true'
+      shell: bash
+      run: pip install -r requirements.txt
+
+    - name: Install extra dependencies
+      if: inputs.extra-dependencies != ''
+      shell: bash
+      run: pip install ${{ inputs.extra-dependencies }}
