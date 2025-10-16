@@ -37,10 +37,11 @@ class Handler(abc.ABC):
         hand_type = hand.get_hand_type()
         self._action_buffers[hand.get_hand_type()].append(self._get_action(hand))
         if hand_type in self._action_buffers and self._action_buffers[hand_type]:
-            return self._majority_action(hand)
+            majority = self._majority_action(hand)
+            return majority if majority is not None else self._get_action(hand)
         return self._get_action(hand)
 
-    def _majority_action(self, hand: Hand) -> Enum or None:
+    def _majority_action(self, hand: Hand) -> Optional[Enum]:
         if hand.get_hand_type() == HandType.UNKNOWN:
             return None
         counter = collections.Counter(self._action_buffers[hand.get_hand_type()])
