@@ -8,18 +8,15 @@ from hand import Hand, HandType, IndexOrientation
 
 
 class Handler(abc.ABC):
-    _BUFFER_SIZE = 30
-
-    def __init__(self, esp32: Esp32):
+    def __init__(self, esp32: Esp32, buffer_size: int = 30):
         self._esp32_connector = esp32
         self._last_actions: Dict[HandType, Optional[Enum]] = {
             HandType.LEFT: None,
             HandType.RIGHT: None,
         }
-
         self._action_buffers: Dict[HandType, collections.deque] = {
-            HandType.LEFT: collections.deque(maxlen=self._BUFFER_SIZE),
-            HandType.RIGHT: collections.deque(maxlen=self._BUFFER_SIZE),
+            HandType.LEFT: collections.deque(maxlen=buffer_size),
+            HandType.RIGHT: collections.deque(maxlen=buffer_size),
         }
 
     @abc.abstractmethod

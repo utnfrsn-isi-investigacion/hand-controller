@@ -29,8 +29,8 @@ def main() -> None:
     )
     client_esp32.connect()
 
-    # Init Handler
-    handler = handlers.CarHandler(client_esp32)
+    # Init Handler with config
+    handler = handlers.CarHandler(client_esp32, buffer_size=config.handler.buffer_size)
 
     while True:
         ret, frame = cap.read()

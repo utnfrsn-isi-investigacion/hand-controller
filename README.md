@@ -130,11 +130,25 @@ Edit `config.json` to customize settings:
     "show_landmarks": true,         // Show hand landmarks
     "show_fps": false,              // Show FPS counter
     "window_name": "Hand Gesture Recognition"
+  },
+  "handler": {
+    "buffer_size": 30               // Action buffer size for smoothing
   }
 }
 ```
 
 **Important**: Never commit `config.json` with sensitive information. Use `config.example.json` as a template.
+
+### Configuration Parameters Explained
+
+#### Handler Settings
+- **buffer_size**: Number of frames to buffer for action smoothing (default: 30)
+  - Higher values = smoother transitions but slower response
+  - Lower values = faster response but more jittery
+  - Recommended range: 15-50 frames
+  - Example: At 30 FPS, buffer_size=30 smooths over 1 second of data
+
+The handler uses a majority voting system across the buffer to determine the most consistent action, reducing noise and false detections in hand gesture recognition.
 
 ## 🎮 Usage
 
@@ -208,6 +222,7 @@ Instead of remembering the IP address.
 hand-controller/
 ├── main.py              # Main application entry point
 ├── hand.py              # Hand gesture detection logic
+├── handlers.py          # Action handlers with buffering logic
 ├── esp32.py             # TCP communication with ESP32
 ├── config.py            # Configuration management with dataclasses
 ├── config.json          # Configuration file (create from example)
@@ -227,6 +242,7 @@ hand-controller/
 
 - **main.py**: Orchestrates the video capture, hand detection, and ESP32 communication
 - **hand.py**: Contains the `HandGestureDetector` class with MediaPipe integration
+- **handlers.py**: Implements action handlers with configurable buffering for gesture smoothing
 - **esp32.py**: Manages TCP socket connection and command transmission
 - **config.py**: Configuration management using Python dataclasses for type safety
 
