@@ -16,33 +16,33 @@ struct Action {
 // Action handlers
 void accelerate(WiFiClient& client) {
   digitalWrite(LED_PIN, HIGH);
-  digitalWrite(17, LOW);
-  digitalWrite(16, HIGH);
+  digitalWrite(MOTOR_PIN_B, LOW);
+  digitalWrite(MOTOR_PIN_A, HIGH);
   client.println("ACCELERATE (LED ON)");
 }
 
 void stopAction(WiFiClient& client) {
   digitalWrite(LED_PIN, LOW);
-  digitalWrite(17, HIGH);
-  digitalWrite(16, LOW);
+  digitalWrite(MOTOR_PIN_B, HIGH);
+  digitalWrite(MOTOR_PIN_A, LOW);
   client.println("STOP (LED OFF)");
 }
 
 void directionLeft(WiFiClient& client) {
-  digitalWrite(4, HIGH);
-  digitalWrite(5, LOW);
+  digitalWrite(DIRECTION_PIN_LEFT, HIGH);
+  digitalWrite(DIRECTION_PIN_RIGHT, LOW);
   client.println("DIRECTION LEFT");
 }
 
 void directionRight(WiFiClient& client) {
-  digitalWrite(5, HIGH);
-  digitalWrite(4, LOW);
+  digitalWrite(DIRECTION_PIN_RIGHT, HIGH);
+  digitalWrite(DIRECTION_PIN_LEFT, LOW);
   client.println("DIRECTION RIGHT");
 }
 
 void directionStraight(WiFiClient& client) {
-  digitalWrite(5, LOW);
-  digitalWrite(4, LOW);
+  digitalWrite(DIRECTION_PIN_RIGHT, LOW);
+  digitalWrite(DIRECTION_PIN_LEFT, LOW);
   client.println("DIRECTION STRAIGHT");
 }
 
