@@ -65,6 +65,10 @@ void setup() {
   delay(1000);
 
   pinMode(LED_PIN, OUTPUT);
+  pinMode(DIRECTION_PIN_LEFT, OUTPUT);
+  pinMode(DIRECTION_PIN_RIGHT, OUTPUT);
+  pinMode(MOTOR_PIN_A, OUTPUT);
+  pinMode(MOTOR_PIN_B, OUTPUT);
 
   // Connect to Wi-Fi using secrets
   Serial.printf("Connecting to %s ...\n", WIFI_SSID);
