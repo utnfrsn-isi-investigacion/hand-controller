@@ -51,12 +51,14 @@ class Handler(abc.ABC):
     def _get_action(self, hand: Hand) -> Enum:
         pass
 
+
 class CarAction(Enum):
     ACCELERATE = "001"
     STOP = "000"
     DIRECTION_LEFT = "101"
     DIRECTION_RIGHT = "110"
     DIRECTION_STRAIGHT = "111"
+
 
 class CarHandler(Handler):
     def __init__(self, esp32: Esp32, buffer_size: int = 30):
@@ -81,11 +83,11 @@ class CarHandler(Handler):
 
     def _determine_action(self, hand_type: HandType, hand: Optional[Hand]) -> CarAction:
         """Determine the action for a specific hand type.
-        
+
         Args:
             hand_type: The type of hand to process (LEFT or RIGHT)
             hand: The detected Hand object, or None if hand is not detected
-            
+
         Returns:
             The action to perform for this hand
         """
