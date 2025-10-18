@@ -32,11 +32,12 @@ class Handler(abc.ABC):
 
     def get_action(self, hand: Hand) -> Enum:
         hand_type = hand.get_hand_type()
-        self._action_buffers[hand.get_hand_type()].append(self._get_action(hand))
+        action = self._get_action(hand)
+        self._action_buffers[hand.get_hand_type()].append(action)
         if hand_type in self._action_buffers and self._action_buffers[hand_type]:
             majority = self._majority_action(hand)
-            return majority if majority is not None else self._get_action(hand)
-        return self._get_action(hand)
+            return majority if majority is not None else action
+        return action
 
     def _majority_action(self, hand: Hand) -> Optional[Enum]:
         if hand.get_hand_type() == HandType.UNKNOWN:
