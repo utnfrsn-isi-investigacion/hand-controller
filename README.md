@@ -310,8 +310,10 @@ python -m unittest tests.test_handlers -v
 **Run linting with flake8:**
 ```bash
 pip install flake8
-flake8 . --exclude=__pycache__,_esp32
+flake8 .  # Uses .flake8 config (120 char line limit)
 ```
+
+> **Note**: This project uses a 120-character line limit instead of PEP 8's default 79 characters for better readability on modern displays.
 
 **Run tests with coverage:**
 ```bash
