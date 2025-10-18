@@ -42,7 +42,10 @@ class Handler(abc.ABC):
         if hand.get_hand_type() == HandType.UNKNOWN:
             return None
         counter = collections.Counter(self._action_buffers[hand.get_hand_type()])
-        return counter.most_common(1)[0][0]
+        most_common = counter.most_common(1)
+        if most_common:
+            return most_common[0][0]
+        return None
 
     @abc.abstractmethod
     def _get_action(self, hand: Hand) -> Enum:
