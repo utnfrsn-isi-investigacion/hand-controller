@@ -51,21 +51,20 @@ class Handler(abc.ABC):
     def _get_action(self, hand: Hand) -> Enum:
         pass
 
+class CarAction(Enum):
+    ACCELERATE = "001"
+    STOP = "000"
+    DIRECTION_LEFT = "101"
+    DIRECTION_RIGHT = "110"
+    DIRECTION_STRAIGHT = "111"
 
 class CarHandler(Handler):
-    class Action(Enum):
-        ACCELERATE = "001"
-        STOP = "000"
-        DIRECTION_LEFT = "101"
-        DIRECTION_RIGHT = "110"
-        DIRECTION_STRAIGHT = "111"
-
     def __init__(self, esp32: Esp32, buffer_size: int = 30):
         super().__init__(esp32, buffer_size)
         # Default actions when hands are not detected
-        self._default_actions: Dict[HandType, 'CarHandler.Action'] = {
-            HandType.LEFT: self.Action.STOP,
-            HandType.RIGHT: self.Action.DIRECTION_STRAIGHT,
+        self._default_actions: Dict[HandType, CarAction] = {
+            HandType.LEFT: CarAction.STOP,
+            HandType.RIGHT: CarAction.DIRECTION_STRAIGHT,
         }
 
     def process_hands(self, hands: List[Hand]) -> None:
@@ -80,7 +79,7 @@ class CarHandler(Handler):
             if self._last_actions.get(hand_type) != action:
                 self._send_action(hand_type, action)
 
-    def _determine_action(self, hand_type: HandType, hand: Optional[Hand]) -> 'CarHandler.Action':
+    def _determine_action(self, hand_type: HandType, hand: Optional[Hand]) -> CarAction:
         """Determine the action for a specific hand type.
         
         Args:
@@ -98,20 +97,20 @@ class CarHandler(Handler):
             # Hand not detected - return default action without polluting the buffer
             return self._default_actions[hand_type]
 
-    def _get_action(self, hand: Hand) -> Action:
+    def _get_action(self, hand: Hand) -> CarAction:
         """Return the Action for this hand based on type and gesture."""
         hand_type = hand.get_hand_type()
 
         if hand_type == HandType.LEFT:
-            return self.Action.ACCELERATE if hand.is_open() else self.Action.STOP
+            return CarAction.ACCELERATE if hand.is_open() else CarAction.STOP
 
         elif hand_type == HandType.RIGHT:
             orientation = hand.get_index_orientation()
             if orientation == IndexOrientation.LEFT:
-                return self.Action.DIRECTION_LEFT
+                return CarAction.DIRECTION_LEFT
             elif orientation == IndexOrientation.RIGHT:
-                return self.Action.DIRECTION_RIGHT
+                return CarAction.DIRECTION_RIGHT
             else:
-                return self.Action.DIRECTION_STRAIGHT
+                return CarAction.DIRECTION_STRAIGHT
 
-        return self.Action.STOP
+        return CarAction.STOP
