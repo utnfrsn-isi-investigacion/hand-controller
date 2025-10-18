@@ -60,31 +60,43 @@ class CarHandler(Handler):
         DIRECTION_RIGHT = "110"
         DIRECTION_STRAIGHT = "111"
 
+    def __init__(self, esp32: Esp32, buffer_size: int = 30):
+        super().__init__(esp32, buffer_size)
+        # Default actions when hands are not detected
+        self._default_actions: Dict[HandType, 'CarHandler.Action'] = {
+            HandType.LEFT: self.Action.STOP,
+            HandType.RIGHT: self.Action.DIRECTION_STRAIGHT,
+        }
+
     def process_hands(self, hands: List[Hand]) -> None:
         """Process a list of detected hands and send actions for car control."""
-
         # Create a dictionary of hand types present in the current frame
         detected_hands_map = {hand.get_hand_type(): hand for hand in hands if hand.get_hand_type() != HandType.UNKNOWN}
 
-        # Determine and send action for the left hand (throttle)
-        if HandType.LEFT in detected_hands_map:
-            left_action = self.get_action(detected_hands_map[HandType.LEFT])
+        # Process both hands types even if one is missing
+        for hand_type in [HandType.LEFT, HandType.RIGHT]:
+            hand = detected_hands_map.get(hand_type)  # None if hand not detected
+            action = self._determine_action(hand_type, hand)
+            if self._last_actions.get(hand_type) != action:
+                self._send_action(hand_type, action)
+
+    def _determine_action(self, hand_type: HandType, hand: Optional[Hand]) -> 'CarHandler.Action':
+        """Determine the action for a specific hand type.
+        
+        Args:
+            hand_type: The type of hand to process (LEFT or RIGHT)
+            hand: The detected Hand object, or None if hand is not detected
+            
+        Returns:
+            The action to perform for this hand
+        """
+        if hand is not None:
+            # Hand is detected - use buffered action from get_action
+            action = self.get_action(hand)
+            return action  # type: ignore[return-value]
         else:
-            self._action_buffers[HandType.LEFT].append(self.Action.STOP)  # Improve
-            left_action = self.Action.STOP
-
-        if self._last_actions.get(HandType.LEFT) != left_action:
-            self._send_action(HandType.LEFT, left_action)
-
-        # Determine and send action for the right hand (direction)
-        if HandType.RIGHT in detected_hands_map:
-            right_action = self.get_action(detected_hands_map[HandType.RIGHT])
-        else:
-            self._action_buffers[HandType.RIGHT].append(self.Action.DIRECTION_STRAIGHT)  # Improve
-            right_action = self.Action.DIRECTION_STRAIGHT
-
-        if self._last_actions.get(HandType.RIGHT) != right_action:
-            self._send_action(HandType.RIGHT, right_action)
+            # Hand not detected - return default action without polluting the buffer
+            return self._default_actions[hand_type]
 
     def _get_action(self, hand: Hand) -> Action:
         """Return the Action for this hand based on type and gesture."""
