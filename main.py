@@ -2,7 +2,7 @@ import cv2
 import esp32
 import handlers
 from config import Config
-from hand import HandProcessor
+from hand import HandProcessor, HandType
 
 
 def main() -> None:
@@ -29,8 +29,8 @@ def main() -> None:
     )
     client_esp32.connect()
 
-    # Init Handler
-    handler = handlers.CarHandler(client_esp32)
+    # Init Handler with config
+    handler = handlers.CarHandler(client_esp32, buffer_size=config.handler.buffer_size)
 
     while True:
         ret, frame = cap.read()
@@ -47,6 +47,8 @@ def main() -> None:
 
         # Draw info on the frame
         for hand in detected_hands:
+            if hand.get_hand_type() == HandType.UNKNOWN:
+                continue
             action = handler.get_action(hand)
             hand.draw_info(frame, action)
 

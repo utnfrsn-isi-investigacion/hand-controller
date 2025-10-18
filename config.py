@@ -39,12 +39,19 @@ class DisplayConfig:
 
 
 @dataclass
+class HandlerConfig:
+    """Handler configuration."""
+    buffer_size: int = 30
+
+
+@dataclass
 class Config:
     """Main configuration class."""
     esp32: ESP32Config = field(default_factory=ESP32Config)
     camera: CameraConfig = field(default_factory=CameraConfig)
     hand_detection: HandDetectionConfig = field(default_factory=HandDetectionConfig)
     display: DisplayConfig = field(default_factory=DisplayConfig)
+    handler: HandlerConfig = field(default_factory=HandlerConfig)
 
     @classmethod
     def from_dict(cls, data: dict) -> 'Config':
@@ -53,7 +60,8 @@ class Config:
             esp32=ESP32Config(**data.get('esp32', {})),
             camera=CameraConfig(**data.get('camera', {})),
             hand_detection=HandDetectionConfig(**data.get('hand_detection', {})),
-            display=DisplayConfig(**data.get('display', {}))
+            display=DisplayConfig(**data.get('display', {})),
+            handler=HandlerConfig(**data.get('handler', {}))
         )
 
     @classmethod
@@ -98,6 +106,9 @@ class Config:
                 'show_landmarks': self.display.show_landmarks,
                 'show_fps': self.display.show_fps,
                 'window_name': self.display.window_name
+            },
+            'handler': {
+                'buffer_size': self.handler.buffer_size
             }
         }
 
