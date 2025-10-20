@@ -49,8 +49,10 @@ def main() -> None:
         for hand in detected_hands:
             if hand.get_hand_type() == HandType.UNKNOWN:
                 continue
-            action = handler.get_action(hand)
-            hand.draw_info(frame, action)
+            # Use get_last_action to avoid polluting the buffer with duplicate entries
+            action = handler.get_last_action(hand.get_hand_type())
+            if action is not None:
+                hand.draw_info(frame, action)
 
         cv2.imshow(config.display.window_name, frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
