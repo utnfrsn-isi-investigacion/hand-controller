@@ -19,5 +19,8 @@
     "show_landmarks": true,
     "show_fps": false,
     "window_name": "Hand Gesture Recognition"
+  },
+  "handler": {
+    "buffer_size": 30
   }
 }
