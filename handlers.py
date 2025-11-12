@@ -70,15 +70,22 @@ class CarHandler(Handler):
             HandType.RIGHT: CarAction.DIRECTION_STRAIGHT,
         }
 
+    def __determine_actions(self, hands: List[Hand]) -> Dict[HandType, CarAction]:
+        """
+        Determine car actions based on hand detections.
+        If  it does not detect the 2 hands, stops
+        """
+        detected = {h.get_hand_type(): h for h in hands if h.get_hand_type() != HandType.UNKNOWN}
+        both = HandType.LEFT in detected and HandType.RIGHT in detected
+
+        return {
+            ht: self._determine_action(ht, detected[ht] if both else None)
+            for ht in (HandType.LEFT, HandType.RIGHT)
+        }
+
     def process_hands(self, hands: List[Hand]) -> None:
         """Process a list of detected hands and send actions for car control."""
-        # Create a dictionary of hand types present in the current frame
-        detected_hands_map = {hand.get_hand_type(): hand for hand in hands if hand.get_hand_type() != HandType.UNKNOWN}
-
-        # Process both hands types even if one is missing
-        for hand_type in [HandType.LEFT, HandType.RIGHT]:
-            hand = detected_hands_map.get(hand_type)  # None if hand not detected
-            action = self._determine_action(hand_type, hand)
+        for hand_type, action in self.__determine_actions(hands).items():
             if self._last_actions.get(hand_type) != action:
                 self._send_action(hand_type, action)
 
