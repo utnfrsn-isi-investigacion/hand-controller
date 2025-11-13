@@ -29,7 +29,8 @@ class TestCarHandler(unittest.TestCase):
     def test_left_hand_accelerate(self):
         """Test that an open left hand triggers ACCELERATE."""
         left_hand_open = self.create_mock_hand(HandType.LEFT, is_open=True, orientation=IndexOrientation.STRAIGHT)
-        self.handler.process_hands([left_hand_open])
+        mock_hand = self.create_mock_hand(HandType.RIGHT, is_open=True, orientation=IndexOrientation.STRAIGHT)
+        self.handler.process_hands([left_hand_open, mock_hand])
         # It should send ACCELERATE for left hand and STRAIGHT for the absent right hand
         self.mock_esp32.send_action.assert_any_call(CarAction.ACCELERATE.value)
         self.mock_esp32.send_action.assert_any_call(CarAction.DIRECTION_STRAIGHT.value)
@@ -38,7 +39,8 @@ class TestCarHandler(unittest.TestCase):
     def test_left_hand_stop(self):
         """Test that a closed left hand triggers STOP."""
         left_hand_closed = self.create_mock_hand(HandType.LEFT, is_open=False, orientation=IndexOrientation.STRAIGHT)
-        self.handler.process_hands([left_hand_closed])
+        mock_hand = self.create_mock_hand(HandType.RIGHT, is_open=False, orientation=IndexOrientation.STRAIGHT)
+        self.handler.process_hands([left_hand_closed, mock_hand])
         self.mock_esp32.send_action.assert_any_call(CarAction.STOP.value)
         self.mock_esp32.send_action.assert_any_call(CarAction.DIRECTION_STRAIGHT.value)
         self.assertEqual(self.mock_esp32.send_action.call_count, 2)
@@ -46,14 +48,16 @@ class TestCarHandler(unittest.TestCase):
     def test_right_hand_direction_right(self):
         """Test right hand direction controls: RIGHT orientation."""
         right_hand_right = self.create_mock_hand(HandType.RIGHT, is_open=True, orientation=IndexOrientation.RIGHT)
-        self.handler.process_hands([right_hand_right])
+        mock_hand = self.create_mock_hand(HandType.LEFT, is_open=False, orientation=IndexOrientation.LEFT)
+        self.handler.process_hands([right_hand_right, mock_hand])
         self.mock_esp32.send_action.assert_any_call(CarAction.STOP.value)
         self.mock_esp32.send_action.assert_any_call(CarAction.DIRECTION_RIGHT.value)
 
     def test_right_hand_direction_left(self):
         """Test right hand direction controls: LEFT orientation."""
         right_hand_left = self.create_mock_hand(HandType.RIGHT, is_open=True, orientation=IndexOrientation.LEFT)
-        self.handler.process_hands([right_hand_left])
+        mock_hand = self.create_mock_hand(HandType.LEFT, is_open=False, orientation=IndexOrientation.LEFT)
+        self.handler.process_hands([right_hand_left, mock_hand])
         self.mock_esp32.send_action.assert_any_call(CarAction.STOP.value)
         self.mock_esp32.send_action.assert_any_call(CarAction.DIRECTION_LEFT.value)
 
