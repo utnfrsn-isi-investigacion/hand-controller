@@ -22,5 +22,8 @@ htmlcov/
 bandit-report.json
 .tox/
 
+# PlatformIO build artifacts
+_esp32/.pio/
+
 # Vscode settings
 .vscode/
