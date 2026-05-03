@@ -9,8 +9,8 @@ help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
 
-venv: ## Create virtual environment
-	python -m venv $(VENV)
+venv: ## Create virtual environment (uses pyenv Python version from .python-version)
+	pyenv exec python -m venv $(VENV)
 
 install: venv ## Install Python dependencies
 	$(PIP) install --upgrade pip
