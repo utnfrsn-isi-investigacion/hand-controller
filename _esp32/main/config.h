@@ -12,10 +12,8 @@ const uint16_t TCP_PORT = 1234;
 //////////////////////
 // LED pin for visual feedback
 // Common values:
-//   - Most ESP32 boards: 2
-//   - ESP32-CAM: 33 (white LED) or 4 (flash)
-//   - ESP32-S2: 15
-//   - ESP32-C3: 8
+//   - NodeMCU / Wemos D1 Mini: 2 (D4, active LOW)
+//   - ESP-01: 1
 const int LED_PIN = 2;
 
 // Motor control pins

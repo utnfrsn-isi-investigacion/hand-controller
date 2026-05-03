@@ -1,7 +1,7 @@
 #include "secrets.h"
 #include "config.h"
-#include <WiFi.h>
-#include <ESPmDNS.h>
+#include <ESP8266WiFi.h>
+#include <ESP8266mDNS.h>
 
 WiFiServer tcpServer(TCP_PORT);
 
@@ -97,6 +97,7 @@ void setup() {
 // LOOP
 //////////////////////
 void loop() {
+  MDNS.update();
   WiFiClient client = tcpServer.available();
   if (client) {
     Serial.println("Client connected!");
