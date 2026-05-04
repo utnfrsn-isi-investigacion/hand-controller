@@ -98,7 +98,7 @@ void setup() {
 //////////////////////
 void loop() {
   MDNS.update();
-  WiFiClient client = tcpServer.available();
+  WiFiClient client = tcpServer.accept();
   if (client) {
     Serial.println("Client connected!");
     while (client.connected()) {
