@@ -13,6 +13,27 @@ struct Action {
   void (*handler)(WiFiClient&);
 };
 
+// Pin-level helpers, usable without a connected client (failsafe path)
+void applyStop() {
+  digitalWrite(LED_PIN, LOW);
+  // TODO: verify against the motor driver wiring. On an L298N-style
+  // H-bridge (IN1/IN2) A=LOW/B=HIGH drives REVERSE; stop/coast is both LOW.
+  digitalWrite(MOTOR_PIN_B, HIGH);
+  digitalWrite(MOTOR_PIN_A, LOW);
+}
+
+void applyStraight() {
+  digitalWrite(DIRECTION_PIN_RIGHT, LOW);
+  digitalWrite(DIRECTION_PIN_LEFT, LOW);
+}
+
+// Stop motors and center direction when the client is gone or silent
+void failsafeStop() {
+  applyStop();
+  applyStraight();
+  Serial.println("Failsafe: stopping motors");
+}
+
 // Action handlers
 void accelerate(WiFiClient& client) {
   digitalWrite(LED_PIN, HIGH);
@@ -22,9 +43,7 @@ void accelerate(WiFiClient& client) {
 }
 
 void stopAction(WiFiClient& client) {
-  digitalWrite(LED_PIN, LOW);
-  digitalWrite(MOTOR_PIN_B, HIGH);
-  digitalWrite(MOTOR_PIN_A, LOW);
+  applyStop();
   client.println("STOP (LED OFF)");
 }
 
@@ -41,8 +60,7 @@ void directionRight(WiFiClient& client) {
 }
 
 void directionStraight(WiFiClient& client) {
-  digitalWrite(DIRECTION_PIN_RIGHT, LOW);
-  digitalWrite(DIRECTION_PIN_LEFT, LOW);
+  applyStraight();
   client.println("DIRECTION STRAIGHT");
 }
 
@@ -69,6 +87,10 @@ void setup() {
   pinMode(DIRECTION_PIN_RIGHT, OUTPUT);
   pinMode(MOTOR_PIN_A, OUTPUT);
   pinMode(MOTOR_PIN_B, OUTPUT);
+
+  // Start from a known-safe output state
+  applyStop();
+  applyStraight();
 
   // Connect to Wi-Fi using secrets
   Serial.printf("Connecting to %s ...\n", WIFI_SSID);
@@ -100,6 +122,8 @@ void loop() {
   WiFiClient client = tcpServer.accept();
   if (client) {
     Serial.println("Client connected!");
+    unsigned long lastCommandMs = millis();
+    bool failsafeActive = false;
     while (client.connected()) {
       if (client.available()) {
         String command = client.readStringUntil('\n');
@@ -117,9 +141,17 @@ void loop() {
         if (!matched) {
           client.println("Unknown command");
         }
+        lastCommandMs = millis();
+        failsafeActive = false;
+      } else if (!failsafeActive && millis() - lastCommandMs > COMMAND_TIMEOUT_MS) {
+        // Dead-man switch: the client resends the current action periodically,
+        // so a silent connection means it is gone (crash, sleep, WiFi drop).
+        failsafeStop();
+        failsafeActive = true;
       }
     }
     client.stop();
+    failsafeStop();
     Serial.println("Client disconnected.");
   }
 }

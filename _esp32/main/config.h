@@ -7,6 +7,12 @@
 // TCP server port
 const uint16_t TCP_PORT = 1234;
 
+// Dead-man timeout: if no command arrives within this window, motors are
+// stopped. The Python client resends the current action every
+// handler.refresh_interval seconds (default 0.5s), so this must stay well
+// above that.
+const unsigned long COMMAND_TIMEOUT_MS = 2000;
+
 //////////////////////
 // HARDWARE CONFIGURATION
 //////////////////////
