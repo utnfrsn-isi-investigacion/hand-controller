@@ -128,9 +128,15 @@ Edit `config.json` to customize settings:
     "index_orientation_threshold": 0.05  // X offset for left/right pointing
   },
   "display": {
+    "show_overlays": true,          // Master toggle for all overlays
     "show_landmarks": true,         // Show hand landmarks
+    "show_confidence": true,        // Show gesture confidence next to actions
     "show_fps": false,              // Show FPS counter
-    "window_name": "Hand Gesture Recognition"
+    "window_name": "Hand Gesture Recognition",
+    "left_hand_color": [0, 255, 0], // Overlay color per hand (BGR)
+    "right_hand_color": [0, 0, 255],
+    "text_scale": 1.0,              // Overlay text size multiplier
+    "text_thickness": 2             // Overlay text stroke thickness
   },
   "handler": {
     "buffer_size": 30,              // Action buffer size for smoothing
@@ -142,6 +148,15 @@ Edit `config.json` to customize settings:
 **Important**: Never commit `config.json` with sensitive information. Use `config.example.json` as a template.
 
 ### Configuration Parameters Explained
+
+#### Display Settings
+- **show_overlays**: Master switch — turns off every overlay at once (landmarks,
+  action text, connection status, FPS) for a clean camera view.
+- **show_confidence**: Appends the gesture stability (share of the winning action
+  in the smoothing buffer, e.g. "ACCELERATE 87%") to each hand's action text.
+- **left_hand_color / right_hand_color**: Overlay color per hand in BGR order
+  (OpenCV convention — `[0, 255, 0]` is green).
+- **text_scale / text_thickness**: Size and stroke of all overlay text.
 
 #### Hand Detection Settings
 - **open_threshold_ratio**: How extended (tip-to-knuckle distance relative to hand size)
@@ -242,6 +257,7 @@ hand-controller/
 ├── main.py              # Main application entry point
 ├── hand.py              # Hand gesture detection logic
 ├── handlers.py          # Action handlers with buffering logic
+├── draw.py              # Preview window overlay rendering
 ├── esp32.py             # TCP communication with ESP32
 ├── config.py            # Configuration management with dataclasses
 ├── config.json          # Configuration file (create from example)

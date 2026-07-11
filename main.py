@@ -6,18 +6,10 @@ import cv2
 import esp32
 import handlers
 from config import Config, ConfigError
+from draw import Drawer
 from hand import HandProcessor, HandType
 
 logger = logging.getLogger(__name__)
-
-
-def draw_connection_status(frame, connected: bool) -> None:
-    """Draw the ESP32 connection state in the top-left corner of the preview."""
-    if connected:
-        text, color = "ESP32: connected", (0, 255, 0)
-    else:
-        text, color = "ESP32: disconnected (reconnecting...)", (0, 0, 255)
-    cv2.putText(frame, text, (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
 
 
 def main() -> None:
@@ -59,6 +51,9 @@ def main() -> None:
         refresh_interval=config.handler.refresh_interval
     )
 
+    # Init overlay renderer with config
+    drawer = Drawer(config.display)
+
     prev_time = time.monotonic()
     try:
         while True:
@@ -78,22 +73,18 @@ def main() -> None:
 
             # Let the handler determine and send actions
             actions = handler.process_hands(detected_hands)
-
-            # Draw info on the frame, reusing the actions that were sent
-            for hand in detected_hands:
-                hand_type = hand.get_hand_type()
-                if hand_type == HandType.UNKNOWN:
-                    continue
-                hand.draw_info(frame, actions[hand_type], show_landmarks=config.display.show_landmarks)
-
-            draw_connection_status(frame, client_esp32.is_connected())
+            confidences = {
+                hand_type: handler.get_action_confidence(hand_type)
+                for hand_type in (HandType.LEFT, HandType.RIGHT)
+            }
 
             now = time.monotonic()
             fps = 1.0 / max(now - prev_time, 1e-6)
             prev_time = now
-            if config.display.show_fps:
-                cv2.putText(frame, f"FPS: {fps:.0f}", (10, frame.shape[0] - 10),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 0), 2)
+
+            # Draw all overlays, reusing the actions that were sent
+            drawer.draw(frame, detected_hands, actions, confidences,
+                        client_esp32.is_connected(), fps)
 
             cv2.imshow(config.display.window_name, frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
