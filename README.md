@@ -123,7 +123,9 @@ Edit `config.json` to customize settings:
   "hand_detection": {
     "max_hands": 2,                 // Maximum hands to detect
     "min_detection_confidence": 0.5,
-    "min_tracking_confidence": 0.5
+    "min_tracking_confidence": 0.5,
+    "open_threshold_ratio": 0.6,    // Finger extension ratio for "open hand"
+    "index_orientation_threshold": 0.05  // X offset for left/right pointing
   },
   "display": {
     "show_landmarks": true,         // Show hand landmarks
@@ -140,6 +142,14 @@ Edit `config.json` to customize settings:
 **Important**: Never commit `config.json` with sensitive information. Use `config.example.json` as a template.
 
 ### Configuration Parameters Explained
+
+#### Hand Detection Settings
+- **open_threshold_ratio**: How extended (tip-to-knuckle distance relative to hand size)
+  every finger must be for the hand to count as open (default: 0.6). Lower it if
+  ACCELERATE is hard to trigger; raise it if it triggers too easily.
+- **index_orientation_threshold**: How far (in normalized image coordinates) the index
+  fingertip must deviate horizontally from its knuckle to count as pointing
+  left/right instead of straight (default: 0.05). Lower = more sensitive steering.
 
 #### Handler Settings
 - **buffer_size**: Number of frames to buffer for action smoothing (default: 30)

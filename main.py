@@ -29,7 +29,9 @@ def main() -> None:
     hand_processor = HandProcessor(
         min_detection_confidence=config.hand_detection.min_detection_confidence,
         min_tracking_confidence=config.hand_detection.min_tracking_confidence,
-        max_hands=config.hand_detection.max_hands
+        max_hands=config.hand_detection.max_hands,
+        open_threshold_ratio=config.hand_detection.open_threshold_ratio,
+        index_orientation_threshold=config.hand_detection.index_orientation_threshold
     )
 
     # Initialize ESP32 client with config

@@ -30,6 +30,12 @@ class HandDetectionConfig:
     max_hands: int = 2
     min_detection_confidence: float = 0.5
     min_tracking_confidence: float = 0.5
+    # Normalized tip-to-knuckle distance (relative to hand size) above which
+    # a finger counts as extended; all five must pass for an open hand.
+    open_threshold_ratio: float = 0.6
+    # Horizontal tip-to-knuckle offset (normalized image coords) beyond which
+    # the index finger counts as pointing left/right instead of straight.
+    index_orientation_threshold: float = 0.05
 
 
 @dataclass

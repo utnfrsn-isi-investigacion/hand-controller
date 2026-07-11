@@ -30,9 +30,12 @@ class IndexOrientation(Enum):
 class Hand:
     """Represents a single detected hand and its properties."""
 
-    def __init__(self, handedness: Handedness, landmarks: HandLandmarkList):
+    def __init__(self, handedness: Handedness, landmarks: HandLandmarkList,
+                 open_threshold_ratio: float = 0.6, index_orientation_threshold: float = 0.05):
         self.handedness = handedness
         self.landmarks = landmarks
+        self._open_threshold_ratio = open_threshold_ratio
+        self._index_orientation_threshold = index_orientation_threshold
         self._hand_size_cache: Optional[float] = None
 
     @staticmethod
@@ -59,8 +62,10 @@ class Hand:
         label = self.handedness.classification[0].label
         return HandType[label.upper()]
 
-    def is_open(self, threshold_ratio: float = 0.6) -> bool:
+    def is_open(self, threshold_ratio: Optional[float] = None) -> bool:
         """Check if the hand is open by measuring finger extension."""
+        if threshold_ratio is None:
+            threshold_ratio = self._open_threshold_ratio
         if not self.landmarks:
             return False
 
@@ -98,12 +103,14 @@ class Hand:
         normalized_distances = [d / hand_size for d in distances]
         return all(d > threshold_ratio for d in normalized_distances)
 
-    def get_index_orientation(self, threshold: float = 0.05) -> IndexOrientation:
+    def get_index_orientation(self, threshold: Optional[float] = None) -> IndexOrientation:
         """Get the orientation of the index finger.
 
         Assumes a mirrored (selfie-view) frame, where a larger x means
         further to the user's right.
         """
+        if threshold is None:
+            threshold = self._index_orientation_threshold
         if not self.landmarks:
             raise ValueError("Hand landmarks not available.")
 
@@ -135,12 +142,16 @@ class Hand:
 class HandProcessor:
     """Processes video frames to detect and analyze hand gestures."""
 
-    def __init__(self, min_detection_confidence: float = 0.5, min_tracking_confidence: float = 0.5, max_hands: int = 2):
+    def __init__(self, min_detection_confidence: float = 0.5, min_tracking_confidence: float = 0.5,
+                 max_hands: int = 2, open_threshold_ratio: float = 0.6,
+                 index_orientation_threshold: float = 0.05):
         self.hands_engine = mp_hands.Hands(
             min_detection_confidence=min_detection_confidence,
             min_tracking_confidence=min_tracking_confidence,
             max_num_hands=max_hands
         )
+        self._open_threshold_ratio = open_threshold_ratio
+        self._index_orientation_threshold = index_orientation_threshold
 
     def process_frame(self, rgb_frame: Any) -> List[Hand]:
         """Processes a single RGB frame to find hands."""
@@ -149,7 +160,12 @@ class HandProcessor:
 
         if results.multi_hand_landmarks:
             for handedness, landmarks in zip(results.multi_handedness, results.multi_hand_landmarks):
-                detected_hands.append(Hand(handedness=handedness, landmarks=landmarks))
+                detected_hands.append(Hand(
+                    handedness=handedness,
+                    landmarks=landmarks,
+                    open_threshold_ratio=self._open_threshold_ratio,
+                    index_orientation_threshold=self._index_orientation_threshold
+                ))
 
         return detected_hands
 
