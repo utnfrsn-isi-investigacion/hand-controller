@@ -158,22 +158,32 @@ class TestCarHandler(unittest.TestCase):
         self.assertEqual(self.handler.get_action(unknown_hand), CarAction.STOP)
         self.assertIsNone(self.handler._majority_action(unknown_hand))
 
-    def test_majority_action_with_mixed_actions(self):
-        """Test majority voting with different actions where one is majority."""
+    def test_stop_bypasses_majority_vote(self):
+        """A STOP gesture takes effect immediately, even against an ACCELERATE majority."""
         left_hand_open = self.create_mock_hand(HandType.LEFT, is_open=True, orientation=IndexOrientation.STRAIGHT)
         left_hand_closed = self.create_mock_hand(HandType.LEFT, is_open=False, orientation=IndexOrientation.STRAIGHT)
 
-        # Add 4 ACCELERATE actions
-        for _ in range(4):
+        # Fill the buffer with ACCELERATE
+        for _ in range(10):
             self.handler._record_action(left_hand_open)
 
-        # Add 2 STOP actions
-        for _ in range(2):
+        # A single closed-hand frame must return STOP, not the majority
+        self.assertEqual(self.handler._record_action(left_hand_closed), CarAction.STOP)
+        # The read-only path agrees
+        self.assertEqual(self.handler.get_action(left_hand_closed), CarAction.STOP)
+
+    def test_accelerate_still_smoothed_by_majority(self):
+        """Non-priority actions keep majority smoothing: one open frame can't override STOP."""
+        left_hand_open = self.create_mock_hand(HandType.LEFT, is_open=True, orientation=IndexOrientation.STRAIGHT)
+        left_hand_closed = self.create_mock_hand(HandType.LEFT, is_open=False, orientation=IndexOrientation.STRAIGHT)
+
+        # Fill the buffer with STOP
+        for _ in range(10):
             self.handler._record_action(left_hand_closed)
 
-        # Next action with closed hand should still return ACCELERATE (majority)
-        action = self.handler._record_action(left_hand_closed)
-        self.assertEqual(action, CarAction.ACCELERATE)
+        # A single open-hand frame is outvoted by the STOP majority
+        action = self.handler._record_action(left_hand_open)
+        self.assertEqual(action, CarAction.STOP)
 
     def test_buffer_respects_max_size(self):
         """Test that buffer doesn't exceed the specified max size."""
@@ -226,19 +236,19 @@ class TestCarHandler(unittest.TestCase):
     def test_get_action_uses_majority_when_available(self):
         """Test that get_action returns the majority action from the buffer."""
         handler = CarHandler(self.mock_esp32, buffer_size=10)
-        left_hand_open = self.create_mock_hand(HandType.LEFT, is_open=True, orientation=IndexOrientation.STRAIGHT)
-        left_hand_closed = self.create_mock_hand(HandType.LEFT, is_open=False, orientation=IndexOrientation.STRAIGHT)
+        right_hand_left = self.create_mock_hand(HandType.RIGHT, is_open=True, orientation=IndexOrientation.LEFT)
+        right_hand_straight = self.create_mock_hand(HandType.RIGHT, is_open=True, orientation=IndexOrientation.STRAIGHT)
 
-        # Fill buffer with mostly ACCELERATE actions
+        # Fill buffer with mostly DIRECTION_LEFT actions
         for _ in range(7):
-            handler._record_action(left_hand_open)
-        # Add fewer STOP actions
+            handler._record_action(right_hand_left)
+        # Add fewer STRAIGHT actions
         for _ in range(2):
-            handler._record_action(left_hand_closed)
+            handler._record_action(right_hand_straight)
 
-        # Reading with a STOP gesture still returns the majority (ACCELERATE)
-        action = handler.get_action(left_hand_closed)
-        self.assertEqual(action, CarAction.ACCELERATE)
+        # Reading with a STRAIGHT gesture still returns the majority (DIRECTION_LEFT)
+        action = handler.get_action(right_hand_straight)
+        self.assertEqual(action, CarAction.DIRECTION_LEFT)
 
     def test_right_hand_buffer_with_direction_changes(self):
         """Test buffering and majority for right hand direction changes."""

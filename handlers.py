@@ -51,8 +51,11 @@ class Handler(abc.ABC):
 
         Read-only: does not modify the action buffers.
         """
+        action = self._get_action(hand)
+        if self._is_priority_action(action):
+            return action
         majority = self._majority_action(hand)
-        return majority if majority is not None else self._get_action(hand)
+        return majority if majority is not None else action
 
     def _record_action(self, hand: Hand) -> Enum:
         """Record the hand's current action in its buffer and return the smoothed action."""
@@ -60,10 +63,15 @@ class Handler(abc.ABC):
         hand_type = hand.get_hand_type()
         if hand_type in self._action_buffers:
             self._action_buffers[hand_type].append(action)
-            majority = self._majority_action(hand)
-            if majority is not None:
-                return majority
+            if not self._is_priority_action(action):
+                majority = self._majority_action(hand)
+                if majority is not None:
+                    return majority
         return action
+
+    def _is_priority_action(self, action: Enum) -> bool:
+        """Actions that bypass majority smoothing (e.g. safety stops)."""
+        return False
 
     def _majority_action(self, hand: Hand) -> Optional[Enum]:
         hand_type = hand.get_hand_type()
@@ -134,6 +142,10 @@ class CarHandler(Handler):
         else:
             # Hand not detected - return default action without polluting the buffer
             return self._default_actions[hand_type]
+
+    def _is_priority_action(self, action: Enum) -> bool:
+        """STOP takes effect immediately; never trade stop latency for smoothing."""
+        return action == CarAction.STOP
 
     def _get_action(self, hand: Hand) -> CarAction:
         """Return the Action for this hand based on type and gesture."""
