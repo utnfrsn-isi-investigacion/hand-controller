@@ -352,11 +352,29 @@ pip-audit --requirement requirements.txt
 ### Continuous Integration
 
 This project uses GitHub Actions for CI. On every push and pull request, the following checks run automatically:
-- ✅ Unit tests on Ubuntu, macOS, and Windows
+- ✅ Unit tests on Ubuntu (Python 3.12)
 - ✅ Code linting with flake8
 - ✅ Security scans with Bandit and pip-audit
 
 See [CI Documentation](.github/CI_DOCUMENTATION.md) for more details.
+
+## 🔒 Security Considerations
+
+The ESP32's TCP server is **unauthenticated**: any device on the same WiFi
+network can connect and send driving commands to the car.
+
+- Run the system only on a **trusted network** (e.g. a phone hotspot or an
+  isolated lab network) — never on open/shared WiFi.
+- Only one client is served at a time; a hijacker connecting first blocks the
+  real controller.
+- If a shared network is unavoidable, add a shared-secret handshake to the
+  protocol (client sends a token before commands are accepted) — not currently
+  implemented.
+- WiFi credentials live in `_esp32/main/secrets.h`, which is gitignored.
+  Never commit it.
+- The firmware stops the motors automatically if no command arrives for 2
+  seconds (dead-man timeout), which also limits how long a spoofed command
+  can persist once the controller disconnects.
 
 ## �🤝 Contributing
 
