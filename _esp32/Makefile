@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := help
 PIO           := pio
 
-.PHONY: help build upload monitor clean secrets upload-ota
+.PHONY: help build upload monitor upload-monitor upload-ota clean secrets
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -19,9 +19,9 @@ monitor: ## Open serial monitor (115200 baud)
 upload-monitor: ## Flash firmware then open serial monitor
 	$(PIO) run --target upload && $(PIO) device monitor
 
-upload-ota: ## Flash firmware over WiFi (needs OTA_PASSWORD env var; device must already run OTA-capable firmware)
+upload-ota: ## Flash firmware over WiFi (needs OTA_PASSWORD env var; device must already run OTA-capable firmware; override host with OTA_HOST if MDNS_NAME isn't "esp32")
 	@test -n "$(OTA_PASSWORD)" || { echo "Set OTA_PASSWORD to the plaintext OTA password (matching OTA_PASSWORD_HASH in secrets.h)"; exit 1; }
-	OTA_PASSWORD=$(OTA_PASSWORD) $(PIO) run -e esp32dev-ota --target upload
+	OTA_PASSWORD=$(OTA_PASSWORD) $(PIO) run -e esp32dev-ota --target upload $(if $(OTA_HOST),--upload-port $(OTA_HOST))
 
 clean: ## Remove PlatformIO build artifacts
 	$(PIO) run --target clean

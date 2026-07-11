@@ -254,14 +254,24 @@ Once the car is assembled, reflashing over USB means opening it up. After the
 can be sent over WiFi:
 
 1. **Set an OTA password** in `_esp32/main/secrets.h` — `OTA_PASSWORD_HASH` is
-   the MD5 hash of the password (`echo -n 'your_password' | md5`, or
-   `md5sum` on Linux), never the plaintext. Leave it empty to disable OTA;
-   with no hash configured, the firmware never starts an OTA listener.
+   the MD5 hash of the password, never the plaintext. Generate the raw hash
+   (not the labeled output these tools print by default):
+   ```bash
+   echo -n 'your_password' | md5 -q                    # macOS
+   echo -n 'your_password' | md5sum | cut -d' ' -f1     # Linux
+   ```
+   Leave `OTA_PASSWORD_HASH` empty to disable OTA; with no hash configured,
+   the firmware never starts an OTA listener.
 2. **Flash over WiFi**:
    ```bash
    OTA_PASSWORD='your_password' make upload-ota
    ```
-   This targets `esp32.local` using the `esp32dev-ota` PlatformIO environment.
+   This targets `esp32.local` using the `esp32dev-ota` PlatformIO environment
+   — which assumes `MDNS_NAME` is still the default `"esp32"`. If you changed
+   `MDNS_NAME` in `secrets.h`, override the host:
+   ```bash
+   OTA_PASSWORD='your_password' OTA_HOST='your_name.local' make upload-ota
+   ```
    `make upload` / `make upload-monitor` remain the USB path and stay the
    default.
 
