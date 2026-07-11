@@ -16,10 +16,10 @@ struct Action {
 // Pin-level helpers, usable without a connected client (failsafe path)
 void applyStop() {
   digitalWrite(LED_PIN, LOW);
-  // TODO: verify against the motor driver wiring. On an L298N-style
-  // H-bridge (IN1/IN2) A=LOW/B=HIGH drives REVERSE; stop/coast is both LOW.
-  digitalWrite(MOTOR_PIN_B, HIGH);
-  digitalWrite(MOTOR_PIN_A, LOW);
+  // Stop levels are defined in config.h — verify them against the motor
+  // driver wiring (see the note there).
+  digitalWrite(MOTOR_PIN_B, MOTOR_STOP_LEVEL_B);
+  digitalWrite(MOTOR_PIN_A, MOTOR_STOP_LEVEL_A);
 }
 
 void applyStraight() {

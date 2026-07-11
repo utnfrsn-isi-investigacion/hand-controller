@@ -28,6 +28,14 @@ const int LED_PIN = 2;
 const int MOTOR_PIN_A = 16;  // Motor control A
 const int MOTOR_PIN_B = 17;  // Motor control B
 
+// Pin levels that stop the motor (used by STOP and the failsafe).
+// These defaults preserve the original firmware behavior, but NOTE:
+// on an L298N-style H-bridge (IN1/IN2), A=LOW/B=HIGH drives REVERSE;
+// coast is LOW/LOW and brake is HIGH/HIGH. Verify against your wiring
+// before trusting the failsafe, and adjust these two values if needed.
+const int MOTOR_STOP_LEVEL_A = LOW;
+const int MOTOR_STOP_LEVEL_B = HIGH;
+
 // Direction control pins
 const int DIRECTION_PIN_LEFT = 4;   // Direction left control
 const int DIRECTION_PIN_RIGHT = 5;  // Direction right control
