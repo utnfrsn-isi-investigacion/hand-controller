@@ -27,8 +27,9 @@ lint: ## Run flake8 linter
 		--statistics --exclude=__pycache__,_esp32,$(VENV)
 
 security: ## Run bandit and pip-audit security checks
-	$(VENV)/bin/bandit -r . --exclude=./_esp32,./tests
-	$(VENV)/bin/pip-audit --requirement requirements.txt
+	$(VENV)/bin/bandit -r . --exclude=./_esp32,./tests,./$(VENV)
+	# PYSEC-2026-1805: protobuf fix conflicts with mediapipe's protobuf<5 pin (see ci.yml)
+	$(VENV)/bin/pip-audit --requirement requirements.txt --ignore-vuln PYSEC-2026-1805
 
 config: ## Create config.json from example (skips if already exists)
 	@test -f config.json && echo "config.json already exists, skipping." || \
