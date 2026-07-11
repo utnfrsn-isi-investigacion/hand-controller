@@ -7,6 +7,15 @@ from config import Config
 from hand import HandProcessor, HandType
 
 
+def draw_connection_status(frame, connected: bool) -> None:
+    """Draw the ESP32 connection state in the top-left corner of the preview."""
+    if connected:
+        text, color = "ESP32: connected", (0, 255, 0)
+    else:
+        text, color = "ESP32: disconnected (reconnecting...)", (0, 0, 255)
+    cv2.putText(frame, text, (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
+
+
 def main() -> None:
     # Load configuration
     config = Config.from_file()
@@ -64,6 +73,8 @@ def main() -> None:
                 if hand_type == HandType.UNKNOWN:
                     continue
                 hand.draw_info(frame, actions[hand_type], show_landmarks=config.display.show_landmarks)
+
+            draw_connection_status(frame, client_esp32.is_connected())
 
             now = time.monotonic()
             fps = 1.0 / max(now - prev_time, 1e-6)
