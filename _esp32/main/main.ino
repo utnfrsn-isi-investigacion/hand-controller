@@ -2,6 +2,7 @@
 #include "config.h"
 #include <WiFi.h>
 #include <ESPmDNS.h>
+#include <ArduinoOTA.h>
 
 WiFiServer tcpServer(TCP_PORT);
 
@@ -76,6 +77,42 @@ Action actions[] = {
 const int numActions = sizeof(actions) / sizeof(actions[0]);
 
 //////////////////////
+// OTA
+//////////////////////
+void setupOTA() {
+  if (strlen(OTA_PASSWORD_HASH) == 0) {
+    Serial.println("OTA disabled: no password hash in secrets.h");
+    return;
+  }
+
+  ArduinoOTA.setHostname(MDNS_NAME);
+  ArduinoOTA.setPasswordHash(OTA_PASSWORD_HASH);
+
+  ArduinoOTA.onStart([]() {
+    // Stop motors before flash erase begins
+    failsafeStop();
+    Serial.println("OTA: update starting");
+  });
+  ArduinoOTA.onEnd([]() {
+    Serial.println("OTA: update complete");
+  });
+  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+    Serial.printf("OTA progress: %u%%\n", (progress * 100) / total);
+  });
+  ArduinoOTA.onError([](ota_error_t error) {
+    Serial.printf("OTA error [%u]: ", error);
+    if (error == OTA_AUTH_ERROR) Serial.println("Auth failed");
+    else if (error == OTA_BEGIN_ERROR) Serial.println("Begin failed");
+    else if (error == OTA_CONNECT_ERROR) Serial.println("Connect failed");
+    else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive failed");
+    else if (error == OTA_END_ERROR) Serial.println("End failed");
+  });
+
+  ArduinoOTA.begin();
+  Serial.println("OTA ready");
+}
+
+//////////////////////
 // SETUP
 //////////////////////
 void setup() {
@@ -110,6 +147,9 @@ void setup() {
     Serial.printf("mDNS started: %s.local\n", MDNS_NAME);
   }
 
+  // Start OTA updates (no-op if no password hash is configured)
+  setupOTA();
+
   // Start TCP server
   tcpServer.begin();
   Serial.printf("TCP server listening on port %d\n", TCP_PORT);
@@ -119,12 +159,15 @@ void setup() {
 // LOOP
 //////////////////////
 void loop() {
+  ArduinoOTA.handle();
+
   WiFiClient client = tcpServer.accept();
   if (client) {
     Serial.println("Client connected!");
     unsigned long lastCommandMs = millis();
     bool failsafeActive = false;
     while (client.connected()) {
+      ArduinoOTA.handle();
       if (client.available()) {
         String command = client.readStringUntil('\n');
         command.trim(); // strip \r \n and spaces

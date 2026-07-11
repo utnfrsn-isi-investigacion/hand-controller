@@ -18,4 +18,10 @@ const char* WIFI_PASSWORD = "your_wifi_password";
 // Must be alphanumeric, no spaces or special characters
 const char* MDNS_NAME = "esp32";
 
+// OTA update password, stored as an MD5 hash so the plaintext never ships
+// in the firmware binary. Generate with:  echo -n 'your_password' | md5
+// (macOS; use md5sum on Linux). Leave empty ("") to disable OTA entirely —
+// the firmware never starts an unauthenticated OTA endpoint.
+const char* OTA_PASSWORD_HASH = "";
+
 #endif
