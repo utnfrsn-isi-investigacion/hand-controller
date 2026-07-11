@@ -91,21 +91,50 @@ class TestHand(unittest.TestCase):
         hand = self.create_mock_hand(landmarks_data)
         self.assertFalse(hand.is_open())
 
+    def test_is_open_respects_configured_threshold(self):
+        """Test that the constructor threshold changes the is_open outcome."""
+        landmarks_data = [(0.0, 0.0, 0.0)] * 21
+        landmarks_data[mp_hands.HandLandmark.WRIST] = (0.5, 0.9, 0.0)
+        landmarks_data[mp_hands.HandLandmark.MIDDLE_FINGER_MCP] = (0.5, 0.7, 0.0)
+        landmarks_data[mp_hands.HandLandmark.THUMB_TIP] = (0.3, 0.5, 0.0)
+        landmarks_data[mp_hands.HandLandmark.THUMB_CMC] = (0.35, 0.7, 0.0)
+        landmarks_data[mp_hands.HandLandmark.INDEX_FINGER_TIP] = (0.4, 0.2, 0.0)
+        landmarks_data[mp_hands.HandLandmark.INDEX_FINGER_MCP] = (0.4, 0.7, 0.0)
+        landmarks_data[mp_hands.HandLandmark.MIDDLE_FINGER_TIP] = (0.5, 0.2, 0.0)
+        landmarks_data[mp_hands.HandLandmark.RING_FINGER_TIP] = (0.6, 0.2, 0.0)
+        landmarks_data[mp_hands.HandLandmark.RING_FINGER_MCP] = (0.6, 0.7, 0.0)
+        landmarks_data[mp_hands.HandLandmark.PINKY_TIP] = (0.7, 0.2, 0.0)
+        landmarks_data[mp_hands.HandLandmark.PINKY_MCP] = (0.7, 0.7, 0.0)
+
+        open_hand = self.create_mock_hand(landmarks_data)
+        self.assertTrue(open_hand.is_open())
+
+        # The same landmarks fail with an absurdly strict configured threshold
+        strict_hand = Hand(
+            handedness=open_hand.handedness,
+            landmarks=open_hand.landmarks,
+            open_threshold_ratio=100.0
+        )
+        self.assertFalse(strict_hand.is_open())
+
+        # A per-call threshold overrides the configured one
+        self.assertTrue(strict_hand.is_open(threshold_ratio=0.6))
+
     def test_get_index_orientation(self):
-        """Test the index finger orientation logic. MediaPipe's X-axis is inverted."""
+        """Test the index finger orientation logic on a mirrored (selfie-view) frame."""
         landmarks_data = [(0.0, 0.0, 0.0)] * 21
 
-        # Pointing Right (for a Right hand) -> Tip X is LESS than Base X
+        # Pointing Left -> Tip X is LESS than Base X (mirrored view)
         landmarks_data[mp_hands.HandLandmark.INDEX_FINGER_TIP] = (0.3, 0.5, 0.0)
-        landmarks_data[mp_hands.HandLandmark.INDEX_FINGER_MCP] = (0.4, 0.5, 0.0)
-        hand_pointing_right = self.create_mock_hand(landmarks_data)
-        self.assertEqual(hand_pointing_right.get_index_orientation(), IndexOrientation.RIGHT)
-
-        # Pointing Left (for a Right hand) -> Tip X is GREATER than Base X
-        landmarks_data[mp_hands.HandLandmark.INDEX_FINGER_TIP] = (0.5, 0.5, 0.0)
         landmarks_data[mp_hands.HandLandmark.INDEX_FINGER_MCP] = (0.4, 0.5, 0.0)
         hand_pointing_left = self.create_mock_hand(landmarks_data)
         self.assertEqual(hand_pointing_left.get_index_orientation(), IndexOrientation.LEFT)
+
+        # Pointing Right -> Tip X is GREATER than Base X (mirrored view)
+        landmarks_data[mp_hands.HandLandmark.INDEX_FINGER_TIP] = (0.5, 0.5, 0.0)
+        landmarks_data[mp_hands.HandLandmark.INDEX_FINGER_MCP] = (0.4, 0.5, 0.0)
+        hand_pointing_right = self.create_mock_hand(landmarks_data)
+        self.assertEqual(hand_pointing_right.get_index_orientation(), IndexOrientation.RIGHT)
 
         # Pointing Straight
         landmarks_data[mp_hands.HandLandmark.INDEX_FINGER_TIP] = (0.4, 0.5, 0.0)

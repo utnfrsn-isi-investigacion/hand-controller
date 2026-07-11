@@ -113,8 +113,7 @@ Edit `config.json` to customize settings:
   "esp32": {
     "ip": "esp32.local",            // ESP32 IP or hostname
     "port": 1234,                   // TCP port
-    "connection_timeout": 5,        // Connection timeout in seconds
-    "action_cooldown": 2            // Minimum seconds between actions
+    "connection_timeout": 5         // Connection timeout in seconds
   },
   "camera": {
     "index": 0,                     // Camera device index
@@ -124,7 +123,9 @@ Edit `config.json` to customize settings:
   "hand_detection": {
     "max_hands": 2,                 // Maximum hands to detect
     "min_detection_confidence": 0.5,
-    "min_tracking_confidence": 0.5
+    "min_tracking_confidence": 0.5,
+    "open_threshold_ratio": 0.6,    // Finger extension ratio for "open hand"
+    "index_orientation_threshold": 0.05  // X offset for left/right pointing
   },
   "display": {
     "show_landmarks": true,         // Show hand landmarks
@@ -132,7 +133,8 @@ Edit `config.json` to customize settings:
     "window_name": "Hand Gesture Recognition"
   },
   "handler": {
-    "buffer_size": 30               // Action buffer size for smoothing
+    "buffer_size": 30,              // Action buffer size for smoothing
+    "refresh_interval": 0.5         // Seconds between keepalive resends of the current action
   }
 }
 ```
@@ -141,12 +143,24 @@ Edit `config.json` to customize settings:
 
 ### Configuration Parameters Explained
 
+#### Hand Detection Settings
+- **open_threshold_ratio**: How extended (tip-to-knuckle distance relative to hand size)
+  every finger must be for the hand to count as open (default: 0.6). Lower it if
+  ACCELERATE is hard to trigger; raise it if it triggers too easily.
+- **index_orientation_threshold**: How far (in normalized image coordinates) the index
+  fingertip must deviate horizontally from its knuckle to count as pointing
+  left/right instead of straight (default: 0.05). Lower = more sensitive steering.
+
 #### Handler Settings
 - **buffer_size**: Number of frames to buffer for action smoothing (default: 30)
   - Higher values = smoother transitions but slower response
   - Lower values = faster response but more jittery
   - Recommended range: 15-50 frames
   - Example: At 30 FPS, buffer_size=30 smooths over 1 second of data
+- **refresh_interval**: Seconds between keepalive resends of the current action (default: 0.5)
+  - Feeds the firmware's dead-man timeout (`COMMAND_TIMEOUT_MS`, default 2s): if the ESP32
+    stops receiving commands for that long, it stops the motors
+  - Must stay well below the firmware timeout
 
 The handler uses a majority voting system across the buffer to determine the most consistent action, reducing noise and false detections in hand gesture recognition.
 
@@ -176,11 +190,16 @@ The handler uses a majority voting system across the buffer to determine the mos
 
 ### Available Actions
 
-- **Accelerate**: Move hand forward/specific gesture
-- **Stop**: Closed fist or stop gesture
-- **Direction Left**: Point index finger left
-- **Direction Right**: Point index finger right
-- **Direction Straight**: Point index finger forward
+The preview is mirrored (like a selfie camera), so gestures behave intuitively:
+
+- **Accelerate**: Open your **left** hand
+- **Stop**: Close your **left** hand into a fist (takes effect immediately, bypassing smoothing)
+- **Direction Left**: Point your **right** index finger to the left
+- **Direction Right**: Point your **right** index finger to the right
+- **Direction Straight**: Point your **right** index finger up
+
+Both hands must be fully visible in the frame; otherwise the car stops and the
+direction centers.
 
 ## 🔌 ESP32 Setup
 
@@ -333,11 +352,29 @@ pip-audit --requirement requirements.txt
 ### Continuous Integration
 
 This project uses GitHub Actions for CI. On every push and pull request, the following checks run automatically:
-- ✅ Unit tests on Ubuntu, macOS, and Windows
+- ✅ Unit tests on Ubuntu (Python 3.12)
 - ✅ Code linting with flake8
 - ✅ Security scans with Bandit and pip-audit
 
 See [CI Documentation](.github/CI_DOCUMENTATION.md) for more details.
+
+## 🔒 Security Considerations
+
+The ESP32's TCP server is **unauthenticated**: any device on the same WiFi
+network can connect and send driving commands to the car.
+
+- Run the system only on a **trusted network** (e.g. a phone hotspot or an
+  isolated lab network) — never on open/shared WiFi.
+- Only one client is served at a time; a hijacker connecting first blocks the
+  real controller.
+- If a shared network is unavoidable, add a shared-secret handshake to the
+  protocol (client sends a token before commands are accepted) — not currently
+  implemented.
+- WiFi credentials live in `_esp32/main/secrets.h`, which is gitignored.
+  Never commit it.
+- The firmware stops the motors automatically if no command arrives for 2
+  seconds (dead-man timeout), which also limits how long a spoofed command
+  can persist once the controller disconnects.
 
 ## �🤝 Contributing
 

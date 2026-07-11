@@ -7,6 +7,12 @@
 // TCP server port
 const uint16_t TCP_PORT = 1234;
 
+// Dead-man timeout: if no command arrives within this window, motors are
+// stopped. The Python client resends the current action every
+// handler.refresh_interval seconds (default 0.5s), so this must stay well
+// above that.
+const unsigned long COMMAND_TIMEOUT_MS = 2000;
+
 //////////////////////
 // HARDWARE CONFIGURATION
 //////////////////////
@@ -21,6 +27,14 @@ const int LED_PIN = 2;
 // Motor control pins
 const int MOTOR_PIN_A = 16;  // Motor control A
 const int MOTOR_PIN_B = 17;  // Motor control B
+
+// Pin levels that stop the motor (used by STOP and the failsafe).
+// These defaults preserve the original firmware behavior, but NOTE:
+// on an L298N-style H-bridge (IN1/IN2), A=LOW/B=HIGH drives REVERSE;
+// coast is LOW/LOW and brake is HIGH/HIGH. Verify against your wiring
+// before trusting the failsafe, and adjust these two values if needed.
+const int MOTOR_STOP_LEVEL_A = LOW;
+const int MOTOR_STOP_LEVEL_B = HIGH;
 
 // Direction control pins
 const int DIRECTION_PIN_LEFT = 4;   // Direction left control
