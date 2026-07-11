@@ -1,0 +1,30 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=$(jq -r \".tool_input.file_path\"); case \"$f\" in \"${CLAUDE_PROJECT_DIR:-$PWD}\"/config.json|*secrets.h) echo \"Blocked: $f holds local/secret config — edit config.example.json instead\" >&2; exit 2;; esac",
+            "timeout": 10,
+            "statusMessage": "Checking protected files"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=$(jq -r \".tool_response.filePath // .tool_input.file_path\"); case \"$f\" in *.py) .venv/bin/flake8 --max-complexity=10 \"$f\" >&2 || exit 2;; esac",
+            "timeout": 30,
+            "statusMessage": "Linting with flake8"
+          }
+        ]
+      }
+    ]
+  }
+}
