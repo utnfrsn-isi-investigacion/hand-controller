@@ -1,11 +1,17 @@
 """Configuration management for Hand Controller."""
 from dataclasses import dataclass, field, fields, asdict
 import json
+import logging
 import os
-import sys
 from typing import Type, TypeVar
 
+logger = logging.getLogger(__name__)
+
 T = TypeVar('T')
+
+
+class ConfigError(Exception):
+    """Raised when the configuration file is missing or invalid."""
 
 
 @dataclass
@@ -60,7 +66,7 @@ def _build_section(section_cls: Type[T], data: dict, section: str) -> T:
     valid = {f.name for f in fields(section_cls)}  # type: ignore[arg-type]
     unknown = set(data) - valid
     if unknown:
-        print(f"Warning: ignoring unknown '{section}' config keys: {', '.join(sorted(unknown))}")
+        logger.warning("Ignoring unknown '%s' config keys: %s", section, ', '.join(sorted(unknown)))
     return section_cls(**{k: v for k, v in data.items() if k in valid})
 
 
@@ -86,22 +92,24 @@ class Config:
 
     @classmethod
     def from_file(cls, config_path: str = "config.json") -> 'Config':
-        """Load configuration from JSON file."""
+        """Load configuration from JSON file.
+
+        Raises ConfigError if the file is missing or invalid.
+        """
         if not os.path.exists(config_path):
-            print(f"Error: Configuration file '{config_path}' not found.")
-            print("Please create a config.json file or copy from config.example.json")
-            sys.exit(1)
+            raise ConfigError(
+                f"Configuration file '{config_path}' not found. "
+                "Create one by copying config.example.json (make config)."
+            )
 
         try:
             with open(config_path, 'r') as f:
                 data = json.load(f)
             return cls.from_dict(data)
         except json.JSONDecodeError as e:
-            print(f"Error: Invalid JSON in configuration file: {e}")
-            sys.exit(1)
+            raise ConfigError(f"Invalid JSON in '{config_path}': {e}") from e
         except TypeError as e:
-            print(f"Error: Invalid configuration structure: {e}")
-            sys.exit(1)
+            raise ConfigError(f"Invalid configuration structure in '{config_path}': {e}") from e
 
     def to_dict(self) -> dict:
         """Convert Config to dictionary."""

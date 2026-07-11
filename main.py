@@ -1,10 +1,14 @@
+import logging
+import sys
 import time
 
 import cv2
 import esp32
 import handlers
-from config import Config
+from config import Config, ConfigError
 from hand import HandProcessor, HandType
+
+logger = logging.getLogger(__name__)
 
 
 def draw_connection_status(frame, connected: bool) -> None:
@@ -17,8 +21,14 @@ def draw_connection_status(frame, connected: bool) -> None:
 
 
 def main() -> None:
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+
     # Load configuration
-    config = Config.from_file()
+    try:
+        config = Config.from_file()
+    except ConfigError as e:
+        logger.error("%s", e)
+        sys.exit(1)
 
     # Initialize video capture with config
     cap = cv2.VideoCapture(config.camera.index)

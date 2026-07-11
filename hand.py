@@ -5,6 +5,8 @@ import math
 from enum import Enum
 from typing import Any, Optional, List
 
+logger = logging.getLogger(__name__)
+
 # MediaPipe solutions
 mp_drawing = mp.solutions.drawing_utils  # type: ignore[attr-defined]
 mp_hands = mp.solutions.hands  # type: ignore[attr-defined]
@@ -77,7 +79,7 @@ class Hand:
 
         hand_size = self._hand_size_cache
         if hand_size < 1e-6:
-            logging.warning(f"Hand size too small ({hand_size}), cannot determine if open.")
+            logger.warning("Hand size too small (%s), cannot determine if open.", hand_size)
             return False
 
         finger_tips = [

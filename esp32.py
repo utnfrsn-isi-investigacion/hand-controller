@@ -1,8 +1,11 @@
 import abc
+import logging
 import socket
 import threading
 import time
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 
 class Esp32(abc.ABC):
@@ -54,12 +57,12 @@ class TCPSender(Esp32):
         try:
             sock.connect((self._ip, self._port))
         except OSError as e:
-            print(f"[TCP] Connection failed: {e}")
+            logger.warning("Connection to %s:%s failed: %s", self._ip, self._port, e)
             sock.close()
             self._sock = None
             return False
         self._sock = sock
-        print(f"[TCP] Connected to {self._ip}:{self._port}")
+        logger.info("Connected to %s:%s", self._ip, self._port)
         return True
 
     def send_action(self, action: str) -> bool:
@@ -73,7 +76,7 @@ class TCPSender(Esp32):
             self.__drain_replies()
             return True
         except OSError as e:
-            print(f"[TCP] Send failed: {e}")
+            logger.warning("Send failed: %s", e)
             self.close()
             return False
 
@@ -89,7 +92,7 @@ class TCPSender(Esp32):
             if self.__reconnect_thread and self.__reconnect_thread.is_alive():
                 return
             self.__last_connect_attempt = time.monotonic()
-            print("[TCP] Attempting to reconnect...")
+            logger.info("Attempting to reconnect...")
             self.__reconnect_thread = threading.Thread(target=self.connect, daemon=True)
             self.__reconnect_thread.start()
 
@@ -114,7 +117,7 @@ class TCPSender(Esp32):
                 self._sock.close()
             finally:
                 self._sock = None
-            print("[TCP] Connection closed")
+            logger.info("Connection closed")
 
     def is_connected(self) -> bool:
         return self._sock is not None
