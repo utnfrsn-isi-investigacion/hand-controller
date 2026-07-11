@@ -25,7 +25,8 @@ class TestDrawer(unittest.TestCase):
         return mock_hand
 
     def draw(self, drawer, hands=(), actions=None, confidences=None, connected=True, fps=30.0):
-        drawer.draw(self.frame, list(hands), actions or {}, confidences or {}, connected, fps)
+        provider = (confidences or {}).get
+        drawer.draw(self.frame, list(hands), actions or {}, provider, connected, fps)
 
     @patch('draw.mp_drawing')
     @patch('draw.cv2.putText')
@@ -59,6 +60,23 @@ class TestDrawer(unittest.TestCase):
         self.draw(drawer, [hand], {HandType.LEFT: CarAction.ACCELERATE}, {HandType.LEFT: None})
         texts = [call.args[1] for call in mock_put_text.call_args_list]
         self.assertIn("ACCELERATE", texts)
+
+    @patch('draw.mp_drawing')
+    @patch('draw.cv2.putText')
+    def test_confidence_provider_not_called_when_disabled(self, mock_put_text, mock_mp_drawing):
+        """The provider must not run when confidence display (or all overlays) is off."""
+        hand = self.make_hand(HandType.LEFT)
+        actions = {HandType.LEFT: CarAction.ACCELERATE}
+
+        provider = Mock()
+        drawer = Drawer(DisplayConfig(show_confidence=False))
+        drawer.draw(self.frame, [hand], actions, provider, True, 30.0)
+        provider.assert_not_called()
+
+        provider = Mock()
+        drawer = Drawer(DisplayConfig(show_overlays=False))
+        drawer.draw(self.frame, [hand], actions, provider, True, 30.0)
+        provider.assert_not_called()
 
     @patch('draw.mp_drawing')
     @patch('draw.cv2.putText')

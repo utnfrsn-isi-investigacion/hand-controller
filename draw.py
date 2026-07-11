@@ -5,12 +5,15 @@ free of rendering details and every visual element can be configured or
 toggled from DisplayConfig.
 """
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import cv2
 
 from config import DisplayConfig
 from hand import Hand, HandType, mp_drawing, mp_hands
+
+# Returns the gesture confidence (0..1) for a hand type, or None when unknown
+ConfidenceProvider = Callable[[HandType], Optional[float]]
 
 # Fixed overlay colors (BGR)
 _STATUS_OK_COLOR = (0, 255, 0)
@@ -31,13 +34,15 @@ class Drawer:
         self._config = config
 
     def draw(self, frame: Any, hands: List[Hand], actions: Dict[HandType, Enum],
-             confidences: Dict[HandType, Optional[float]], connected: bool, fps: float) -> None:
+             confidence_provider: ConfidenceProvider, connected: bool, fps: float) -> None:
         """Draw all enabled overlays for one frame.
 
         :param frame: BGR frame to draw on (modified in place)
         :param hands: detected hands
         :param actions: action per hand type, as returned by the handler
-        :param confidences: gesture confidence (0..1) per hand type, or None
+        :param confidence_provider: called per drawn hand for the gesture
+            confidence (0..1, or None); only invoked when show_confidence
+            is enabled, so disabled overlays cost nothing
         :param connected: whether the ESP32 connection is up
         :param fps: current frames per second
         """
@@ -48,7 +53,8 @@ class Drawer:
             hand_type = hand.get_hand_type()
             if hand_type == HandType.UNKNOWN:
                 continue
-            self._draw_hand(frame, hand, hand_type, actions[hand_type], confidences.get(hand_type))
+            confidence = confidence_provider(hand_type) if self._config.show_confidence else None
+            self._draw_hand(frame, hand, hand_type, actions[hand_type], confidence)
 
         self._draw_connection_status(frame, connected)
 
@@ -64,7 +70,7 @@ class Drawer:
                    action: Enum, confidence: Optional[float]) -> None:
         """Draw landmarks and the current action (with confidence) for one hand."""
         text = action.name
-        if self._config.show_confidence and confidence is not None:
+        if confidence is not None:
             text = f"{text} {confidence:.0%}"
 
         cv2.putText(frame, text, self._ACTION_POSITIONS[hand_type], cv2.FONT_HERSHEY_SIMPLEX,

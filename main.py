@@ -7,7 +7,7 @@ import esp32
 import handlers
 from config import Config, ConfigError
 from draw import Drawer
-from hand import HandProcessor, HandType
+from hand import HandProcessor
 
 logger = logging.getLogger(__name__)
 
@@ -73,17 +73,14 @@ def main() -> None:
 
             # Let the handler determine and send actions
             actions = handler.process_hands(detected_hands)
-            confidences = {
-                hand_type: handler.get_action_confidence(hand_type)
-                for hand_type in (HandType.LEFT, HandType.RIGHT)
-            }
 
             now = time.monotonic()
             fps = 1.0 / max(now - prev_time, 1e-6)
             prev_time = now
 
-            # Draw all overlays, reusing the actions that were sent
-            drawer.draw(frame, detected_hands, actions, confidences,
+            # Draw all overlays, reusing the actions that were sent; the
+            # Drawer queries confidences lazily, only when displayed
+            drawer.draw(frame, detected_hands, actions, handler.get_action_confidence,
                         client_esp32.is_connected(), fps)
 
             cv2.imshow(config.display.window_name, frame)
