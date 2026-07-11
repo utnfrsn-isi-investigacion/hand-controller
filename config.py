@@ -1,8 +1,11 @@
 """Configuration management for Hand Controller."""
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields, asdict
 import json
 import os
 import sys
+from typing import Type, TypeVar
+
+T = TypeVar('T')
 
 
 @dataclass
@@ -11,7 +14,6 @@ class ESP32Config:
     ip: str = "esp32.local"
     port: int = 1234
     connection_timeout: int = 5
-    action_cooldown: int = 2
 
 
 @dataclass
@@ -42,6 +44,18 @@ class DisplayConfig:
 class HandlerConfig:
     """Handler configuration."""
     buffer_size: int = 30
+    # Seconds between keepalive resends of the current action; must stay well
+    # below the firmware's COMMAND_TIMEOUT_MS dead-man timeout.
+    refresh_interval: float = 0.5
+
+
+def _build_section(section_cls: Type[T], data: dict, section: str) -> T:
+    """Build a config section, warning about and ignoring unknown keys."""
+    valid = {f.name for f in fields(section_cls)}  # type: ignore[arg-type]
+    unknown = set(data) - valid
+    if unknown:
+        print(f"Warning: ignoring unknown '{section}' config keys: {', '.join(sorted(unknown))}")
+    return section_cls(**{k: v for k, v in data.items() if k in valid})
 
 
 @dataclass
@@ -57,11 +71,11 @@ class Config:
     def from_dict(cls, data: dict) -> 'Config':
         """Create Config from dictionary."""
         return cls(
-            esp32=ESP32Config(**data.get('esp32', {})),
-            camera=CameraConfig(**data.get('camera', {})),
-            hand_detection=HandDetectionConfig(**data.get('hand_detection', {})),
-            display=DisplayConfig(**data.get('display', {})),
-            handler=HandlerConfig(**data.get('handler', {}))
+            esp32=_build_section(ESP32Config, data.get('esp32', {}), 'esp32'),
+            camera=_build_section(CameraConfig, data.get('camera', {}), 'camera'),
+            hand_detection=_build_section(HandDetectionConfig, data.get('hand_detection', {}), 'hand_detection'),
+            display=_build_section(DisplayConfig, data.get('display', {}), 'display'),
+            handler=_build_section(HandlerConfig, data.get('handler', {}), 'handler')
         )
 
     @classmethod
@@ -85,32 +99,7 @@ class Config:
 
     def to_dict(self) -> dict:
         """Convert Config to dictionary."""
-        return {
-            'esp32': {
-                'ip': self.esp32.ip,
-                'port': self.esp32.port,
-                'connection_timeout': self.esp32.connection_timeout,
-                'action_cooldown': self.esp32.action_cooldown
-            },
-            'camera': {
-                'index': self.camera.index,
-                'width': self.camera.width,
-                'height': self.camera.height
-            },
-            'hand_detection': {
-                'max_hands': self.hand_detection.max_hands,
-                'min_detection_confidence': self.hand_detection.min_detection_confidence,
-                'min_tracking_confidence': self.hand_detection.min_tracking_confidence
-            },
-            'display': {
-                'show_landmarks': self.display.show_landmarks,
-                'show_fps': self.display.show_fps,
-                'window_name': self.display.window_name
-            },
-            'handler': {
-                'buffer_size': self.handler.buffer_size
-            }
-        }
+        return asdict(self)
 
     def save_to_file(self, config_path: str = "config.json") -> None:
         """Save configuration to JSON file."""

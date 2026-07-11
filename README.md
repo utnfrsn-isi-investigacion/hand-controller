@@ -113,8 +113,7 @@ Edit `config.json` to customize settings:
   "esp32": {
     "ip": "esp32.local",            // ESP32 IP or hostname
     "port": 1234,                   // TCP port
-    "connection_timeout": 5,        // Connection timeout in seconds
-    "action_cooldown": 2            // Minimum seconds between actions
+    "connection_timeout": 5         // Connection timeout in seconds
   },
   "camera": {
     "index": 0,                     // Camera device index
@@ -132,7 +131,8 @@ Edit `config.json` to customize settings:
     "window_name": "Hand Gesture Recognition"
   },
   "handler": {
-    "buffer_size": 30               // Action buffer size for smoothing
+    "buffer_size": 30,              // Action buffer size for smoothing
+    "refresh_interval": 0.5         // Seconds between keepalive resends of the current action
   }
 }
 ```
@@ -147,6 +147,10 @@ Edit `config.json` to customize settings:
   - Lower values = faster response but more jittery
   - Recommended range: 15-50 frames
   - Example: At 30 FPS, buffer_size=30 smooths over 1 second of data
+- **refresh_interval**: Seconds between keepalive resends of the current action (default: 0.5)
+  - Feeds the firmware's dead-man timeout (`COMMAND_TIMEOUT_MS`, default 2s): if the ESP32
+    stops receiving commands for that long, it stops the motors
+  - Must stay well below the firmware timeout
 
 The handler uses a majority voting system across the buffer to determine the most consistent action, reducing noise and false detections in hand gesture recognition.
 
