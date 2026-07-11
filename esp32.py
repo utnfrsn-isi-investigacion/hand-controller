@@ -73,7 +73,7 @@ class TCPSender(Esp32):
             return False
         try:
             sock.sendall((action + "\n").encode("utf-8"))
-            self.__drain_replies()
+            self.__drain_replies(sock)
             return True
         except OSError as e:
             logger.warning("Send failed: %s", e)
@@ -96,19 +96,21 @@ class TCPSender(Esp32):
             self.__reconnect_thread = threading.Thread(target=self.connect, daemon=True)
             self.__reconnect_thread.start()
 
-    def __drain_replies(self) -> None:
-        """Discard pending ESP32 replies so the receive buffer never fills up."""
-        if self._sock is None:
-            return
-        self._sock.settimeout(0)
+    def __drain_replies(self, sock: socket.socket) -> None:
+        """Discard pending ESP32 replies so the receive buffer never fills up.
+
+        Operates on the socket the caller just sent on, not self._sock, which
+        the background reconnect thread may swap concurrently.
+        """
+        sock.settimeout(0)
         try:
             while True:
-                if not self._sock.recv(4096):
+                if not sock.recv(4096):
                     raise OSError("Connection closed by peer")
         except BlockingIOError:
             return  # no more pending data
         finally:
-            self._sock.settimeout(self.__connection_timeout)
+            sock.settimeout(self.__connection_timeout)
 
     def close(self) -> None:
         """Close the TCP connection."""
