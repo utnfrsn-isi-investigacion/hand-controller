@@ -226,20 +226,26 @@ direction centers.
 
 ### Firmware Installation
 
-1. **Open Arduino IDE** and install ESP32 board support
+The firmware is a [PlatformIO](https://platformio.org/) project in `_esp32/` (board `esp32dev`, Arduino framework).
 
-2. **Configure WiFi credentials** in `_esp32/main/main.ino`:
-   ```cpp
-   const char* ssid = "YOUR_WIFI_SSID";
-   const char* password = "YOUR_WIFI_PASSWORD";
+1. **Install the PlatformIO CLI** (`pio`), e.g. `pip install platformio` or via your package manager
+
+2. **Configure WiFi credentials** in `_esp32/main/secrets.h` (gitignored, never commit it):
+   ```bash
+   cd _esp32
+   make secrets   # creates main/secrets.h from secrets.example.h
+   # then edit main/secrets.h and set WIFI_SSID / WIFI_PASSWORD
    ```
 
-3. **Upload the sketch** to your ESP32:
-   - Open `_esp32/main/main.ino` in Arduino IDE
-   - Select your ESP32 board and port
-   - Click Upload
+3. **Build and flash**:
+   ```bash
+   make build            # compile only
+   make upload-monitor   # flash and open the serial monitor (115200 baud)
+   ```
 
-4. **Note the IP address** displayed in the Serial Monitor after connection
+4. **Note the IP address** printed on the serial monitor after WiFi connects
+
+Hardware pins, the TCP port, and the action codes are defined in `_esp32/main/config.h`.
 
 ### mDNS Access
 
@@ -263,11 +269,14 @@ hand-controller/
 ├── config.json          # Configuration file (create from example)
 ├── config.example.json  # Example configuration template
 ├── requirements.txt     # Python dependencies
-├── _esp32/
+├── _esp32/              # ESP32 firmware (PlatformIO project)
+│   ├── Makefile         # build / upload / monitor / secrets targets
+│   ├── platformio.ini   # PlatformIO configuration
 │   └── main/
-│       └── main.ino     # ESP32 Arduino firmware
-├── docs/
-│   └── todo.md          # Project todos
+│       ├── main.ino     # Firmware entry point (TCP server + actions)
+│       ├── config.h     # Pins, TCP port, action codes, timeouts
+│       └── secrets.example.h  # WiFi credentials template
+├── tests/               # unittest suite
 └── .venv/               # Virtual environment (created during setup)
 ```
 
@@ -276,7 +285,7 @@ hand-controller/
 ### Python Components
 
 - **main.py**: Orchestrates the video capture, hand detection, and ESP32 communication
-- **hand.py**: Contains the `HandGestureDetector` class with MediaPipe integration
+- **hand.py**: Contains the `HandProcessor` and `Hand` classes with MediaPipe integration
 - **handlers.py**: Implements action handlers with configurable buffering for gesture smoothing
 - **esp32.py**: Manages TCP socket connection and command transmission
 - **config.py**: Configuration management using Python dataclasses for type safety
@@ -372,7 +381,7 @@ This project uses GitHub Actions for CI. On every push and pull request, the fol
 - ✅ Code linting with flake8
 - ✅ Security scans with Bandit and pip-audit
 
-See [CI Documentation](.github/CI_DOCUMENTATION.md) for more details.
+See the [CI workflow](.github/workflows/ci.yml) for details.
 
 ## 🔒 Security Considerations
 
