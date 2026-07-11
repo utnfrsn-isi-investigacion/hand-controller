@@ -180,11 +180,16 @@ The handler uses a majority voting system across the buffer to determine the mos
 
 ### Available Actions
 
-- **Accelerate**: Move hand forward/specific gesture
-- **Stop**: Closed fist or stop gesture
-- **Direction Left**: Point index finger left
-- **Direction Right**: Point index finger right
-- **Direction Straight**: Point index finger forward
+The preview is mirrored (like a selfie camera), so gestures behave intuitively:
+
+- **Accelerate**: Open your **left** hand
+- **Stop**: Close your **left** hand into a fist (takes effect immediately, bypassing smoothing)
+- **Direction Left**: Point your **right** index finger to the left
+- **Direction Right**: Point your **right** index finger to the right
+- **Direction Straight**: Point your **right** index finger up
+
+Both hands must be fully visible in the frame; otherwise the car stops and the
+direction centers.
 
 ## 🔌 ESP32 Setup
 

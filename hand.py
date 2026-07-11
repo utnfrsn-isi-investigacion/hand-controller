@@ -99,7 +99,11 @@ class Hand:
         return all(d > threshold_ratio for d in normalized_distances)
 
     def get_index_orientation(self, threshold: float = 0.05) -> IndexOrientation:
-        """Get the orientation of the index finger."""
+        """Get the orientation of the index finger.
+
+        Assumes a mirrored (selfie-view) frame, where a larger x means
+        further to the user's right.
+        """
         if not self.landmarks:
             raise ValueError("Hand landmarks not available.")
 
@@ -108,9 +112,9 @@ class Hand:
         diff = index_tip.x - index_base.x
 
         if diff > threshold:
-            return IndexOrientation.LEFT
-        elif diff < -threshold:
             return IndexOrientation.RIGHT
+        elif diff < -threshold:
+            return IndexOrientation.LEFT
         else:
             return IndexOrientation.STRAIGHT
 

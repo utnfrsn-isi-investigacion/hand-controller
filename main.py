@@ -45,6 +45,11 @@ def main() -> None:
             if not ret:
                 break
 
+            # Mirror the frame (selfie view): MediaPipe assigns handedness
+            # assuming a mirrored image, so labels match physical hands and
+            # the preview behaves like a mirror.
+            frame = cv2.flip(frame, 1)
+
             rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
             # Process the frame to find hands
