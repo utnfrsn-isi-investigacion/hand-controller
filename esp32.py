@@ -1,5 +1,6 @@
 import abc
 import socket
+import threading
 import time
 from typing import Optional
 
@@ -41,6 +42,8 @@ class TCPSender(Esp32):
         self.__connection_timeout = connection_timeout
         self.__reconnect_interval = reconnect_interval
         self.__last_connect_attempt = 0.0
+        self.__reconnect_lock = threading.Lock()
+        self.__reconnect_thread: Optional[threading.Thread] = None
         self._sock: Optional[socket.socket] = None
 
     def connect(self) -> bool:
@@ -60,11 +63,13 @@ class TCPSender(Esp32):
         return True
 
     def send_action(self, action: str) -> bool:
-        """Send an action, reconnecting if needed. Returns True if sent."""
-        if self._sock is None and not self.__try_reconnect():
+        """Send an action, scheduling a reconnect if needed. Returns True if sent."""
+        sock = self._sock
+        if sock is None:
+            self.__schedule_reconnect()
             return False
         try:
-            self._sock.sendall((action + "\n").encode("utf-8"))  # type: ignore[union-attr]
+            sock.sendall((action + "\n").encode("utf-8"))
             self.__drain_replies()
             return True
         except OSError as e:
@@ -72,12 +77,21 @@ class TCPSender(Esp32):
             self.close()
             return False
 
-    def __try_reconnect(self) -> bool:
-        """Attempt to reconnect, throttled to one attempt per reconnect_interval."""
+    def __schedule_reconnect(self) -> None:
+        """Start a throttled background reconnect attempt.
+
+        connect() can block for seconds on mDNS resolution, so it must not
+        run on the caller's (frame loop) thread.
+        """
         if time.monotonic() - self.__last_connect_attempt < self.__reconnect_interval:
-            return False
-        print("[TCP] Attempting to reconnect...")
-        return self.connect()
+            return
+        with self.__reconnect_lock:
+            if self.__reconnect_thread and self.__reconnect_thread.is_alive():
+                return
+            self.__last_connect_attempt = time.monotonic()
+            print("[TCP] Attempting to reconnect...")
+            self.__reconnect_thread = threading.Thread(target=self.connect, daemon=True)
+            self.__reconnect_thread.start()
 
     def __drain_replies(self) -> None:
         """Discard pending ESP32 replies so the receive buffer never fills up."""

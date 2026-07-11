@@ -73,7 +73,15 @@ class TestTCPSenderWithServer(unittest.TestCase):
             time.sleep(0.05)
         self.assertFalse(self.sender.is_connected())
 
-        # With reconnect_interval=0 the next send reconnects immediately
+        # The next send schedules a background reconnect (non-blocking)
+        self.assertFalse(self.sender.send_action("111"))
+        for _ in range(100):
+            if self.sender.is_connected():
+                break
+            time.sleep(0.05)
+        self.assertTrue(self.sender.is_connected())
+
+        # Once reconnected, sending works again
         self.assertTrue(self.sender.send_action("111"))
         conn2, _ = self.server.accept()
         self.assertEqual(conn2.recv(16), b"111\n")
