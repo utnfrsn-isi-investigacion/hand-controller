@@ -114,7 +114,7 @@ class Hand:
         else:
             return IndexOrientation.STRAIGHT
 
-    def draw_info(self, cv_frame: Any, action: Enum) -> None:
+    def draw_info(self, cv_frame: Any, action: Enum, show_landmarks: bool = True) -> None:
         """Draw landmarks and action text on the frame."""
         hand_type = self.get_hand_type()
         if hand_type == HandType.UNKNOWN:
@@ -124,7 +124,8 @@ class Hand:
         position = (50, 50) if hand_type == HandType.LEFT else (350, 50)
 
         cv2.putText(cv_frame, action.name, position, cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
-        mp_drawing.draw_landmarks(cv_frame, self.landmarks, mp_hands.HAND_CONNECTIONS)
+        if show_landmarks:
+            mp_drawing.draw_landmarks(cv_frame, self.landmarks, mp_hands.HAND_CONNECTIONS)
 
 
 class HandProcessor:
