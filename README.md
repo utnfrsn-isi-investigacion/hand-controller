@@ -247,6 +247,38 @@ The firmware is a [PlatformIO](https://platformio.org/) project in `_esp32/` (bo
 
 Hardware pins, the TCP port, and the action codes are defined in `_esp32/main/config.h`.
 
+### OTA Updates
+
+Once the car is assembled, reflashing over USB means opening it up. After the
+**first flash over USB** (which must include OTA support), subsequent updates
+can be sent over WiFi:
+
+1. **Set an OTA password** in `_esp32/main/secrets.h` — `OTA_PASSWORD_HASH` is
+   the MD5 hash of the password, never the plaintext. Generate the raw hash
+   (not the labeled output these tools print by default):
+   ```bash
+   echo -n 'your_password' | md5 -q                    # macOS
+   echo -n 'your_password' | md5sum | cut -d' ' -f1     # Linux
+   ```
+   Leave `OTA_PASSWORD_HASH` empty to disable OTA; with no hash configured,
+   the firmware never starts an OTA listener.
+2. **Flash over WiFi**:
+   ```bash
+   OTA_PASSWORD='your_password' make upload-ota
+   ```
+   This targets `esp32.local` using the `esp32dev-ota` PlatformIO environment
+   — which assumes `MDNS_NAME` is still the default `"esp32"`. If you changed
+   `MDNS_NAME` in `secrets.h`, override the host:
+   ```bash
+   OTA_PASSWORD='your_password' OTA_HOST='your_name.local' make upload-ota
+   ```
+   `make upload` / `make upload-monitor` remain the USB path and stay the
+   default.
+
+During an update the firmware stops the motors immediately (the same
+failsafe used for dead-man timeouts) and the board reboots when the flash
+completes, dropping any connected TCP client.
+
 ### mDNS Access
 
 The ESP32 is configured with mDNS, so you can access it using:
@@ -400,6 +432,10 @@ network can connect and send driving commands to the car.
 - The firmware stops the motors automatically if no command arrives for 2
   seconds (dead-man timeout), which also limits how long a spoofed command
   can persist once the controller disconnects.
+- Unlike the TCP command server, **OTA firmware updates are password-protected**
+  (`ArduinoOTA.setPasswordHash()`) and disabled entirely unless
+  `OTA_PASSWORD_HASH` is set in `secrets.h` — an unauthenticated flash
+  endpoint would be strictly worse than an unauthenticated drive command.
 
 ## �🤝 Contributing
 
