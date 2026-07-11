@@ -250,6 +250,22 @@ class TestCarHandler(unittest.TestCase):
         action = handler.get_action(right_hand_straight)
         self.assertEqual(action, CarAction.DIRECTION_LEFT)
 
+    def test_action_confidence_reflects_buffer_share(self):
+        """Test that get_action_confidence returns the winning action's buffer share."""
+        left_hand_open = self.create_mock_hand(HandType.LEFT, is_open=True, orientation=IndexOrientation.STRAIGHT)
+        left_hand_closed = self.create_mock_hand(HandType.LEFT, is_open=False, orientation=IndexOrientation.STRAIGHT)
+
+        # Empty buffer -> no confidence
+        self.assertIsNone(self.handler.get_action_confidence(HandType.LEFT))
+        # Unknown hand type has no buffer -> no confidence
+        self.assertIsNone(self.handler.get_action_confidence(HandType.UNKNOWN))
+
+        # 4 ACCELERATE + 1 STOP -> 80% confidence
+        for _ in range(4):
+            self.handler._record_action(left_hand_open)
+        self.handler._record_action(left_hand_closed)
+        self.assertEqual(self.handler.get_action_confidence(HandType.LEFT), 0.8)
+
     def test_right_hand_buffer_with_direction_changes(self):
         """Test buffering and majority for right hand direction changes."""
         right_hand_left = self.create_mock_hand(HandType.RIGHT, is_open=True, orientation=IndexOrientation.LEFT)

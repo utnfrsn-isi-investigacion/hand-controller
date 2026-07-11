@@ -3,7 +3,7 @@ from dataclasses import dataclass, field, fields, asdict
 import json
 import logging
 import os
-from typing import Type, TypeVar
+from typing import List, Type, TypeVar
 
 logger = logging.getLogger(__name__)
 
@@ -47,9 +47,17 @@ class HandDetectionConfig:
 @dataclass
 class DisplayConfig:
     """Display configuration."""
+    # Master toggle: disables every overlay (landmarks, text, status, FPS)
+    show_overlays: bool = True
     show_landmarks: bool = True
+    show_confidence: bool = True
     show_fps: bool = False
     window_name: str = "Hand Gesture Recognition"
+    # Overlay colors in BGR order (OpenCV convention)
+    left_hand_color: List[int] = field(default_factory=lambda: [0, 255, 0])
+    right_hand_color: List[int] = field(default_factory=lambda: [0, 0, 255])
+    text_scale: float = 1.0
+    text_thickness: int = 2
 
 
 @dataclass

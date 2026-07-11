@@ -1,5 +1,4 @@
 import logging
-import cv2
 import mediapipe as mp
 import math
 from enum import Enum
@@ -126,19 +125,6 @@ class Hand:
             return IndexOrientation.LEFT
         else:
             return IndexOrientation.STRAIGHT
-
-    def draw_info(self, cv_frame: Any, action: Enum, show_landmarks: bool = True) -> None:
-        """Draw landmarks and action text on the frame."""
-        hand_type = self.get_hand_type()
-        if hand_type == HandType.UNKNOWN:
-            return
-
-        color = (0, 255, 0) if hand_type == HandType.LEFT else (0, 0, 255)
-        position = (50, 50) if hand_type == HandType.LEFT else (350, 50)
-
-        cv2.putText(cv_frame, action.name, position, cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
-        if show_landmarks:
-            mp_drawing.draw_landmarks(cv_frame, self.landmarks, mp_hands.HAND_CONNECTIONS)
 
 
 class HandProcessor:

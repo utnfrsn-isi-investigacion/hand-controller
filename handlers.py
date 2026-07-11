@@ -73,6 +73,18 @@ class Handler(abc.ABC):
         """Actions that bypass majority smoothing (e.g. safety stops)."""
         return False
 
+    def get_action_confidence(self, hand_type: HandType) -> Optional[float]:
+        """Share (0..1) of the most common action in this hand's buffer.
+
+        Serves as a gesture-stability indicator for display. Returns None
+        when there is no buffered history for the hand type.
+        """
+        buffer = self._action_buffers.get(hand_type)
+        if not buffer:
+            return None
+        _, count = collections.Counter(buffer).most_common(1)[0]
+        return count / len(buffer)
+
     def _majority_action(self, hand: Hand) -> Optional[Enum]:
         hand_type = hand.get_hand_type()
         if hand_type not in self._action_buffers:
