@@ -44,7 +44,7 @@ class TestDrawer(unittest.TestCase):
         hand = self.make_hand(HandType.LEFT)
         self.draw(drawer, [hand], {HandType.LEFT: CarAction.ACCELERATE}, {HandType.LEFT: 0.8})
         texts = [call.args[1] for call in mock_put_text.call_args_list]
-        self.assertIn("ACCELERATE 80%", texts)
+        self.assertIn("ACELERAR 80%", texts)
 
     @patch('draw.mp_drawing')
     @patch('draw.cv2.putText')
@@ -53,13 +53,13 @@ class TestDrawer(unittest.TestCase):
         hand = self.make_hand(HandType.LEFT)
         self.draw(drawer, [hand], {HandType.LEFT: CarAction.ACCELERATE}, {HandType.LEFT: 0.8})
         texts = [call.args[1] for call in mock_put_text.call_args_list]
-        self.assertIn("ACCELERATE", texts)
+        self.assertIn("ACELERAR", texts)
 
         mock_put_text.reset_mock()
         drawer = Drawer(DisplayConfig())
         self.draw(drawer, [hand], {HandType.LEFT: CarAction.ACCELERATE}, {HandType.LEFT: None})
         texts = [call.args[1] for call in mock_put_text.call_args_list]
-        self.assertIn("ACCELERATE", texts)
+        self.assertIn("ACELERAR", texts)
 
     @patch('draw.mp_drawing')
     @patch('draw.cv2.putText')
@@ -106,11 +106,11 @@ class TestDrawer(unittest.TestCase):
         drawer = Drawer(DisplayConfig())
 
         self.draw(drawer, connected=True)
-        self.assertEqual(mock_put_text.call_args_list[0].args[1], "ESP32: connected")
+        self.assertEqual(mock_put_text.call_args_list[0].args[1], "ESP32: conectado")
 
         mock_put_text.reset_mock()
         self.draw(drawer, connected=False)
-        self.assertEqual(mock_put_text.call_args_list[0].args[1], "ESP32: disconnected (reconnecting...)")
+        self.assertEqual(mock_put_text.call_args_list[0].args[1], "ESP32: desconectado (reconectando...)")
 
     @patch('draw.cv2.putText')
     def test_fps_drawn_only_when_enabled(self, mock_put_text):

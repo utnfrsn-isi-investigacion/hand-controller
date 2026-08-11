@@ -52,7 +52,7 @@ class DisplayConfig:
     show_landmarks: bool = True
     show_confidence: bool = True
     show_fps: bool = False
-    window_name: str = "Hand Gesture Recognition"
+    window_name: str = "Reconocimiento de Gestos de Manos"
     # Overlay colors in BGR order (OpenCV convention)
     left_hand_color: List[int] = field(default_factory=lambda: [0, 255, 0])
     right_hand_color: List[int] = field(default_factory=lambda: [0, 0, 255])

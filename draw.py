@@ -20,6 +20,18 @@ _STATUS_OK_COLOR = (0, 255, 0)
 _STATUS_ERROR_COLOR = (0, 0, 255)
 _FPS_COLOR = (255, 255, 0)
 
+# Spanish labels for the on-screen action text, keyed by the action enum's
+# member name. Keeping this map here (rather than on the enum) leaves the
+# wire protocol and gesture logic untouched; unmapped actions fall back to
+# their raw member name.
+_ACTION_LABELS = {
+    "ACCELERATE": "ACELERAR",
+    "STOP": "DETENER",
+    "DIRECTION_LEFT": "IZQUIERDA",
+    "DIRECTION_RIGHT": "DERECHA",
+    "DIRECTION_STRAIGHT": "RECTO",
+}
+
 
 class Drawer:
     """Renders visual feedback overlays on the preview frame."""
@@ -69,7 +81,7 @@ class Drawer:
     def _draw_hand(self, frame: Any, hand: Hand, hand_type: HandType,
                    action: Enum, confidence: Optional[float]) -> None:
         """Draw landmarks and the current action (with confidence) for one hand."""
-        text = action.name
+        text = _ACTION_LABELS.get(action.name, action.name)
         if confidence is not None:
             text = f"{text} {confidence:.0%}"
 
@@ -82,9 +94,9 @@ class Drawer:
     def _draw_connection_status(self, frame: Any, connected: bool) -> None:
         """Draw the ESP32 connection state in the top-left corner."""
         if connected:
-            text, color = "ESP32: connected", _STATUS_OK_COLOR
+            text, color = "ESP32: conectado", _STATUS_OK_COLOR
         else:
-            text, color = "ESP32: disconnected (reconnecting...)", _STATUS_ERROR_COLOR
+            text, color = "ESP32: desconectado (reconectando...)", _STATUS_ERROR_COLOR
         cv2.putText(frame, text, (10, 25), cv2.FONT_HERSHEY_SIMPLEX,
                     0.6 * self._config.text_scale, color, self._config.text_thickness)
 
