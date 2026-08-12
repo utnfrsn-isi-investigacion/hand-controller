@@ -370,7 +370,7 @@ kbd{
    call to action, but at body weight so they stay subordinate to it. */
 .lnk{
   color:var(--data-ink); text-decoration:none;
-  border-bottom:1px solid color-mix(in srgb, var(--data) 55%, transparent);
+  border-bottom:1px solid color-mix(in srgb, var(--data) 80%, transparent);
 }
 .lnk:hover{ color:var(--ink); border-bottom-color:var(--ink); }
 .lnk:focus-visible{ outline:2px solid var(--data); outline-offset:2px; }
@@ -1372,6 +1372,12 @@ Action actions[] = {
   // Tap the right/left half to advance on touch screens (deck mode only)
   stage.addEventListener('click', function(e){
     if (window.matchMedia('(max-width: 860px)').matches) return;
+    // A click on a link or a control belongs to that element, not to the
+    // page-turn. Without this the deck swallows every link on the sheet.
+    if (e.target.closest && e.target.closest('a, button, [role="button"]')) return;
+    // Releasing the mouse after selecting text must not turn the page either.
+    var sel = window.getSelection();
+    if (sel && String(sel).length) return;
     var r = stage.getBoundingClientRect();
     show(i + ((e.clientX - r.left) > r.width / 2 ? 1 : -1));
   });
