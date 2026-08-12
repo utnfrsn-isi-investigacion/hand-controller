@@ -366,6 +366,15 @@ kbd{
 .url-cta:hover{ color:var(--ink); border-bottom-color:var(--ink); }
 .url-cta:focus-visible{ outline:2px solid var(--data); outline-offset:3px; }
 
+/* Secondary links inside the closing details — same colour language as the
+   call to action, but at body weight so they stay subordinate to it. */
+.lnk{
+  color:var(--data-ink); text-decoration:none;
+  border-bottom:1px solid color-mix(in srgb, var(--data) 55%, transparent);
+}
+.lnk:hover{ color:var(--ink); border-bottom-color:var(--ink); }
+.lnk:focus-visible{ outline:2px solid var(--data); outline-offset:2px; }
+
 /* The QR stays dark-on-light in both themes — inverted codes trip up
    a lot of phone scanners, so it gets its own white card. */
 .cta{ display:flex; align-items:center; gap:1.1em; margin-top:1.15em; }
@@ -1292,8 +1301,8 @@ Action actions[] = {
           <dt>Facultad</dt><dd>UTN — Facultad Regional San Nicolás</dd>
           <dt>Carrera</dt><dd>Ingeniería en Sistemas de Información</dd>
           <dt>Área</dt><dd>Investigación</dd>
-          <dt>Código</dt><dd>Repositorio público — <span class="mono">https://github.com/utnfrsn-isi-investigacion/hand-controller</span></dd>
-          <dt>Contacto</dt><dd>alejandro.recalde@frsn.utn.edu.ar</dd>
+          <dt>Código</dt><dd>Repositorio público — <a class="lnk mono" href="https://github.com/utnfrsn-isi-investigacion/hand-controller" target="_blank" rel="noopener">https://github.com/utnfrsn-isi-investigacion/hand-controller</a></dd>
+          <dt>Contacto</dt><dd><a class="lnk" href="mailto:alejandro.recalde@frsn.utn.edu.ar">alejandro.recalde@frsn.utn.edu.ar</a></dd>
         </dl>
       </div>
     </div>
