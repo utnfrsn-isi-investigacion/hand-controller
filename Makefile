@@ -2,8 +2,9 @@
 VENV          := .venv
 PYTHON        := $(VENV)/bin/python
 PIP           := $(VENV)/bin/pip
+DECK          := docs/presentacion-expo-carreras.html
 
-.PHONY: help install run test lint security venv clean
+.PHONY: help install run test lint security venv clean config present
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -34,6 +35,18 @@ security: ## Run bandit and pip-audit security checks
 config: ## Create config.json from example (skips if already exists)
 	@test -f config.json && echo "config.json already exists, skipping." || \
 		(cp config.example.json config.json && echo "Created config.json from config.example.json")
+
+# Deliberately not xdg-open: it follows the text/html MIME default, which
+# desktop apps (Electron ones especially) tend to hijack. Ask for a browser.
+present: ## Open the Expo Carreras presentation in a browser
+	@for b in "$$BROWSER" sensible-browser x-www-browser firefox google-chrome chromium open; do \
+		if [ -n "$$b" ] && command -v "$$b" >/dev/null 2>&1; then \
+			echo "Opening $(DECK) with $$b"; \
+			nohup "$$b" "file://$(CURDIR)/$(DECK)" >/dev/null 2>&1 & \
+			exit 0; \
+		fi; \
+	done; \
+	echo "No browser found. Open $(DECK) manually (self-contained, no server needed)."
 
 clean: ## Remove virtual environment and cache files
 	rm -rf $(VENV) __pycache__ .pytest_cache htmlcov .coverage coverage.xml bandit-report.json
