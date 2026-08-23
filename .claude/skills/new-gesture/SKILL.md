@@ -27,7 +27,10 @@ Work through every step; skipping one is the usual source of "gesture detected b
 
 - Add a member to `CarAction` (3-digit string code) or extend the relevant handler.
 - Map gesture → action in `CarHandler._get_action()`.
-- Safety-critical actions (like STOP) must bypass majority smoothing: extend `_is_priority_action()`.
+- Every action goes through the same majority vote over the buffer — there is no priority/bypass path.
+  If the new gesture is safety-critical, remember `handler.buffer_size` is what sets its latency
+  (~half the buffer in frames to flip a saturated window); the fast backstops are the
+  undetected-hand default (`_default_actions`) and the firmware dead-man timeout.
 
 ## 4. Firmware (_esp32/main/) — only if a new action code was added
 

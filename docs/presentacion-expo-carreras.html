@@ -773,75 +773,35 @@ kbd{
   <div class="sh-body mid">
     <p style="max-width:76ch">La mano nunca está quieta. La cámara pierde un cuadro. Cambia la luz un instante y el modelo duda. Con treinta lecturas por segundo <strong>algunas van a salir mal</strong>, siempre — y sin ninguna protección, un solo cuadro malo se convierte en una orden equivocada que llega al motor.</p>
     <figure style="margin-top:.5em">
-      <svg viewBox="0 0 660 132" role="img" aria-label="Treinta lecturas consecutivas, tres con ruido, y el resultado por mayoría">
-        <text class="cap" x="8" y="14">últimas 30 lecturas — aproximadamente 1 segundo</text>
+      <svg viewBox="0 0 660 132" role="img" aria-label="Diez lecturas consecutivas, una con ruido, y el resultado por mayoría">
+        <text class="cap" x="8" y="14">últimas 10 lecturas — aproximadamente un tercio de segundo</text>
         <g>
-          <rect x="8" y="26" width="17" height="30" fill="var(--data)"/><rect x="29" y="26" width="17" height="30" fill="var(--data)"/>
-          <rect x="50" y="26" width="17" height="30" fill="var(--data)"/><rect x="71" y="26" width="17" height="30" fill="var(--data)"/>
-          <rect x="92" y="26" width="17" height="30" fill="var(--data)"/><rect x="113" y="26" width="17" height="30" fill="var(--data)"/>
-          <rect x="134" y="26" width="17" height="30" fill="var(--data)"/>
-          <rect x="155" y="26" width="17" height="30" fill="var(--power)"/>
-          <rect x="176" y="26" width="17" height="30" fill="var(--data)"/><rect x="197" y="26" width="17" height="30" fill="var(--data)"/>
-          <rect x="218" y="26" width="17" height="30" fill="var(--data)"/><rect x="239" y="26" width="17" height="30" fill="var(--data)"/>
-          <rect x="260" y="26" width="17" height="30" fill="var(--data)"/>
-          <rect x="281" y="26" width="17" height="30" fill="var(--power)"/>
-          <rect x="302" y="26" width="17" height="30" fill="var(--data)"/><rect x="323" y="26" width="17" height="30" fill="var(--data)"/>
-          <rect x="344" y="26" width="17" height="30" fill="var(--data)"/><rect x="365" y="26" width="17" height="30" fill="var(--data)"/>
-          <rect x="386" y="26" width="17" height="30" fill="var(--data)"/>
-          <rect x="407" y="26" width="17" height="30" fill="var(--power)"/>
-          <rect x="428" y="26" width="17" height="30" fill="var(--data)"/><rect x="449" y="26" width="17" height="30" fill="var(--data)"/>
-          <rect x="470" y="26" width="17" height="30" fill="var(--data)"/><rect x="491" y="26" width="17" height="30" fill="var(--data)"/>
-          <rect x="512" y="26" width="17" height="30" fill="var(--data)"/><rect x="533" y="26" width="17" height="30" fill="var(--data)"/>
-          <rect x="554" y="26" width="17" height="30" fill="var(--data)"/><rect x="575" y="26" width="17" height="30" fill="var(--data)"/>
-          <rect x="596" y="26" width="17" height="30" fill="var(--data)"/><rect x="617" y="26" width="17" height="30" fill="var(--data)"/>
+          <rect x="8" y="26" width="52" height="30" fill="var(--data)"/><rect x="73" y="26" width="52" height="30" fill="var(--data)"/>
+          <rect x="138" y="26" width="52" height="30" fill="var(--data)"/><rect x="203" y="26" width="52" height="30" fill="var(--power)"/>
+          <rect x="268" y="26" width="52" height="30" fill="var(--data)"/><rect x="333" y="26" width="52" height="30" fill="var(--data)"/>
+          <rect x="398" y="26" width="52" height="30" fill="var(--data)"/><rect x="463" y="26" width="52" height="30" fill="var(--data)"/>
+          <rect x="528" y="26" width="52" height="30" fill="var(--data)"/><rect x="593" y="26" width="52" height="30" fill="var(--data)"/>
         </g>
-        <path class="arw" d="M8 68 v10 h626 v-10 M330 78 v14 m-5 -6 l5 6 l5 -6"/>
-        <text class="lbl" x="330" y="112" text-anchor="middle">MAYORÍA: DIRECCIÓN RECTO — 27 de 30</text>
-        <text class="sub" x="330" y="128" text-anchor="middle">las 3 lecturas con ruido nunca llegan al motor</text>
+        <path class="arw" d="M8 68 v10 h637 v-10 M326 78 v14 m-5 -6 l5 6 l5 -6"/>
+        <text class="lbl" x="326" y="112" text-anchor="middle">MAYORÍA: DIRECCIÓN RECTO — 9 de 10</text>
+        <text class="sub" x="326" y="128" text-anchor="middle">la lectura con ruido nunca llega al motor</text>
       </svg>
       <figcaption>Fig. 05 — Votación por mayoría sobre la ventana de lecturas</figcaption>
     </figure>
     <div class="cols-2" style="margin-top:1.1em">
       <div class="callout">
         <h3>Esto ya lo conocés: es un antirrebote</h3>
-        <p style="margin:0">Cuando leés un pulsador no confiás en una sola lectura del contacto: leés varias veces y recién ahí decidís. Acá es igual, con treinta lecturas y con cinco opciones en vez de abierto/cerrado.</p>
+        <p style="margin:0">Cuando leés un pulsador no confiás en una sola lectura del contacto: leés varias veces y recién ahí decidís. Acá es igual, con diez lecturas y con cinco opciones en vez de abierto/cerrado.</p>
       </div>
       <div class="callout warn">
         <h3>Y como todo filtro, se paga</h3>
-        <p style="margin:0">Más lecturas: más suave, pero más lento en reaccionar. Menos lecturas: más rápido, pero más nervioso. Treinta cuadros ≈ un segundo de historia es el punto elegido.</p>
+        <p style="margin:0">Más lecturas: más suave, pero más lento en reaccionar. Menos lecturas: más rápido, pero más nervioso. Y ojo: <strong>parar también vota</strong>, así que una ventana larga es una frenada larga. Diez cuadros ≈ un tercio de segundo es el punto elegido.</p>
       </div>
     </div>
   </div>
 </section>
 
 <!-- ══ 10 ══════════════════════════════════════════════════ -->
-<section class="sheet" data-sec="Filtrado">
-  <header class="sh-head">
-    <p class="eyebrow">La excepción</p>
-    <h2>Pero <span style="color:var(--parada)">PARAR</span> no vota</h2>
-  </header>
-  <div class="sh-body mid">
-    <div class="cols-2u">
-      <div class="stack">
-        <p>Mirá el problema que acabamos de crear: si el filtro necesita medio segundo para convencerse, y vos cerrás el puño para frenar… <strong>el auto sigue andando medio segundo más</strong>.</p>
-        <p>Para suavizar el volante, medio segundo es un precio razonable. Para frenar, es inaceptable.</p>
-        <p>Así que la orden de parar es la única que <strong>saltea el filtro</strong>: se detecta en un cuadro y sale en el siguiente, sin esperar a ninguna mayoría.</p>
-      </div>
-      <div class="stack">
-        <div class="callout stop">
-          <h3>La regla del proyecto</h3>
-          <p class="big s" style="font-size:1.35em;max-width:none;margin:0">Nunca cambies latencia de frenado por suavidad de manejo.</p>
-        </div>
-        <div class="callout">
-          <p style="margin:0">Es la misma jerarquía que ya viste en cualquier tablero: <strong>el pulsador de parada de emergencia no pasa por la lógica de mando.</strong> No espera confirmaciones, no espera temporizadores. Corta, y después se discute.</p>
-        </div>
-        <p style="color:var(--ink-2);font-size:.92em">Está escrito así, con todas las letras, en la documentación del proyecto — para que nadie lo “optimice” dentro de seis meses sin entender por qué estaba.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ══ 11 ══════════════════════════════════════════════════ -->
 <section class="sheet" data-sec="Protocolo">
   <header class="sh-head tight">
     <p class="eyebrow">La red</p>
@@ -886,7 +846,7 @@ kbd{
   </div>
 </section>
 
-<!-- ══ 12 ══════════════════════════════════════════════════ -->
+<!-- ══ 11 ══════════════════════════════════════════════════ -->
 <section class="sheet" data-sec="Hardware">
   <header class="sh-head">
     <p class="eyebrow">El microcontrolador</p>
@@ -922,7 +882,7 @@ kbd{
   </div>
 </section>
 
-<!-- ══ 13 ══════════════════════════════════════════════════ -->
+<!-- ══ 12 ══════════════════════════════════════════════════ -->
 <section class="sheet" data-sec="Potencia">
   <header class="sh-head">
     <p class="eyebrow">Del código al cobre <span class="sep">/</span> 1 de 2</p>
@@ -959,7 +919,7 @@ kbd{
   </div>
 </section>
 
-<!-- ══ 14 ══════════════════════════════════════════════════ -->
+<!-- ══ 13 ══════════════════════════════════════════════════ -->
 <section class="sheet" data-sec="Potencia">
   <header class="sh-head tight">
     <p class="eyebrow">Del código al cobre <span class="sep">/</span> 2 de 2</p>
@@ -1022,7 +982,7 @@ kbd{
   </div>
 </section>
 
-<!-- ══ 15 ══════════════════════════════════════════════════ -->
+<!-- ══ 14 ══════════════════════════════════════════════════ -->
 <section class="sheet" data-sec="Firmware">
   <header class="sh-head tight">
     <p class="eyebrow">El programa del ESP32</p>
@@ -1075,7 +1035,7 @@ Action actions[] = {
   </div>
 </section>
 
-<!-- ══ 16 ══════════════════════════════════════════════════ -->
+<!-- ══ 15 ══════════════════════════════════════════════════ -->
 <section class="sheet" data-sec="Seguridad funcional">
   <header class="sh-head tight">
     <p class="eyebrow">La pregunta incómoda</p>
@@ -1120,7 +1080,7 @@ Action actions[] = {
   </div>
 </section>
 
-<!-- ══ 17 ══════════════════════════════════════════════════ -->
+<!-- ══ 16 ══════════════════════════════════════════════════ -->
 <section class="sheet" data-sec="Seguridad funcional">
   <header class="sh-head">
     <p class="eyebrow">Los números no son al azar</p>
@@ -1163,7 +1123,7 @@ Action actions[] = {
   </div>
 </section>
 
-<!-- ══ 18 ══════════════════════════════════════════════════ -->
+<!-- ══ 17 ══════════════════════════════════════════════════ -->
 <section class="sheet" data-sec="Seguridad informática">
   <header class="sh-head">
     <p class="eyebrow">Ser honestos</p>
@@ -1199,7 +1159,7 @@ Action actions[] = {
   </div>
 </section>
 
-<!-- ══ 19 ══════════════════════════════════════════════════ -->
+<!-- ══ 18 ══════════════════════════════════════════════════ -->
 <section class="sheet" data-sec="La carrera">
   <header class="sh-head">
     <p class="eyebrow">La pregunta del millón</p>
@@ -1227,7 +1187,7 @@ Action actions[] = {
   </div>
 </section>
 
-<!-- ══ 20 ══════════════════════════════════════════════════ -->
+<!-- ══ 19 ══════════════════════════════════════════════════ -->
 <section class="sheet" data-sec="La carrera">
   <header class="sh-head tight">
     <p class="eyebrow">El área de investigación</p>
@@ -1262,7 +1222,7 @@ Action actions[] = {
   </div>
 </section>
 
-<!-- ══ 21 ══════════════════════════════════════════════════ -->
+<!-- ══ 20 ══════════════════════════════════════════════════ -->
 <section class="sheet" data-sec="Cierre">
   <header class="sh-head">
     <p class="eyebrow">Glosario mínimo</p>
@@ -1315,7 +1275,7 @@ Action actions[] = {
   <button id="prev" type="button" aria-label="Hoja anterior">← Anterior</button>
   <button id="next" type="button" aria-label="Hoja siguiente">Siguiente →</button>
   <div class="bar"><i id="fill"></i></div>
-  <span class="count" id="count">01 / 21</span>
+  <span class="count" id="count">01 / 20</span>
 </nav>
 </div><!-- /app -->
 

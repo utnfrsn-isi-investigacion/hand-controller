@@ -28,7 +28,7 @@
     "text_thickness": 2
   },
   "handler": {
-    "buffer_size": 30,
+    "buffer_size": 10,
     "refresh_interval": 0.5
   }
 }

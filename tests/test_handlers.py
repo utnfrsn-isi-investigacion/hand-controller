@@ -158,8 +158,8 @@ class TestCarHandler(unittest.TestCase):
         self.assertEqual(self.handler.get_action(unknown_hand), CarAction.STOP)
         self.assertIsNone(self.handler._majority_action(unknown_hand))
 
-    def test_stop_bypasses_majority_vote(self):
-        """A STOP gesture takes effect immediately, even against an ACCELERATE majority."""
+    def test_stop_is_smoothed_like_any_other_action(self):
+        """STOP gets no special treatment: it must win the majority vote to take effect."""
         left_hand_open = self.create_mock_hand(HandType.LEFT, is_open=True, orientation=IndexOrientation.STRAIGHT)
         left_hand_closed = self.create_mock_hand(HandType.LEFT, is_open=False, orientation=IndexOrientation.STRAIGHT)
 
@@ -167,13 +167,18 @@ class TestCarHandler(unittest.TestCase):
         for _ in range(10):
             self.handler._record_action(left_hand_open)
 
-        # A single closed-hand frame must return STOP, not the majority
-        self.assertEqual(self.handler._record_action(left_hand_closed), CarAction.STOP)
+        # A single closed-hand frame is outvoted by the ACCELERATE majority
+        self.assertEqual(self.handler._record_action(left_hand_closed), CarAction.ACCELERATE)
         # The read-only path agrees
-        self.assertEqual(self.handler.get_action(left_hand_closed), CarAction.STOP)
+        self.assertEqual(self.handler.get_action(left_hand_closed), CarAction.ACCELERATE)
+
+        # Once closed frames outnumber the open ones, STOP wins
+        for _ in range(10):
+            self.handler._record_action(left_hand_closed)
+        self.assertEqual(self.handler._record_action(left_hand_closed), CarAction.STOP)
 
     def test_accelerate_still_smoothed_by_majority(self):
-        """Non-priority actions keep majority smoothing: one open frame can't override STOP."""
+        """One open frame can't override a STOP majority."""
         left_hand_open = self.create_mock_hand(HandType.LEFT, is_open=True, orientation=IndexOrientation.STRAIGHT)
         left_hand_closed = self.create_mock_hand(HandType.LEFT, is_open=False, orientation=IndexOrientation.STRAIGHT)
 

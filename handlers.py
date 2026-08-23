@@ -9,7 +9,7 @@ from hand import Hand, HandType, IndexOrientation
 
 
 class Handler(abc.ABC):
-    def __init__(self, esp32: Esp32, buffer_size: int = 30, refresh_interval: float = 0.5):
+    def __init__(self, esp32: Esp32, buffer_size: int = 10, refresh_interval: float = 0.5):
         self._esp32_connector = esp32
         self._refresh_interval = refresh_interval
         self._last_actions: Dict[HandType, Optional[Enum]] = {
@@ -52,8 +52,6 @@ class Handler(abc.ABC):
         Read-only: does not modify the action buffers.
         """
         action = self._get_action(hand)
-        if self._is_priority_action(action):
-            return action
         majority = self._majority_action(hand)
         return majority if majority is not None else action
 
@@ -63,15 +61,10 @@ class Handler(abc.ABC):
         hand_type = hand.get_hand_type()
         if hand_type in self._action_buffers:
             self._action_buffers[hand_type].append(action)
-            if not self._is_priority_action(action):
-                majority = self._majority_action(hand)
-                if majority is not None:
-                    return majority
+            majority = self._majority_action(hand)
+            if majority is not None:
+                return majority
         return action
-
-    def _is_priority_action(self, action: Enum) -> bool:
-        """Actions that bypass majority smoothing (e.g. safety stops)."""
-        return False
 
     def get_action_confidence(self, hand_type: HandType) -> Optional[float]:
         """Share (0..1) of the most common action in this hand's buffer.
@@ -109,7 +102,7 @@ class CarAction(Enum):
 
 
 class CarHandler(Handler):
-    def __init__(self, esp32: Esp32, buffer_size: int = 30, refresh_interval: float = 0.5):
+    def __init__(self, esp32: Esp32, buffer_size: int = 10, refresh_interval: float = 0.5):
         super().__init__(esp32, buffer_size, refresh_interval)
         # Default actions when hands are not detected
         self._default_actions: Dict[HandType, CarAction] = {
@@ -154,10 +147,6 @@ class CarHandler(Handler):
         else:
             # Hand not detected - return default action without polluting the buffer
             return self._default_actions[hand_type]
-
-    def _is_priority_action(self, action: Enum) -> bool:
-        """STOP takes effect immediately; never trade stop latency for smoothing."""
-        return action == CarAction.STOP
 
     def _get_action(self, hand: Hand) -> CarAction:
         """Return the Action for this hand based on type and gesture."""

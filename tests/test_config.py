@@ -15,7 +15,7 @@ class TestConfig(unittest.TestCase):
         config = Config.from_dict({})
         self.assertEqual(config.esp32.ip, "esp32.local")
         self.assertEqual(config.esp32.port, 1234)
-        self.assertEqual(config.handler.buffer_size, 30)
+        self.assertEqual(config.handler.buffer_size, 10)
         self.assertEqual(config.hand_detection.open_threshold_ratio, 0.6)
 
     def test_unknown_keys_are_ignored(self):

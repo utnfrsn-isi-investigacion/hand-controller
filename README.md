@@ -139,7 +139,7 @@ Edit `config.json` to customize settings:
     "text_thickness": 2             // Overlay text stroke thickness
   },
   "handler": {
-    "buffer_size": 30,              // Action buffer size for smoothing
+    "buffer_size": 10,              // Action buffer size for smoothing
     "refresh_interval": 0.5         // Seconds between keepalive resends of the current action
   }
 }
@@ -167,17 +167,17 @@ Edit `config.json` to customize settings:
   left/right instead of straight (default: 0.05). Lower = more sensitive steering.
 
 #### Handler Settings
-- **buffer_size**: Number of frames to buffer for action smoothing (default: 30)
-  - Higher values = smoother transitions but slower response
+- **buffer_size**: Number of frames to buffer for action smoothing (default: 10)
+  - Higher values = smoother transitions but slower response — including a slower stop
   - Lower values = faster response but more jittery
-  - Recommended range: 15-50 frames
-  - Example: At 30 FPS, buffer_size=30 smooths over 1 second of data
+  - Recommended range: 8-20 frames
+  - Example: At 30 FPS, buffer_size=10 smooths over about a third of a second
 - **refresh_interval**: Seconds between keepalive resends of the current action (default: 0.5)
   - Feeds the firmware's dead-man timeout (`COMMAND_TIMEOUT_MS`, default 2s): if the ESP32
     stops receiving commands for that long, it stops the motors
   - Must stay well below the firmware timeout
 
-The handler uses a majority voting system across the buffer to determine the most consistent action, reducing noise and false detections in hand gesture recognition.
+The handler uses a majority voting system across the buffer to determine the most consistent action, reducing noise and false detections in hand gesture recognition. Every action votes, STOP included, so `buffer_size` is what sets stop latency: flipping a saturated buffer takes about half the buffer in frames (~0.2s at the default 10 frames / 30 FPS). The fast paths that do not vote are the undetected-hand default (STOP) and the firmware's dead-man timeout.
 
 ## 🎮 Usage
 
@@ -208,7 +208,7 @@ The handler uses a majority voting system across the buffer to determine the mos
 The preview is mirrored (like a selfie camera), so gestures behave intuitively:
 
 - **Accelerate**: Open your **left** hand
-- **Stop**: Close your **left** hand into a fist (takes effect immediately, bypassing smoothing)
+- **Stop**: Close your **left** hand into a fist
 - **Direction Left**: Point your **right** index finger to the left
 - **Direction Right**: Point your **right** index finger to the right
 - **Direction Straight**: Point your **right** index finger up

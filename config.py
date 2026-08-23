@@ -63,7 +63,10 @@ class DisplayConfig:
 @dataclass
 class HandlerConfig:
     """Handler configuration."""
-    buffer_size: int = 30
+    # Frames of history majority-voted per hand. Every action votes, STOP
+    # included, so this is what sets stop latency: flipping a full buffer
+    # takes about half of it (10 frames @30fps -> ~0.2s).
+    buffer_size: int = 10
     # Seconds between keepalive resends of the current action; must stay well
     # below the firmware's COMMAND_TIMEOUT_MS dead-man timeout.
     refresh_interval: float = 0.5

@@ -41,7 +41,7 @@ Una explicación en lenguaje sencillo para lectores no técnicos.
                                             ┌───────────────────────────┐
                                             │  🛡️  Filtro suavizador    │
                                             │                           │
-                                            │  Mira los últimos ~30     │
+                                            │  Mira los últimos ~10     │
                                             │  cuadros y elige el gesto │
                                             │  más común, así un peque- │
                                             │  ño temblor no dispara un │
