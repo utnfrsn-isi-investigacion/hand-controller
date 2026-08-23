@@ -148,7 +148,6 @@ em{ font-style:normal; color:var(--data-ink); font-weight:600; }
 
 .lead{ font-size:1.16em; color:var(--ink-2); max-width:48ch; }
 .mono{ font-family:'DeckMono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
-.num{ font-variant-numeric: tabular-nums; }
 
 /* ── Layout helpers ────────────────────────────────────────── */
 .cols-2{ display:grid; grid-template-columns:1fr 1fr; gap:1.5em; align-items:start; }
@@ -193,8 +192,6 @@ em{ font-style:normal; color:var(--data-ink); font-weight:600; }
   font-size:1.72em; line-height:1.1; text-wrap:balance;
   margin:0; max-width:28ch;
 }
-.big.q{ color:var(--power-ink); }
-.big.s{ color:var(--parada); }
 
 /* ── Tables ────────────────────────────────────────────────── */
 .tw{ overflow-x:auto; }
@@ -234,7 +231,6 @@ table.d td.dim{ color:var(--ink-2); }
 }
 .code .cm{ color:var(--ink-3); }
 .code .kw{ color:var(--data-ink); }
-.code .st{ color:var(--power-ink); }
 
 /* ── Key/value strips ──────────────────────────────────────── */
 .kv{ display:grid; grid-template-columns:auto 1fr; gap:.3em 1em; font-size:.9em; }
@@ -821,18 +817,6 @@ kbd{
         </dl>
       </div>
       <div class="stack">
-        <div class="tw">
-          <table class="d">
-            <thead><tr><th class="c">Código</th><th>Significado</th></tr></thead>
-            <tbody>
-              <tr><td class="c">000</td><td>Parar el motor</td></tr>
-              <tr><td class="c">001</td><td>Acelerar</td></tr>
-              <tr><td class="c">101</td><td>Dirección izquierda</td></tr>
-              <tr><td class="c">110</td><td>Dirección derecha</td></tr>
-              <tr><td class="c">111</td><td>Dirección al centro</td></tr>
-            </tbody>
-          </table>
-        </div>
         <div class="callout">
           <h3>Por qué tan simple</h3>
           <p style="margin:0">Lo podés probar a mano desde una terminal: te conectás con <span class="mono">nc esp32.local 1234</span>, escribís <span class="mono">001</span> y el motor arranca. Sin la cámara, sin Python, sin nada. Cuando algo no anda, <strong>poder probar una pieza sola vale más que cualquier optimización</strong>.</p>
