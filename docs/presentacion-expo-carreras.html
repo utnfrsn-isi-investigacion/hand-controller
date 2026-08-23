@@ -973,10 +973,6 @@ kbd{
           </table>
         </div>
         <p style="font-size:.93em">Invertir el giro de un motor de corriente continua es invertir la polaridad. Con cuatro llaves y un poco de lógica, eso se hace desde el código sin tocar un cable.</p>
-        <div class="callout warn">
-          <h3>Un detalle real de este proyecto</h3>
-          <p style="margin:0">En el archivo de configuración del firmware, el estado “motor detenido” está definido como <span class="mono">A = LOW / B = HIGH</span>. El propio comentario del código avisa que <strong>en un L298N esa combinación es marcha atrás, no parada</strong> (libre es LOW/LOW y freno es HIGH/HIGH). Antes de confiar en el corte de emergencia, hay que verificar el cableado propio y corregir esos dos valores. Está anotado en el código justamente para que nadie lo dé por sentado.</p>
-        </div>
       </div>
     </div>
   </div>
