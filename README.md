@@ -13,6 +13,7 @@ A real-time hand gesture recognition system that detects hand movements and send
 Published at **[utnfrsn-isi-investigacion.github.io/hand-controller](https://utnfrsn-isi-investigacion.github.io/hand-controller/)** (in Spanish, from [`docs/`](docs/)):
 
 - **[La presentación](https://utnfrsn-isi-investigacion.github.io/hand-controller/presentacion-expo-carreras.html)** — how the system works end to end, from the camera to the motor, in twenty slides.
+- **[Visión y software](https://utnfrsn-isi-investigacion.github.io/hand-controller/vision-y-software.html)** — the software companion, walked through the actual code: what MediaPipe returns, the geometry behind each gesture, the majority-vote filter and the latency it buys, the wire protocol, and how the whole thing is tested without a camera or a car.
 - **[Electrónica y mecánica](https://utnfrsn-isi-investigacion.github.io/hand-controller/electronica-y-mecanica.html)** — the hardware companion, written for people who write software: voltage and current, DC motors, torque and gearing, the H-bridge, PWM, and how all of it maps to the pins in `_esp32/main/config.h`.
 
 ## 🚀 Features

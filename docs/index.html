@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Hand Controller — UTN FRSN</title>
-<meta name="description" content="Un auto que se maneja con gestos frente a una webcam. Presentación del proyecto y guía de electrónica y mecánica.">
+<meta name="description" content="Un auto que se maneja con gestos frente a una webcam. La presentación del proyecto y las dos guías técnicas: visión y software, electrónica y mecánica.">
 <style>
 :root{
   --stage:#DCE0D8; --sheet:#F3F5EF; --sheet-2:#E9ECE4;
@@ -31,7 +31,7 @@ body{
   display:flex; align-items:center; justify-content:center; padding:2rem 1.2rem;
   -webkit-font-smoothing:antialiased;
 }
-main{ width:min(100%, 52rem); }
+main{ width:min(100%, 62rem); }
 .eyebrow{
   font-weight:700; text-transform:uppercase; letter-spacing:.16em;
   font-size:.72rem; color:var(--data-ink); margin:0 0 .8em;
@@ -43,8 +43,8 @@ h1{
 h1 span{ color:var(--data-ink); }
 .lead{ color:var(--ink-2); max-width:46ch; margin:0 0 2.6rem; font-size:1.05rem; }
 
-.cards{ display:grid; grid-template-columns:1fr 1fr; gap:1.2rem; }
-@media (max-width:42rem){ .cards{ grid-template-columns:1fr; } }
+.cards{ display:grid; grid-template-columns:repeat(3, 1fr); gap:1.1rem; }
+@media (max-width:56rem){ .cards{ grid-template-columns:1fr; } }
 a.card{
   display:block; text-decoration:none; color:inherit;
   background:var(--sheet); border:1px solid var(--rule); box-shadow:var(--shadow);
@@ -54,7 +54,7 @@ a.card{
 a.card:hover{ border-color:var(--data); transform:translateY(-2px); }
 a.card:focus-visible{ outline:2px solid var(--data); outline-offset:3px; }
 a.card h2{
-  font-size:1.25rem; margin:0 0 .4em; line-height:1.2;
+  font-size:1.12rem; margin:0 0 .4em; line-height:1.2;
   display:flex; align-items:baseline; justify-content:space-between; gap:1em;
 }
 a.card h2 i{ font-style:normal; color:var(--data-ink); font-size:1.1em; }
@@ -83,6 +83,11 @@ footer a:hover{ color:var(--data-ink); }
       <h2>La presentación <i>→</i></h2>
       <p>Cómo funciona, de la cámara al motor, en veinte hojas. Es la que se dio en la Expo Carreras.</p>
       <span class="tag">Empezá por acá</span>
+    </a>
+    <a class="card" href="vision-y-software.html">
+      <h2>Visión y software <i>→</i></h2>
+      <p>Cómo la computadora ve una mano y la convierte en una orden, sobre el código real del proyecto.</p>
+      <span class="tag">El lado del programa</span>
     </a>
     <a class="card" href="electronica-y-mecanica.html">
       <h2>Electrónica y mecánica <i>→</i></h2>
