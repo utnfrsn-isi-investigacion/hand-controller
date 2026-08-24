@@ -8,6 +8,13 @@ A real-time hand gesture recognition system that detects hand movements and send
 
 > **⚠️ IMPORTANT**: This project requires **Python 3.12.x** and **pyenv** for proper dependency management. MediaPipe 0.10.21 is not compatible with Python 3.13+. Please follow the installation instructions carefully.
 
+## 📚 Documentation
+
+Published at **[utnfrsn-isi-investigacion.github.io/hand-controller](https://utnfrsn-isi-investigacion.github.io/hand-controller/)** (in Spanish, from [`docs/`](docs/)):
+
+- **[La presentación](https://utnfrsn-isi-investigacion.github.io/hand-controller/presentacion-expo-carreras.html)** — how the system works end to end, from the camera to the motor, in twenty slides.
+- **[Electrónica y mecánica](https://utnfrsn-isi-investigacion.github.io/hand-controller/electronica-y-mecanica.html)** — the hardware companion, written for people who write software: voltage and current, DC motors, torque and gearing, the H-bridge, PWM, and how all of it maps to the pins in `_esp32/main/config.h`.
+
 ## 🚀 Features
 
 - **Real-time Hand Tracking**: Uses MediaPipe for accurate hand landmark detection
