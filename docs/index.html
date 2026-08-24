@@ -4,25 +4,97 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Hand Controller — UTN FRSN</title>
-<meta http-equiv="refresh" content="0; url=presentacion-expo-carreras.html">
-<link rel="canonical" href="presentacion-expo-carreras.html">
+<meta name="description" content="Un auto que se maneja con gestos frente a una webcam. Presentación del proyecto y guía de electrónica y mecánica.">
 <style>
-  :root { color-scheme: light dark; }
-  body {
-    margin: 0; min-height: 100dvh;
-    display: flex; align-items: center; justify-content: center;
-    background: #f3f5ef; color: #151a18;
-    font-family: system-ui, sans-serif; text-align: center; padding: 2rem;
+:root{
+  --stage:#DCE0D8; --sheet:#F3F5EF; --sheet-2:#E9ECE4;
+  --ink:#151A18; --ink-2:#525C57; --ink-3:#7C857F;
+  --rule:#C2C9C0; --rule-soft:#D8DDD4;
+  --data:#0D6070; --data-ink:#0A4E5C;
+  --shadow:0 1px 2px rgba(20,30,26,.06), 0 12px 34px rgba(20,30,26,.10);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --stage:#0A0E0F; --sheet:#151C1E; --sheet-2:#1D2528;
+    --ink:#E3E8E1; --ink-2:#98A39D; --ink-3:#77827C;
+    --rule:#2E393B; --rule-soft:#232D2F;
+    --data:#57BDD3; --data-ink:#82D2E3;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 14px 40px rgba(0,0,0,.5);
+    color-scheme: dark;
   }
-  a { color: #0a4e5c; }
-  @media (prefers-color-scheme: dark) {
-    body { background: #151c1e; color: #e3e8e1; }
-    a { color: #82d2e3; }
-  }
+}
+*{ box-sizing:border-box; }
+body{
+  margin:0; min-height:100dvh; background:var(--stage); color:var(--ink);
+  font-family:system-ui, sans-serif; line-height:1.6;
+  display:flex; align-items:center; justify-content:center; padding:2rem 1.2rem;
+  -webkit-font-smoothing:antialiased;
+}
+main{ width:min(100%, 52rem); }
+.eyebrow{
+  font-weight:700; text-transform:uppercase; letter-spacing:.16em;
+  font-size:.72rem; color:var(--data-ink); margin:0 0 .8em;
+}
+h1{
+  font-size:clamp(2.4rem, 8vw, 4rem); line-height:1; letter-spacing:-.02em;
+  margin:0 0 .35em; font-weight:800;
+}
+h1 span{ color:var(--data-ink); }
+.lead{ color:var(--ink-2); max-width:46ch; margin:0 0 2.6rem; font-size:1.05rem; }
+
+.cards{ display:grid; grid-template-columns:1fr 1fr; gap:1.2rem; }
+@media (max-width:42rem){ .cards{ grid-template-columns:1fr; } }
+a.card{
+  display:block; text-decoration:none; color:inherit;
+  background:var(--sheet); border:1px solid var(--rule); box-shadow:var(--shadow);
+  padding:1.6rem 1.7rem 1.7rem;
+  transition:border-color .15s, transform .15s;
+}
+a.card:hover{ border-color:var(--data); transform:translateY(-2px); }
+a.card:focus-visible{ outline:2px solid var(--data); outline-offset:3px; }
+a.card h2{
+  font-size:1.25rem; margin:0 0 .4em; line-height:1.2;
+  display:flex; align-items:baseline; justify-content:space-between; gap:1em;
+}
+a.card h2 i{ font-style:normal; color:var(--data-ink); font-size:1.1em; }
+a.card p{ margin:0; color:var(--ink-2); font-size:.95rem; }
+a.card .tag{
+  display:inline-block; margin-top:1em; font-size:.68rem; font-weight:700;
+  text-transform:uppercase; letter-spacing:.13em; color:var(--ink-3);
+}
+footer{
+  margin-top:2.6rem; padding-top:1.2rem; border-top:1px solid var(--rule);
+  font-size:.8rem; color:var(--ink-3);
+  display:flex; flex-wrap:wrap; gap:.4em 1.6em; justify-content:space-between;
+}
+footer a{ color:var(--ink-3); }
+footer a:hover{ color:var(--data-ink); }
 </style>
 </head>
 <body>
-  <p>Redirigiendo a la presentación…<br>
-    <a href="presentacion-expo-carreras.html">Hand Controller — Expo Carreras</a></p>
+<main>
+  <p class="eyebrow">UTN — Facultad Regional San Nicolás <span style="color:var(--ink-3)">/</span> ISI <span style="color:var(--ink-3)">/</span> Investigación</p>
+  <h1>Hand Controller<span>.</span></h1>
+  <p class="lead">Un auto que se maneja con las manos frente a una webcam. Visión por computadora en la notebook, un ESP32 escuchando por Wi-Fi, y un motor del otro lado.</p>
+
+  <div class="cards">
+    <a class="card" href="presentacion-expo-carreras.html">
+      <h2>La presentación <i>→</i></h2>
+      <p>Cómo funciona, de la cámara al motor, en veinte hojas. Es la que se dio en la Expo Carreras.</p>
+      <span class="tag">Empezá por acá</span>
+    </a>
+    <a class="card" href="electronica-y-mecanica.html">
+      <h2>Electrónica y mecánica <i>→</i></h2>
+      <p>La guía de hardware del proyecto, desde cero: del voltio al puente H, y de ahí al firmware.</p>
+      <span class="tag">Para ir más a fondo</span>
+    </a>
+  </div>
+
+  <footer>
+    <span>Reconocimiento de gestos con MediaPipe · ESP32 · TCP</span>
+    <span>Código abierto en <a href="https://github.com/utnfrsn-isi-investigacion/hand-controller">GitHub</a></span>
+  </footer>
+</main>
 </body>
 </html>
