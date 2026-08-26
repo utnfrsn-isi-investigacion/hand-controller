@@ -72,6 +72,20 @@ class HandlerConfig:
     refresh_interval: float = 0.5
 
 
+@dataclass
+class DebugConfig:
+    """Diagnostic logging for the gesture -> action -> ESP32 pipeline."""
+    # Master switch. `python main.py --debug` turns this on for one run;
+    # setting it here keeps it on. Off, the reporter costs nothing per frame.
+    enabled: bool = False
+    # Seconds between repeats of an unchanged diagnostic block; any change in
+    # the pipeline state (gate, actions, connection) is always logged at once.
+    log_interval: float = 1.0
+    # Draw a compact summary of the same information on the preview window,
+    # so gestures can be diagnosed without looking away from the camera.
+    show_panel: bool = True
+
+
 def _build_section(section_cls: Type[T], data: dict, section: str) -> T:
     """Build a config section, warning about and ignoring unknown keys."""
     valid = {f.name for f in fields(section_cls)}  # type: ignore[arg-type]
@@ -89,6 +103,7 @@ class Config:
     hand_detection: HandDetectionConfig = field(default_factory=HandDetectionConfig)
     display: DisplayConfig = field(default_factory=DisplayConfig)
     handler: HandlerConfig = field(default_factory=HandlerConfig)
+    debug: DebugConfig = field(default_factory=DebugConfig)
 
     @classmethod
     def from_dict(cls, data: dict) -> 'Config':
@@ -98,7 +113,8 @@ class Config:
             camera=_build_section(CameraConfig, data.get('camera', {}), 'camera'),
             hand_detection=_build_section(HandDetectionConfig, data.get('hand_detection', {}), 'hand_detection'),
             display=_build_section(DisplayConfig, data.get('display', {}), 'display'),
-            handler=_build_section(HandlerConfig, data.get('handler', {}), 'handler')
+            handler=_build_section(HandlerConfig, data.get('handler', {}), 'handler'),
+            debug=_build_section(DebugConfig, data.get('debug', {}), 'debug')
         )
 
     @classmethod

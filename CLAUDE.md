@@ -10,6 +10,7 @@ Python 3.12.x is required (MediaPipe 0.10.21 does not support 3.13+); the versio
 make install    # create .venv (pyenv) and install requirements
 make config     # create config.json from config.example.json
 make run        # run the app (needs a webcam; ESP32 optional)
+make debug      # same, with per-frame pipeline diagnostics (main.py --debug)
 make test       # unittest discovery over tests/
 make lint       # flake8 (120-char lines, max-complexity 10)
 make security   # bandit + pip-audit (PYSEC-2026-1805 ignored — see Makefile comment)
@@ -35,6 +36,8 @@ Cross-file invariants that are easy to break:
 - **Wire protocol**: `CarAction` enum values in handlers.py ("000", "001", …) must exactly match the `ACTION_*` constants in `_esp32/main/config.h` and have an entry in the `actions[]` table in `_esp32/main/main.ino`. Codes are newline-terminated; firmware replies are drained and discarded, so nothing may depend on them. The `esp32-protocol-reviewer` agent checks this.
 - **Dead-man timing**: the handler resends the current action every `handler.refresh_interval` seconds (default 0.5) as a keepalive; the firmware stops the motors after `COMMAND_TIMEOUT_MS` (2000ms) of silence. `refresh_interval` must stay well below that.
 - **Gesture smoothing**: `Handler` majority-votes each hand's action over a deque buffer (`handler.buffer_size`) to suppress jitter — every action, STOP included, must win that vote before it is sent, so `buffer_size` directly sets stop latency (~`buffer_size / 2` frames to flip a saturated buffer). Keep it small enough that a deliberate stop gesture still reacts quickly. The undetected-hand path is the fast backstop: it returns `_default_actions` (STOP) without touching the buffer.
+- **Debug path**: `debug.py` reports every pipeline stage (detection -> hand type -> gate -> raw/smoothed action -> send -> firmware reply) and is the first thing to reach for when gestures do not reach the car. It reads `HandlerDebug` (recorded by `process_hands`) and `Hand.diagnostics()`; both are diagnostics-only, so keep them in step with the logic they describe. Disabled, it must stay free: no `diagnostics()` calls, no formatting.
+
 - **Config flow**: `config.py` dataclasses → constructor parameters, threaded explicitly through `main.py`. New tunables get a dataclass field (with a comment) plus a `config.example.json` entry. `config.json` is the user's gitignored local copy — never edit it (a hook blocks this), and never touch `_esp32/main/secrets.h` (WiFi credentials).
 - **Reconnects**: `TCPSender` reconnects on a throttled background thread because mDNS resolution can block for seconds; never call `connect()` from the frame loop.
 

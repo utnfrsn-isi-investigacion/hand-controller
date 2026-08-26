@@ -1,11 +1,38 @@
 import abc
 import collections
 import time
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, Optional, List
 
 from esp32 import Esp32
 from hand import Hand, HandType, IndexOrientation
+
+
+@dataclass
+class HandDebug:
+    """What happened to one hand type during a process_hands() call."""
+    detected: bool = False              # hand present AND usable (not UNKNOWN)
+    raw_action: Optional[Enum] = None   # gesture before majority smoothing
+    action: Optional[Enum] = None       # what was returned, and possibly sent
+    confidence: Optional[float] = None  # majority share of the action buffer
+    sent: Optional[bool] = None         # True ok, False failed, None not attempted
+
+
+@dataclass
+class HandlerDebug:
+    """Snapshot of the last process_hands() call, for debug reporting only.
+
+    The handler drops a lot of information on the floor -- which detections
+    were unusable, whether the all-hands gate held, what the gesture said
+    before smoothing -- and that is exactly what is needed when the car does
+    not move. Recording it costs one small object per frame.
+    """
+    detections: int = 0                 # hands MediaPipe returned this frame
+    unusable: int = 0                   # of those, how many came back UNKNOWN
+    gate_ok: bool = False               # all required hands present -> gestures used
+    missing: List[HandType] = field(default_factory=list)
+    hands: Dict[HandType, HandDebug] = field(default_factory=dict)
 
 
 class Handler(abc.ABC):
@@ -24,6 +51,14 @@ class Handler(abc.ABC):
             HandType.LEFT: collections.deque(maxlen=buffer_size),
             HandType.RIGHT: collections.deque(maxlen=buffer_size),
         }
+        # Pre-smoothing gesture per hand type, kept for debug reporting
+        self._raw_actions: Dict[HandType, Optional[Enum]] = {}
+        self._debug = HandlerDebug()
+
+    @property
+    def debug(self) -> HandlerDebug:
+        """Diagnostics for the most recent process_hands() call."""
+        return self._debug
 
     @abc.abstractmethod
     def process_hands(self, hands: List[Hand]) -> Dict[HandType, Enum]:
@@ -40,11 +75,13 @@ class Handler(abc.ABC):
             return True
         return time.monotonic() - self._last_send_times[hand_type] >= self._refresh_interval
 
-    def _send_action(self, hand_type: HandType, action: Enum) -> None:
+    def _send_action(self, hand_type: HandType, action: Enum) -> bool:
         """Sends the action; on success records it for change/refresh tracking."""
-        if self._esp32_connector.send_action(action.value):
+        sent = self._esp32_connector.send_action(action.value)
+        if sent:
             self._last_actions[hand_type] = action
             self._last_send_times[hand_type] = time.monotonic()
+        return sent
 
     def get_action(self, hand: Hand) -> Enum:
         """Return the action for this hand, preferring the buffered majority.
@@ -59,6 +96,7 @@ class Handler(abc.ABC):
         """Record the hand's current action in its buffer and return the smoothed action."""
         action = self._get_action(hand)
         hand_type = hand.get_hand_type()
+        self._raw_actions[hand_type] = action
         if hand_type in self._action_buffers:
             self._action_buffers[hand_type].append(action)
             majority = self._majority_action(hand)
@@ -110,25 +148,44 @@ class CarHandler(Handler):
             HandType.RIGHT: CarAction.DIRECTION_STRAIGHT,
         }
 
+    # Hand types that must all be present before gestures are obeyed
+    _REQUIRED_HANDS = (HandType.LEFT, HandType.RIGHT)
+
     def __determine_actions(self, hands: List[Hand]) -> Dict[HandType, CarAction]:
         """
         Determine car actions based on hand detections.
         If  it does not detect the 2 hands, stops
         """
-        detected = {h.get_hand_type(): h for h in hands if h.get_hand_type() != HandType.UNKNOWN}
-        both = HandType.LEFT in detected and HandType.RIGHT in detected
+        # One get_hand_type() call per hand: it walks all 21 landmarks
+        types = [hand.get_hand_type() for hand in hands]
+        detected = {t: h for t, h in zip(types, hands) if t != HandType.UNKNOWN}
+        missing = [ht for ht in self._REQUIRED_HANDS if ht not in detected]
+
+        self._debug = HandlerDebug(
+            detections=len(hands),
+            unusable=sum(1 for t in types if t == HandType.UNKNOWN),
+            gate_ok=not missing,
+            missing=missing,
+        )
 
         return {
-            ht: self._determine_action(ht, detected[ht] if both else None)
-            for ht in (HandType.LEFT, HandType.RIGHT)
+            ht: self._determine_action(ht, detected.get(ht) if not missing else None)
+            for ht in self._REQUIRED_HANDS
         }
 
     def process_hands(self, hands: List[Hand]) -> Dict[HandType, Enum]:
         """Process a list of detected hands and send actions for car control."""
+        self._raw_actions = {}
         actions: Dict[HandType, Enum] = dict(self.__determine_actions(hands))
         for hand_type, action in actions.items():
-            if self._should_send(hand_type, action):
-                self._send_action(hand_type, action)
+            sent = self._send_action(hand_type, action) if self._should_send(hand_type, action) else None
+            self._debug.hands[hand_type] = HandDebug(
+                detected=hand_type not in self._debug.missing,
+                raw_action=self._raw_actions.get(hand_type),
+                action=action,
+                confidence=self.get_action_confidence(hand_type),
+                sent=sent,
+            )
         return actions
 
     def _determine_action(self, hand_type: HandType, hand: Optional[Hand]) -> CarAction:

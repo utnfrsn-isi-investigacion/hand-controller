@@ -4,7 +4,7 @@ PYTHON        := $(VENV)/bin/python
 PIP           := $(VENV)/bin/pip
 DECK          := docs/presentacion-expo-carreras.html
 
-.PHONY: help install run test lint security venv clean config present
+.PHONY: help install run debug test lint security venv clean config present
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -19,6 +19,9 @@ install: venv ## Install Python dependencies
 
 run: ## Run the hand controller
 	$(PYTHON) main.py
+
+debug: ## Run with full pipeline diagnostics (see README > Debug mode)
+	$(PYTHON) main.py --debug
 
 test: ## Run unit tests
 	$(PYTHON) -m unittest discover -s tests -p "test_*.py" -v

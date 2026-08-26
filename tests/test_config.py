@@ -18,6 +18,18 @@ class TestConfig(unittest.TestCase):
         self.assertEqual(config.handler.buffer_size, 10)
         self.assertEqual(config.hand_detection.open_threshold_ratio, 0.6)
 
+    def test_debug_defaults_to_off(self):
+        """Debug is opt-in: an existing config.json without the section stays quiet."""
+        config = Config.from_dict({})
+        self.assertFalse(config.debug.enabled)
+        self.assertTrue(config.debug.show_panel)
+        self.assertEqual(config.debug.log_interval, 1.0)
+
+    def test_debug_section_is_loaded(self):
+        config = Config.from_dict({'debug': {'enabled': True, 'log_interval': 0.25}})
+        self.assertTrue(config.debug.enabled)
+        self.assertEqual(config.debug.log_interval, 0.25)
+
     def test_unknown_keys_are_ignored(self):
         """Stale keys in an old config.json must not break loading."""
         config = Config.from_dict({'esp32': {'ip': 'car.local', 'action_cooldown': 2}})

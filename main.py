@@ -1,3 +1,5 @@
+import argparse
+import dataclasses
 import logging
 import sys
 import time
@@ -6,14 +8,26 @@ import cv2
 import esp32
 import handlers
 from config import Config, ConfigError
+from debug import DebugReporter
 from draw import Drawer
 from hand import HandProcessor
 
 logger = logging.getLogger(__name__)
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Hand gesture controller for the ESP32 car.")
+    parser.add_argument(
+        "--debug", action="store_true",
+        help="log the full gesture -> action -> ESP32 pipeline (same as debug.enabled in config.json)"
+    )
+    return parser.parse_args()
+
+
 def main() -> None:
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+    args = parse_args()
+    logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO,
+                        format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 
     # Load configuration
     try:
@@ -21,6 +35,13 @@ def main() -> None:
     except ConfigError as e:
         logger.error("%s", e)
         sys.exit(1)
+
+    # --debug is a per-run override of the config switch; either one enables
+    # the reporter, and DEBUG logging has to follow it in the config-only case
+    debug_config = dataclasses.replace(config.debug, enabled=config.debug.enabled or args.debug)
+    if debug_config.enabled:
+        logging.getLogger().setLevel(logging.DEBUG)
+        logger.debug("Debug mode on: reporting the full pipeline every frame")
 
     # Initialize video capture with config
     cap = cv2.VideoCapture(config.camera.index)
@@ -54,6 +75,9 @@ def main() -> None:
     # Init overlay renderer with config
     drawer = Drawer(config.display)
 
+    # Pipeline diagnostics; a no-op unless debug mode is on
+    reporter = DebugReporter(debug_config)
+
     prev_time = time.monotonic()
     try:
         while True:
@@ -78,10 +102,13 @@ def main() -> None:
             fps = 1.0 / max(now - prev_time, 1e-6)
             prev_time = now
 
+            connected = client_esp32.is_connected()
+            debug_lines = reporter.report(detected_hands, handler.debug, connected, fps)
+
             # Draw all overlays, reusing the actions that were sent; the
             # Drawer queries confidences lazily, only when displayed
             drawer.draw(frame, detected_hands, actions, handler.get_action_confidence,
-                        client_esp32.is_connected(), fps)
+                        connected, fps, debug_lines)
 
             cv2.imshow(config.display.window_name, frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):

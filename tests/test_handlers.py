@@ -289,5 +289,92 @@ class TestCarHandler(unittest.TestCase):
         self.assertEqual(action, CarAction.DIRECTION_LEFT)
 
 
+class TestCarHandlerDebugSnapshot(unittest.TestCase):
+    """The debug snapshot must describe what process_hands() actually did."""
+
+    def setUp(self):
+        self.mock_esp32 = Mock()
+        self.mock_esp32.send_action.return_value = True
+        self.handler = CarHandler(self.mock_esp32, refresh_interval=3600)
+
+    def create_mock_hand(self, hand_type, is_open=True, orientation=IndexOrientation.STRAIGHT):
+        mock_hand = Mock(spec=Hand)
+        mock_hand.get_hand_type.return_value = hand_type
+        mock_hand.is_open.return_value = is_open
+        mock_hand.get_index_orientation.return_value = orientation
+        return mock_hand
+
+    def test_snapshot_records_the_blocked_gate(self):
+        """One hand is not enough: the snapshot says which one is missing."""
+        self.handler.process_hands([self.create_mock_hand(HandType.LEFT)])
+        debug = self.handler.debug
+
+        self.assertFalse(debug.gate_ok)
+        self.assertEqual(debug.missing, [HandType.RIGHT])
+        self.assertEqual(debug.detections, 1)
+        # The left hand was seen, but the blocked gate means its gesture was
+        # never evaluated: no raw action, and the default was sent instead
+        self.assertTrue(debug.hands[HandType.LEFT].detected)
+        self.assertFalse(debug.hands[HandType.RIGHT].detected)
+        self.assertEqual(debug.hands[HandType.LEFT].action, CarAction.STOP)
+        self.assertIsNone(debug.hands[HandType.LEFT].raw_action)
+
+    def test_snapshot_counts_unusable_detections(self):
+        """A hand MediaPipe saw but hand.py could not classify is reported."""
+        self.handler.process_hands([
+            self.create_mock_hand(HandType.LEFT),
+            self.create_mock_hand(HandType.UNKNOWN),
+        ])
+        debug = self.handler.debug
+
+        self.assertEqual(debug.detections, 2)
+        self.assertEqual(debug.unusable, 1)
+        self.assertEqual(debug.missing, [HandType.RIGHT])
+
+    def test_snapshot_records_gesture_and_send_result(self):
+        self.handler.process_hands([
+            self.create_mock_hand(HandType.LEFT, is_open=True),
+            self.create_mock_hand(HandType.RIGHT, orientation=IndexOrientation.RIGHT),
+        ])
+        debug = self.handler.debug
+
+        self.assertTrue(debug.gate_ok)
+        self.assertEqual(debug.missing, [])
+        self.assertTrue(debug.hands[HandType.LEFT].detected)
+        self.assertEqual(debug.hands[HandType.LEFT].raw_action, CarAction.ACCELERATE)
+        self.assertEqual(debug.hands[HandType.LEFT].action, CarAction.ACCELERATE)
+        self.assertEqual(debug.hands[HandType.LEFT].confidence, 1.0)
+        self.assertTrue(debug.hands[HandType.LEFT].sent)
+        self.assertEqual(debug.hands[HandType.RIGHT].raw_action, CarAction.DIRECTION_RIGHT)
+
+    def test_snapshot_marks_unchanged_actions_as_not_sent(self):
+        hands = [self.create_mock_hand(HandType.LEFT), self.create_mock_hand(HandType.RIGHT)]
+        self.handler.process_hands(hands)
+        self.handler.process_hands(hands)
+
+        self.assertIsNone(self.handler.debug.hands[HandType.LEFT].sent)
+
+    def test_snapshot_reports_send_failures(self):
+        self.mock_esp32.send_action.return_value = False
+        self.handler.process_hands([self.create_mock_hand(HandType.LEFT)])
+
+        self.assertFalse(self.handler.debug.hands[HandType.LEFT].sent)
+
+    def test_snapshot_shows_gesture_outvoted_by_smoothing(self):
+        """raw_action vs action is how a smoothed-away gesture becomes visible."""
+        hands = [self.create_mock_hand(HandType.LEFT, is_open=True),
+                 self.create_mock_hand(HandType.RIGHT)]
+        for _ in range(10):
+            self.handler.process_hands(hands)
+
+        closed = [self.create_mock_hand(HandType.LEFT, is_open=False),
+                  self.create_mock_hand(HandType.RIGHT)]
+        self.handler.process_hands(closed)
+        debug = self.handler.debug
+
+        self.assertEqual(debug.hands[HandType.LEFT].raw_action, CarAction.STOP)
+        self.assertEqual(debug.hands[HandType.LEFT].action, CarAction.ACCELERATE)
+
+
 if __name__ == '__main__':
     unittest.main()

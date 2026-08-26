@@ -143,5 +143,78 @@ class TestHand(unittest.TestCase):
         self.assertEqual(hand_pointing_straight.get_index_orientation(), IndexOrientation.STRAIGHT)
 
 
+class TestHandDiagnostics(unittest.TestCase):
+    """diagnostics() must explain the classification, not just repeat it."""
+
+    def create_mock_hand(self, landmarks_data, hand_label="Right", score=0.9):
+        mock_classification = Mock()
+        mock_classification.label = hand_label
+        mock_classification.score = score
+        mock_handedness = Mock()
+        mock_handedness.classification = [mock_classification]
+        landmarks = [MockLandmark(x, y, z) for x, y, z in landmarks_data]
+        return Hand(handedness=mock_handedness, landmarks=MockLandmarkList(landmarks))
+
+    def open_hand_data(self):
+        """Landmarks for a clearly open hand, centered in frame."""
+        data = [(0.5, 0.5, 0.0)] * 21
+        data[mp_hands.HandLandmark.WRIST] = (0.5, 0.9, 0.0)
+        data[mp_hands.HandLandmark.MIDDLE_FINGER_MCP] = (0.5, 0.7, 0.0)
+        data[mp_hands.HandLandmark.THUMB_TIP] = (0.3, 0.5, 0.0)
+        data[mp_hands.HandLandmark.THUMB_CMC] = (0.35, 0.7, 0.0)
+        data[mp_hands.HandLandmark.INDEX_FINGER_TIP] = (0.4, 0.2, 0.0)
+        data[mp_hands.HandLandmark.INDEX_FINGER_MCP] = (0.4, 0.7, 0.0)
+        data[mp_hands.HandLandmark.MIDDLE_FINGER_TIP] = (0.5, 0.2, 0.0)
+        data[mp_hands.HandLandmark.RING_FINGER_TIP] = (0.6, 0.2, 0.0)
+        data[mp_hands.HandLandmark.RING_FINGER_MCP] = (0.6, 0.7, 0.0)
+        data[mp_hands.HandLandmark.PINKY_TIP] = (0.7, 0.2, 0.0)
+        data[mp_hands.HandLandmark.PINKY_MCP] = (0.7, 0.7, 0.0)
+        return data
+
+    def test_reports_ratios_agreeing_with_is_open(self):
+        hand = self.create_mock_hand(self.open_hand_data())
+        diag = hand.diagnostics()
+
+        self.assertEqual(len(diag.finger_ratios), len(Hand.FINGER_NAMES))
+        self.assertTrue(diag.is_open)
+        self.assertEqual(diag.is_open, hand.is_open())
+        self.assertTrue(all(ratio > diag.open_threshold for ratio in diag.finger_ratios))
+
+    def test_reports_index_offset_agreeing_with_orientation(self):
+        data = self.open_hand_data()
+        data[mp_hands.HandLandmark.INDEX_FINGER_TIP] = (0.2, 0.2, 0.0)  # tip well left of knuckle
+        hand = self.create_mock_hand(data)
+        diag = hand.diagnostics()
+
+        self.assertAlmostEqual(diag.index_offset, -0.2)
+        self.assertEqual(diag.index_orientation, IndexOrientation.LEFT)
+        self.assertEqual(diag.index_orientation, hand.get_index_orientation())
+
+    def test_clipped_hand_reports_which_landmarks_left_the_frame(self):
+        data = self.open_hand_data()
+        data[mp_hands.HandLandmark.WRIST] = (0.5, 1.05, 0.0)  # below the bottom edge
+        hand = self.create_mock_hand(data)
+        diag = hand.diagnostics()
+
+        self.assertEqual(diag.hand_type, HandType.UNKNOWN)
+        self.assertEqual(diag.out_of_frame, [int(mp_hands.HandLandmark.WRIST)])
+        self.assertIn("out of frame", diag.unknown_reason)
+        self.assertEqual(Hand.landmark_name(0), "WRIST")
+
+    def test_low_handedness_score_is_reported_with_the_number(self):
+        hand = self.create_mock_hand(self.open_hand_data(), score=0.55)
+        diag = hand.diagnostics()
+
+        self.assertEqual(diag.hand_type, HandType.UNKNOWN)
+        self.assertIn("0.55", diag.unknown_reason)
+        self.assertEqual(diag.out_of_frame, [])
+
+    def test_usable_hand_has_no_unknown_reason(self):
+        diag = self.create_mock_hand(self.open_hand_data(), hand_label="Left").diagnostics()
+
+        self.assertEqual(diag.hand_type, HandType.LEFT)
+        self.assertEqual(diag.unknown_reason, "")
+
+
 if __name__ == '__main__':
     unittest.main()

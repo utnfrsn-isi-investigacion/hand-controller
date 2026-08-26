@@ -19,6 +19,11 @@ ConfidenceProvider = Callable[[HandType], Optional[float]]
 _STATUS_OK_COLOR = (0, 255, 0)
 _STATUS_ERROR_COLOR = (0, 0, 255)
 _FPS_COLOR = (255, 255, 0)
+_DEBUG_COLOR = (255, 255, 255)
+# Debug text is small and fixed-size: it is dense and read up close, so it
+# deliberately ignores text_scale, which is tuned for the action labels.
+_DEBUG_SCALE = 0.45
+_DEBUG_LINE_HEIGHT = 18
 
 # Spanish labels for the on-screen action text, keyed by the action enum's
 # member name. Keeping this map here (rather than on the enum) leaves the
@@ -46,7 +51,8 @@ class Drawer:
         self._config = config
 
     def draw(self, frame: Any, hands: List[Hand], actions: Dict[HandType, Enum],
-             confidence_provider: ConfidenceProvider, connected: bool, fps: float) -> None:
+             confidence_provider: ConfidenceProvider, connected: bool, fps: float,
+             debug_lines: Optional[List[str]] = None) -> None:
         """Draw all enabled overlays for one frame.
 
         :param frame: BGR frame to draw on (modified in place)
@@ -57,6 +63,8 @@ class Drawer:
             is enabled, so disabled overlays cost nothing
         :param connected: whether the ESP32 connection is up
         :param fps: current frames per second
+        :param debug_lines: pipeline diagnostics from DebugReporter, drawn as
+            a panel; empty or None in normal (non-debug) runs
         """
         if not self._config.show_overlays:
             return
@@ -69,6 +77,9 @@ class Drawer:
             self._draw_hand(frame, hand, hand_type, actions[hand_type], confidence)
 
         self._draw_connection_status(frame, connected)
+
+        if debug_lines:
+            self._draw_debug_panel(frame, debug_lines)
 
         if self._config.show_fps:
             self._draw_fps(frame, fps)
@@ -99,6 +110,14 @@ class Drawer:
             text, color = "ESP32: desconectado (reconectando...)", _STATUS_ERROR_COLOR
         cv2.putText(frame, text, (10, 25), cv2.FONT_HERSHEY_SIMPLEX,
                     0.6 * self._config.text_scale, color, self._config.text_thickness)
+
+    def _draw_debug_panel(self, frame: Any, lines: List[str]) -> None:
+        """Draw the debug lines stacked upward from just above the FPS row."""
+        bottom = frame.shape[0] - 30
+        for offset, line in enumerate(reversed(lines)):
+            y = bottom - offset * _DEBUG_LINE_HEIGHT
+            cv2.putText(frame, line, (10, y), cv2.FONT_HERSHEY_SIMPLEX,
+                        _DEBUG_SCALE, _DEBUG_COLOR, 1)
 
     def _draw_fps(self, frame: Any, fps: float) -> None:
         """Draw the FPS counter in the bottom-left corner."""

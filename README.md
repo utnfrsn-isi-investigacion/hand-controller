@@ -224,6 +224,50 @@ The preview is mirrored (like a selfie camera), so gestures behave intuitively:
 Both hands must be fully visible in the frame; otherwise the car stops and the
 direction centers.
 
+### Debug Mode
+
+When gestures do not move the car, run with diagnostics instead of guessing
+which stage failed:
+
+```bash
+python main.py --debug     # or: make debug
+```
+
+Every frame is reported: what MediaPipe detected, why a hand was rejected,
+whether the both-hands gate held, the raw gesture and the smoothed action,
+whether the command reached the ESP32, and what the firmware answered.
+
+```
+DEBUG debug: frame 41 | 24 fps | esp32 connected | 2 detection(s)
+DEBUG debug:   [0] Left 0.93 -> LEFT | open=no (thumb 0.42 index 0.51 middle 1.10 ring 1.04 pinky 0.91 vs >0.60)
+DEBUG debug:   [1] Right 0.98 -> RIGHT | index dx +0.004 vs +-0.050 -> STRAIGHT
+DEBUG debug:   gate: both hands present -> gestures in control
+DEBUG debug:   LEFT  raw STOP -> STOP (vote 100%) sent
+DEBUG debug:   RIGHT raw DIRECTION_STRAIGHT -> DIRECTION_STRAIGHT (vote 90%) not resent (unchanged)
+DEBUG esp32: sent 000
+DEBUG esp32: firmware replied: STOP (LED OFF)
+```
+
+How to read it:
+
+| Line | What it tells you |
+|---|---|
+| `-> UNKNOWN (N landmark(s) out of frame ...)` | The hand was seen but rejected: part of it is outside the frame. Step back or raise the camera |
+| `-> UNKNOWN (handedness 0.62 < 0.70)` | MediaPipe is unsure which hand it is; improve lighting or separate your hands |
+| `gate: missing RIGHT -> defaults sent` | Only one hand is usable, so **both** hands revert to STOP/STRAIGHT and gestures are ignored |
+| `open=no (thumb 0.42 ... vs >0.60)` | Which finger missed `open_threshold_ratio`, and by how much |
+| `index dx +0.004 vs +-0.050` | The index finger is not tilted far enough to count as left/right |
+| `raw ACCELERATE -> STOP (vote 50%)` | The gesture was outvoted by the smoothing buffer; lower `handler.buffer_size` to react faster |
+| `SEND FAILED` / `dropped 001: no connection` | The command never left the machine — an ESP32 connection problem, not a gesture problem |
+| `firmware replied: ...` | Positive proof the ESP32 received and parsed the command. If actions are logged but the car does not move, the problem is downstream: wiring, motor driver, or power |
+| `firmware replied: Unknown command` | Protocol drift: the action code is not in the firmware's `actions[]` table |
+
+The same summary is drawn on the preview window, so gestures can be diagnosed
+without looking away from the camera. Set `debug.show_panel` to `false` to keep
+only the console output, or `debug.enabled` to `true` to make debug mode
+permanent. `debug.log_interval` throttles repeats of an unchanged state; any
+change is always logged immediately.
+
 ## 🔌 ESP32 Setup
 
 ### Hardware Requirements
@@ -304,6 +348,7 @@ hand-controller/
 ├── hand.py              # Hand gesture detection logic
 ├── handlers.py          # Action handlers with buffering logic
 ├── draw.py              # Preview window overlay rendering
+├── debug.py             # Pipeline diagnostics for --debug runs
 ├── esp32.py             # TCP communication with ESP32
 ├── config.py            # Configuration management with dataclasses
 ├── config.json          # Configuration file (create from example)
@@ -329,6 +374,7 @@ hand-controller/
 - **handlers.py**: Implements action handlers with configurable buffering for gesture smoothing
 - **esp32.py**: Manages TCP socket connection and command transmission
 - **config.py**: Configuration management using Python dataclasses for type safety
+- **debug.py**: `DebugReporter`, which reports each stage of the pipeline when `--debug` is on and is inert otherwise
 
 ### ESP32 Firmware
 
@@ -344,6 +390,12 @@ hand-controller/
 - **Missing config.json**: Copy `config.example.json` to `config.json` and customize
 - **Invalid JSON**: Validate your config file format using a JSON validator
 - **Wrong ESP32 IP**: Check ESP32 serial output for actual IP address
+
+### Gestures Detected but Nothing Happens
+
+Run `make debug` and read the `gate:` line first — the most common cause is that
+only one hand is usable, which forces both sides back to their defaults (STOP and
+DIRECTION_STRAIGHT). See [Debug Mode](#debug-mode) for the full output guide.
 
 ### Camera Not Working
 

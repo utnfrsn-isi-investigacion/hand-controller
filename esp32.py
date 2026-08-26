@@ -69,10 +69,12 @@ class TCPSender(Esp32):
         """Send an action, scheduling a reconnect if needed. Returns True if sent."""
         sock = self._sock
         if sock is None:
+            logger.debug("dropped %s: no connection", action)
             self.__schedule_reconnect()
             return False
         try:
             sock.sendall((action + "\n").encode("utf-8"))
+            logger.debug("sent %s", action)
             self.__drain_replies(sock)
             return True
         except OSError as e:
@@ -101,12 +103,23 @@ class TCPSender(Esp32):
 
         Operates on the socket the caller just sent on, not self._sock, which
         the background reconnect thread may swap concurrently.
+
+        At DEBUG level the replies are logged before being dropped: they are
+        the only positive proof that the firmware parsed a command, which is
+        what separates "the client is not sending" from "the wiring is wrong".
+        Round-trip latency means a reply usually belongs to an earlier send.
         """
+        verbose = logger.isEnabledFor(logging.DEBUG)
         sock.settimeout(0)
         try:
             while True:
-                if not sock.recv(4096):
+                data = sock.recv(4096)
+                if not data:
                     raise OSError("Connection closed by peer")
+                if verbose:
+                    for line in data.decode("utf-8", errors="replace").splitlines():
+                        if line.strip():
+                            logger.debug("firmware replied: %s", line.strip())
         except BlockingIOError:
             return  # no more pending data
         finally:
