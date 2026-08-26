@@ -182,7 +182,8 @@ Edit `config.json` to customize settings:
   - Example: At 30 FPS, buffer_size=10 smooths over about a third of a second
 - **refresh_interval**: Seconds between keepalive resends of the current action (default: 0.5)
   - Feeds the firmware's dead-man timeout (`COMMAND_TIMEOUT_MS`, default 2s): if the ESP32
-    stops receiving commands for that long, it stops the motors
+    stops receiving commands for that long, it stops the motors and drops the connection,
+    so the client reconnects instead of talking to a socket nobody is reading
   - Must stay well below the firmware timeout
 
 The handler uses a majority voting system across the buffer to determine the most consistent action, reducing noise and false detections in hand gesture recognition. Every action votes, STOP included, so `buffer_size` is what sets stop latency: flipping a saturated buffer takes about half the buffer in frames (~0.2s at the default 10 frames / 30 FPS). The fast paths that do not vote are the undetected-hand default (STOP) and the firmware's dead-man timeout.
