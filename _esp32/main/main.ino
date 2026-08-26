@@ -165,7 +165,6 @@ void loop() {
   if (client) {
     Serial.println("Client connected!");
     unsigned long lastCommandMs = millis();
-    bool failsafeActive = false;
     while (client.connected()) {
       ArduinoOTA.handle();
       if (client.available()) {
@@ -185,14 +184,19 @@ void loop() {
           client.println("Unknown command");
         }
         lastCommandMs = millis();
-        failsafeActive = false;
-      } else if (!failsafeActive && millis() - lastCommandMs > COMMAND_TIMEOUT_MS) {
-        // Dead-man switch: the client resends the current action periodically,
-        // so a silent connection means it is gone (crash, sleep, WiFi drop).
-        failsafeStop();
-        failsafeActive = true;
+      } else if (millis() - lastCommandMs > COMMAND_TIMEOUT_MS) {
+        // Dead-man switch: the client resends the current action every
+        // refresh_interval, so silence this long means it is gone (crash,
+        // sleep, WiFi drop). Leave the loop rather than just stopping the
+        // motors: a half-open socket never reports !connected(), and while
+        // this loop runs tcpServer.accept() does not, so a reconnecting
+        // client would complete its TCP handshake and then be ignored
+        // forever -- connected and sending, with nothing responding.
+        Serial.println("Client silent past the dead-man timeout");
+        break;
       }
     }
+    // Covers both exits: clean disconnect and dead-man timeout
     client.stop();
     failsafeStop();
     Serial.println("Client disconnected.");
