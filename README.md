@@ -133,7 +133,9 @@ Edit `config.json` to customize settings:
     "min_detection_confidence": 0.5,
     "min_tracking_confidence": 0.5,
     "open_threshold_ratio": 0.6,    // Finger extension ratio for "open hand"
-    "index_orientation_threshold": 0.05  // X offset for left/right pointing
+    "index_orientation_threshold": 0.05, // X offset for left/right pointing
+    "pitch_up_threshold_deg": 60.0,  // At or below this, an open hand accelerates
+    "pitch_down_threshold_deg": 120.0 // At or above this, an open hand reverses
   },
   "display": {
     "show_overlays": true,          // Master toggle for all overlays
@@ -173,11 +175,24 @@ Edit `config.json` to customize settings:
 - **index_orientation_threshold**: How far (in normalized image coordinates) the index
   fingertip must deviate horizontally from its knuckle to count as pointing
   left/right instead of straight (default: 0.05). Lower = more sensitive steering.
+- **pitch_up_threshold_deg** / **pitch_down_threshold_deg**: Where the palm axis
+  (wrist to middle knuckle) has to point for an open left hand to accelerate or
+  reverse, measured in degrees away from straight up — 0 is fingers up, 90 is
+  horizontal, 180 is fingers down (defaults: 60 and 120). Anything between the
+  two is the neutral band and stops the car. Held poses measure close to 11
+  and 165 degrees, so the defaults leave roughly 45 degrees of margin on each
+  side; widen the band to make the forward/reverse interlock more reliable,
+  narrow it to make both gestures easier to reach.
 
 #### Handler Settings
 - **buffer_size**: Number of frames to buffer for action smoothing (default: 10)
   - Higher values = smoother transitions but slower response — including a slower stop
   - Lower values = faster response but more jittery
+  - It also sets how soft the forward/reverse interlock is. A hand rotating from
+    accelerate to reverse has to spend about a quarter of the buffer in the
+    neutral band for STOP to win the vote — 4 frames at the default, roughly
+    0.13s at 30 FPS. Flick faster than that and the car goes from ACCELERATE
+    straight to REVERSE with no STOP in between.
   - Recommended range: 8-20 frames
   - Example: At 30 FPS, buffer_size=10 smooths over about a third of a second
 - **refresh_interval**: Seconds between keepalive resends of the current action (default: 0.5)
@@ -216,8 +231,12 @@ The handler uses a majority voting system across the buffer to determine the mos
 
 The preview is mirrored (like a selfie camera), so gestures behave intuitively:
 
-- **Accelerate**: Open your **left** hand
-- **Stop**: Close your **left** hand into a fist
+- **Accelerate**: Open your **left** hand with the fingers pointing **up**
+- **Reverse**: Open your **left** hand with the fingers pointing **down**
+- **Stop**: Close your **left** hand into a fist, or hold it open and roughly
+  **horizontal** — that neutral band is what a hand crosses when rotating
+  between accelerate and reverse, so the car normally stops before it reverses
+  (see the note on `buffer_size` below for how reliably)
 - **Direction Left**: Point your **right** index finger to the left
 - **Direction Right**: Point your **right** index finger to the right
 - **Direction Straight**: Point your **right** index finger up

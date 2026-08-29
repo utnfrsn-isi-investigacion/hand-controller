@@ -5,7 +5,7 @@ from enum import Enum
 from typing import Dict, Optional, List
 
 from esp32 import Esp32
-from hand import Hand, HandType, IndexOrientation
+from hand import Hand, HandType, IndexOrientation, PalmOrientation
 
 
 class Handler(abc.ABC):
@@ -79,6 +79,18 @@ class Handler(abc.ABC):
         return count / len(buffer)
 
     def _majority_action(self, hand: Hand) -> Optional[Enum]:
+        """Most common action in this hand's buffer, or None when it is empty.
+
+        This vote is also what carries the forward/reverse interlock, and it
+        only carries it so far. Starting from a buffer saturated with one
+        action, an intermediate action has to occupy enough of the buffer to
+        outvote both neighbours -- roughly a quarter of it, so ~4 frames at the
+        default buffer_size of 10 (~0.13s at 30 FPS). A hand flicked from
+        pointing up to pointing down faster than that yields ACCELERATE
+        followed directly by REVERSE, with no STOP in between. Enlarging the
+        NEUTRAL pitch band buys crossing frames; a hard interlock would need
+        explicit state here.
+        """
         hand_type = hand.get_hand_type()
         if hand_type not in self._action_buffers:
             return None
@@ -95,6 +107,7 @@ class Handler(abc.ABC):
 
 class CarAction(Enum):
     ACCELERATE = "001"
+    REVERSE = "010"
     STOP = "000"
     DIRECTION_LEFT = "101"
     DIRECTION_RIGHT = "110"
@@ -153,7 +166,20 @@ class CarHandler(Handler):
         hand_type = hand.get_hand_type()
 
         if hand_type == HandType.LEFT:
-            return CarAction.ACCELERATE if hand.is_open() else CarAction.STOP
+            # A closed hand is the fast, unambiguous stop; only an open hand
+            # steers the throttle, and then its pitch picks the direction.
+            if not hand.is_open():
+                return CarAction.STOP
+            orientation = hand.get_palm_orientation()
+            if orientation == PalmOrientation.UP:
+                return CarAction.ACCELERATE
+            elif orientation == PalmOrientation.DOWN:
+                return CarAction.REVERSE
+            else:
+                # Roughly horizontal: the neutral band a hand crosses on its way
+                # between ACCELERATE and REVERSE. This is a soft interlock, not a
+                # guarantee -- see the note on the majority vote in Handler.
+                return CarAction.STOP
 
         elif hand_type == HandType.RIGHT:
             orientation = hand.get_index_orientation()

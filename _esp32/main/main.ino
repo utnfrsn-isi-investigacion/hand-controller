@@ -43,6 +43,16 @@ void accelerate(WiFiClient& client) {
   client.println("ACCELERATE (LED ON)");
 }
 
+void reverse(WiFiClient& client) {
+  digitalWrite(LED_PIN, HIGH);
+  // Drop the opposing pin before raising the other, so the H-bridge is never
+  // briefly driven on both sides. Levels come from config.h -- read the
+  // warning there before trusting this on real hardware.
+  digitalWrite(MOTOR_PIN_A, MOTOR_REVERSE_LEVEL_A);
+  digitalWrite(MOTOR_PIN_B, MOTOR_REVERSE_LEVEL_B);
+  client.println("REVERSE (LED ON)");
+}
+
 void stopAction(WiFiClient& client) {
   applyStop();
   client.println("STOP (LED OFF)");
@@ -68,6 +78,7 @@ void directionStraight(WiFiClient& client) {
 // Action mapping table
 Action actions[] = {
   {ACTION_ACCELERATE, accelerate},
+  {ACTION_REVERSE, reverse},
   {ACTION_STOP, stopAction},
   {ACTION_LEFT, directionLeft},
   {ACTION_RIGHT, directionRight},

@@ -7,7 +7,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from handlers import CarHandler, CarAction  # noqa: E402
-from hand import Hand, HandType, IndexOrientation  # noqa: E402
+from hand import Hand, HandType, IndexOrientation, PalmOrientation  # noqa: E402
 
 
 class TestCarHandler(unittest.TestCase):
@@ -19,13 +19,28 @@ class TestCarHandler(unittest.TestCase):
         # Large refresh interval so tests only observe change-driven sends
         self.handler = CarHandler(self.mock_esp32, refresh_interval=3600)
 
-    def create_mock_hand(self, hand_type, is_open, orientation):
-        """Helper to create a mock Hand object with specific properties."""
+    def create_mock_hand(self, hand_type, is_open, orientation, palm=PalmOrientation.UP):
+        """Helper to create a mock Hand object with specific properties.
+
+        The palm orientation defaults to UP so an open left hand accelerates,
+        which is what most of these tests mean by "open".
+        """
         mock_hand = Mock(spec=Hand)
         mock_hand.get_hand_type.return_value = hand_type
         mock_hand.is_open.return_value = is_open
         mock_hand.get_index_orientation.return_value = orientation
+        mock_hand.get_palm_orientation.return_value = palm
         return mock_hand
+
+    def _left(self, palm):
+        """An open left hand with the given palm orientation."""
+        return self.create_mock_hand(HandType.LEFT, is_open=True,
+                                     orientation=IndexOrientation.STRAIGHT, palm=palm)
+
+    def _right(self):
+        """A right hand pointing straight ahead."""
+        return self.create_mock_hand(HandType.RIGHT, is_open=True,
+                                     orientation=IndexOrientation.STRAIGHT)
 
     def test_left_hand_accelerate(self):
         """Test that an open left hand triggers ACCELERATE."""
@@ -45,6 +60,76 @@ class TestCarHandler(unittest.TestCase):
         self.mock_esp32.send_action.assert_any_call(CarAction.STOP.value)
         self.mock_esp32.send_action.assert_any_call(CarAction.DIRECTION_STRAIGHT.value)
         self.assertEqual(self.mock_esp32.send_action.call_count, 2)
+
+    def test_left_hand_reverse(self):
+        """An open left hand pointing down triggers REVERSE."""
+        self.handler.process_hands([self._left(PalmOrientation.DOWN), self._right()])
+        self.mock_esp32.send_action.assert_any_call(CarAction.REVERSE.value)
+        self.mock_esp32.send_action.assert_any_call(CarAction.DIRECTION_STRAIGHT.value)
+        self.assertEqual(self.mock_esp32.send_action.call_count, 2)
+
+    def test_left_hand_neutral_pitch_stops(self):
+        """A roughly horizontal open left hand lands in the dead band and stops."""
+        self.handler.process_hands([self._left(PalmOrientation.NEUTRAL), self._right()])
+        self.mock_esp32.send_action.assert_any_call(CarAction.STOP.value)
+        self.assertNotIn(
+            ((CarAction.ACCELERATE.value,),),
+            [(c.args,) for c in self.mock_esp32.send_action.call_args_list])
+
+    def test_closed_hand_stops_regardless_of_pitch(self):
+        """The fist fast-path wins over palm orientation, pointing down included."""
+        for palm in (PalmOrientation.UP, PalmOrientation.DOWN, PalmOrientation.NEUTRAL):
+            with self.subTest(palm=palm):
+                handler = CarHandler(self.mock_esp32, refresh_interval=3600)
+                closed = self.create_mock_hand(HandType.LEFT, is_open=False,
+                                               orientation=IndexOrientation.STRAIGHT, palm=palm)
+                actions = handler.process_hands([closed, self._right()])
+                self.assertEqual(actions[HandType.LEFT], CarAction.STOP)
+
+    def _rotate_down(self, neutral_frames, buffer_size=10):
+        """Saturate the buffer with ACCELERATE, then rotate down through NEUTRAL.
+
+        Returns the actions emitted while crossing and settling.
+        """
+        handler = CarHandler(self.mock_esp32, buffer_size=buffer_size, refresh_interval=3600)
+        right = self._right()
+        for _ in range(buffer_size):
+            handler.process_hands([self._left(PalmOrientation.UP), right])
+        self.assertEqual(handler.get_action(self._left(PalmOrientation.UP)), CarAction.ACCELERATE)
+
+        palms = [PalmOrientation.NEUTRAL] * neutral_frames + [PalmOrientation.DOWN] * 12
+        return [handler.process_hands([self._left(p), right])[HandType.LEFT] for p in palms]
+
+    def test_unhurried_rotation_stops_before_reversing(self):
+        """A hand that dwells in the neutral band stops before REVERSE takes over."""
+        seen = self._rotate_down(neutral_frames=6)
+        self.assertIn(CarAction.STOP, seen)
+        self.assertEqual(seen[-1], CarAction.REVERSE)
+        self.assertLess(seen.index(CarAction.STOP), seen.index(CarAction.REVERSE))
+
+    def test_neutral_band_interlock_needs_a_quarter_of_the_buffer(self):
+        """Pins how soft the forward/reverse interlock actually is.
+
+        STOP only reaches the wire if the neutral crossing outvotes both
+        neighbours in the buffer, which takes a quarter of it -- 4 frames at
+        the default size of 10. This is a documented limitation, not a
+        guarantee: a faster flick emits ACCELERATE then REVERSE back to back,
+        which is exactly what a hard interlock would have to prevent.
+        """
+        for neutral_frames in (0, 1, 2, 3):
+            with self.subTest(neutral_frames=neutral_frames, expected="no stop"):
+                self.assertNotIn(CarAction.STOP, self._rotate_down(neutral_frames))
+
+        for neutral_frames in (4, 5, 6):
+            with self.subTest(neutral_frames=neutral_frames, expected="stops"):
+                self.assertIn(CarAction.STOP, self._rotate_down(neutral_frames))
+
+    def test_interlock_threshold_scales_with_buffer_size(self):
+        """The frames needed to force a STOP track buffer_size, not a constant."""
+        # 4 neutral frames are enough at the default size but not at 20
+        self.assertIn(CarAction.STOP, self._rotate_down(4, buffer_size=10))
+        self.assertNotIn(CarAction.STOP, self._rotate_down(4, buffer_size=20))
+        self.assertIn(CarAction.STOP, self._rotate_down(8, buffer_size=20))
 
     def test_right_hand_direction_right(self):
         """Test right hand direction controls: RIGHT orientation."""

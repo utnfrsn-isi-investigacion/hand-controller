@@ -1,3 +1,4 @@
+import math
 import unittest
 from unittest.mock import Mock
 import sys
@@ -6,7 +7,7 @@ import os
 # Add the root directory to the Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from hand import Hand, HandType, IndexOrientation  # noqa: E402
+from hand import Hand, HandType, IndexOrientation, PalmOrientation  # noqa: E402
 import mediapipe as mp  # noqa: E402
 
 mp_hands = mp.solutions.hands  # type: ignore[attr-defined]
@@ -141,6 +142,83 @@ class TestHand(unittest.TestCase):
         landmarks_data[mp_hands.HandLandmark.INDEX_FINGER_MCP] = (0.4, 0.5, 0.0)
         hand_pointing_straight = self.create_mock_hand(landmarks_data)
         self.assertEqual(hand_pointing_straight.get_index_orientation(), IndexOrientation.STRAIGHT)
+
+    def _palm_hand(self, wrist, knuckle, **kwargs):
+        """A hand whose palm axis runs from wrist to middle knuckle."""
+        landmarks_data = [(0.0, 0.0, 0.0)] * 21
+        landmarks_data[mp_hands.HandLandmark.WRIST] = wrist
+        landmarks_data[mp_hands.HandLandmark.MIDDLE_FINGER_MCP] = knuckle
+        hand = self.create_mock_hand(landmarks_data)
+        if kwargs:
+            return Hand(handedness=hand.handedness, landmarks=hand.landmarks, **kwargs)
+        return hand
+
+    def test_get_palm_pitch(self):
+        """Pitch is 0 with the fingers up, 90 horizontal, 180 pointing down."""
+        # Fingers up: the knuckle sits above the wrist (smaller y)
+        up = self._palm_hand((0.5, 0.8, 0.0), (0.5, 0.6, 0.0))
+        self.assertAlmostEqual(up.get_palm_pitch(), 0.0, places=4)
+
+        # Horizontal: knuckle level with the wrist
+        flat = self._palm_hand((0.4, 0.5, 0.0), (0.6, 0.5, 0.0))
+        self.assertAlmostEqual(flat.get_palm_pitch(), 90.0, places=4)
+
+        # Fingers down: the knuckle sits below the wrist (larger y)
+        down = self._palm_hand((0.5, 0.4, 0.0), (0.5, 0.6, 0.0))
+        self.assertAlmostEqual(down.get_palm_pitch(), 180.0, places=4)
+
+        # Halfway between up and horizontal
+        diagonal = self._palm_hand((0.4, 0.6, 0.0), (0.5, 0.5, 0.0))
+        self.assertAlmostEqual(diagonal.get_palm_pitch(), 45.0, places=4)
+
+    def test_get_palm_pitch_ignores_horizontal_direction(self):
+        """Tilting the same amount inward or outward gives the same pitch.
+
+        The x component is taken as an absolute value, so the measure survives
+        the frame mirroring and works for either hand.
+        """
+        tilted_right = self._palm_hand((0.4, 0.6, 0.0), (0.5, 0.5, 0.0))
+        tilted_left = self._palm_hand((0.4, 0.6, 0.0), (0.3, 0.5, 0.0))
+        self.assertAlmostEqual(tilted_right.get_palm_pitch(), tilted_left.get_palm_pitch(), places=4)
+
+    def test_get_palm_orientation(self):
+        """The three bands map to UP, NEUTRAL and DOWN."""
+        up = self._palm_hand((0.5, 0.8, 0.0), (0.5, 0.6, 0.0))
+        self.assertEqual(up.get_palm_orientation(), PalmOrientation.UP)
+
+        neutral = self._palm_hand((0.4, 0.5, 0.0), (0.6, 0.5, 0.0))
+        self.assertEqual(neutral.get_palm_orientation(), PalmOrientation.NEUTRAL)
+
+        down = self._palm_hand((0.5, 0.4, 0.0), (0.5, 0.6, 0.0))
+        self.assertEqual(down.get_palm_orientation(), PalmOrientation.DOWN)
+
+    def test_get_palm_orientation_respects_configured_thresholds(self):
+        """Constructor thresholds move the band edges; per-call values override them."""
+        # 45 degrees: UP by default, but NEUTRAL once the up threshold tightens
+        diagonal = self._palm_hand((0.4, 0.6, 0.0), (0.5, 0.5, 0.0))
+        self.assertEqual(diagonal.get_palm_orientation(), PalmOrientation.UP)
+
+        strict = self._palm_hand((0.4, 0.6, 0.0), (0.5, 0.5, 0.0),
+                                 pitch_up_threshold_deg=30.0, pitch_down_threshold_deg=120.0)
+        self.assertEqual(strict.get_palm_orientation(), PalmOrientation.NEUTRAL)
+
+        # A per-call threshold overrides the configured one
+        self.assertEqual(strict.get_palm_orientation(up_threshold_deg=60.0), PalmOrientation.UP)
+
+    def test_measured_poses_land_in_the_right_bands(self):
+        """The angles recorded from real hands classify as intended.
+
+        Held poses measured ~11 degrees (open, upright) and ~165 degrees
+        (open, pointing down), against band edges at 60 and 120.
+        """
+        for pitch, expected in ((10.4, PalmOrientation.UP), (11.3, PalmOrientation.UP),
+                                (154.6, PalmOrientation.DOWN), (172.4, PalmOrientation.DOWN)):
+            with self.subTest(pitch=pitch):
+                radians = math.radians(pitch)
+                knuckle = (0.5 + 0.2 * math.sin(radians), 0.5 - 0.2 * math.cos(radians), 0.0)
+                hand = self._palm_hand((0.5, 0.5, 0.0), knuckle)
+                self.assertAlmostEqual(hand.get_palm_pitch(), pitch, places=3)
+                self.assertEqual(hand.get_palm_orientation(), expected)
 
 
 if __name__ == '__main__':

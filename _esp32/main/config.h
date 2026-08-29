@@ -37,6 +37,18 @@ const int MOTOR_PIN_B = 17;  // Motor control B
 const int MOTOR_STOP_LEVEL_A = LOW;
 const int MOTOR_STOP_LEVEL_B = HIGH;
 
+// Pin levels that drive the motor backwards (used by REVERSE).
+// !! UNVERIFIED AND CURRENTLY IDENTICAL TO THE STOP LEVELS ABOVE !!
+// On a plain IN1/IN2 H-bridge, reverse is the inverse of ACCELERATE
+// (which drives A=HIGH/B=LOW), i.e. A=LOW/B=HIGH -- the very levels this
+// firmware uses for "stop". Both cannot be right: if the wiring really is
+// a plain L298N then today's STOP is already driving the car backwards,
+// and REVERSE will be indistinguishable from it. Resolve the wiring first
+// (see issue #22), then set STOP to coast (LOW/LOW) or brake (HIGH/HIGH)
+// and leave these as the reverse pair.
+const int MOTOR_REVERSE_LEVEL_A = LOW;
+const int MOTOR_REVERSE_LEVEL_B = HIGH;
+
 // Direction control pins
 const int DIRECTION_PIN_LEFT = 4;   // Direction left control
 const int DIRECTION_PIN_RIGHT = 5;  // Direction right control
@@ -49,6 +61,7 @@ const unsigned long SERIAL_BAUD = 115200;
 //////////////////////
 // Command codes received from the client
 const char* ACTION_ACCELERATE = "001";
+const char* ACTION_REVERSE = "010";
 const char* ACTION_STOP = "000";
 const char* ACTION_LEFT = "101";
 const char* ACTION_RIGHT = "110";

@@ -26,6 +26,7 @@ _FPS_COLOR = (255, 255, 0)
 # their raw member name.
 _ACTION_LABELS = {
     "ACCELERATE": "ACELERAR",
+    "REVERSE": "RETROCEDER",
     "STOP": "DETENER",
     "DIRECTION_LEFT": "IZQUIERDA",
     "DIRECTION_RIGHT": "DERECHA",

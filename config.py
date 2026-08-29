@@ -42,6 +42,15 @@ class HandDetectionConfig:
     # Horizontal tip-to-knuckle offset (normalized image coords) beyond which
     # the index finger counts as pointing left/right instead of straight.
     index_orientation_threshold: float = 0.05
+    # Palm-axis angle away from straight up, in degrees (0 = fingers up,
+    # 90 = horizontal, 180 = fingers down). An open hand at or below the first
+    # value accelerates, at or above the second it reverses, and in between it
+    # stops. Measured poses sit near 11 (up) and 165 (down), so these leave
+    # ~45 degrees of margin on each side. Widening the neutral band makes the
+    # forward/reverse interlock more reliable (see Handler._majority_action);
+    # narrowing it makes a fast flick more likely to skip STOP entirely.
+    pitch_up_threshold_deg: float = 60.0
+    pitch_down_threshold_deg: float = 120.0
 
 
 @dataclass

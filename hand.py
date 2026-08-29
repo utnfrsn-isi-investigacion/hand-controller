@@ -28,15 +28,25 @@ class IndexOrientation(Enum):
     STRAIGHT = "Straight"
 
 
+class PalmOrientation(Enum):
+    """Which way an open hand points, along the wrist-to-knuckles palm axis."""
+    UP = "Up"
+    DOWN = "Down"
+    NEUTRAL = "Neutral"
+
+
 class Hand:
     """Represents a single detected hand and its properties."""
 
     def __init__(self, handedness: Handedness, landmarks: HandLandmarkList,
-                 open_threshold_ratio: float = 0.6, index_orientation_threshold: float = 0.05):
+                 open_threshold_ratio: float = 0.6, index_orientation_threshold: float = 0.05,
+                 pitch_up_threshold_deg: float = 60.0, pitch_down_threshold_deg: float = 120.0):
         self.handedness = handedness
         self.landmarks = landmarks
         self._open_threshold_ratio = open_threshold_ratio
         self._index_orientation_threshold = index_orientation_threshold
+        self._pitch_up_threshold_deg = pitch_up_threshold_deg
+        self._pitch_down_threshold_deg = pitch_down_threshold_deg
         self._hand_size_cache: Optional[float] = None
 
     @staticmethod
@@ -126,13 +136,55 @@ class Hand:
         else:
             return IndexOrientation.STRAIGHT
 
+    def get_palm_pitch(self) -> float:
+        """Angle of the palm axis away from straight up, in degrees (0..180).
+
+        Measured on the wrist -> middle knuckle vector, the same one is_open()
+        uses as its size baseline: 0 means the fingers point up, 90 means the
+        hand is horizontal, 180 means the fingers point down.
+
+        The horizontal component is taken as an absolute value, so the result
+        is unaffected by the frame mirroring and by whether the hand is tilted
+        inward or outward.
+        """
+        if not self.landmarks:
+            raise ValueError("Hand landmarks not available.")
+
+        wrist = self.landmarks.landmark[mp_hands.HandLandmark.WRIST]
+        knuckle = self.landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_MCP]
+        # Image y grows downward, so negate it to make "up" positive.
+        return math.degrees(math.atan2(abs(knuckle.x - wrist.x), -(knuckle.y - wrist.y)))
+
+    def get_palm_orientation(self, up_threshold_deg: Optional[float] = None,
+                             down_threshold_deg: Optional[float] = None) -> PalmOrientation:
+        """Classify the palm axis as pointing UP, DOWN, or NEUTRAL.
+
+        The NEUTRAL band between the two thresholds is deliberate: a hand
+        rotating between up and down has to pass through it, which gives the
+        handler a chance to stop the car before reversing it. How reliably it
+        does so depends on the majority vote, not on this band alone -- see
+        Handler._majority_action.
+        """
+        if up_threshold_deg is None:
+            up_threshold_deg = self._pitch_up_threshold_deg
+        if down_threshold_deg is None:
+            down_threshold_deg = self._pitch_down_threshold_deg
+
+        pitch = self.get_palm_pitch()
+        if pitch <= up_threshold_deg:
+            return PalmOrientation.UP
+        if pitch >= down_threshold_deg:
+            return PalmOrientation.DOWN
+        return PalmOrientation.NEUTRAL
+
 
 class HandProcessor:
     """Processes video frames to detect and analyze hand gestures."""
 
     def __init__(self, min_detection_confidence: float = 0.5, min_tracking_confidence: float = 0.5,
                  max_hands: int = 2, open_threshold_ratio: float = 0.6,
-                 index_orientation_threshold: float = 0.05):
+                 index_orientation_threshold: float = 0.05,
+                 pitch_up_threshold_deg: float = 60.0, pitch_down_threshold_deg: float = 120.0):
         self.hands_engine = mp_hands.Hands(
             min_detection_confidence=min_detection_confidence,
             min_tracking_confidence=min_tracking_confidence,
@@ -140,6 +192,8 @@ class HandProcessor:
         )
         self._open_threshold_ratio = open_threshold_ratio
         self._index_orientation_threshold = index_orientation_threshold
+        self._pitch_up_threshold_deg = pitch_up_threshold_deg
+        self._pitch_down_threshold_deg = pitch_down_threshold_deg
 
     def process_frame(self, rgb_frame: Any) -> List[Hand]:
         """Processes a single RGB frame to find hands."""
@@ -152,7 +206,9 @@ class HandProcessor:
                     handedness=handedness,
                     landmarks=landmarks,
                     open_threshold_ratio=self._open_threshold_ratio,
-                    index_orientation_threshold=self._index_orientation_threshold
+                    index_orientation_threshold=self._index_orientation_threshold,
+                    pitch_up_threshold_deg=self._pitch_up_threshold_deg,
+                    pitch_down_threshold_deg=self._pitch_down_threshold_deg
                 ))
 
         return detected_hands
