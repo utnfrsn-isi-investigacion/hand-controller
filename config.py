@@ -42,15 +42,18 @@ class HandDetectionConfig:
     # Horizontal tip-to-knuckle offset (normalized image coords) beyond which
     # the index finger counts as pointing left/right instead of straight.
     index_orientation_threshold: float = 0.05
-    # Palm-axis angle away from straight up, in degrees (0 = fingers up,
-    # 90 = horizontal, 180 = fingers down). An open hand at or below the first
-    # value accelerates, at or above the second it reverses, and in between it
-    # stops. Measured poses sit near 11 (up) and 165 (down), so these leave
-    # ~45 degrees of margin on each side. Widening the neutral band makes the
-    # forward/reverse interlock more reliable (see Handler._majority_action);
-    # narrowing it makes a fast flick more likely to skip STOP entirely.
-    pitch_up_threshold_deg: float = 60.0
-    pitch_down_threshold_deg: float = 120.0
+    # Angle of the index-knuckle -> thumb-tip vector away from straight up, in
+    # degrees (0 = thumb up, 90 = sideways, 180 = thumb down). On a closed hand,
+    # at or below the first value accelerates, at or above the second reverses,
+    # and in between stops. Held poses measure ~33 (thumbs up), ~112 (plain
+    # fist) and ~158 (thumbs down), so these defaults centre the fist with
+    # roughly 23 degrees of margin either side. The neutral band is a real pose
+    # rather than something you sweep through, which is what makes it a usable
+    # resting state; widening it makes the forward/reverse interlock more
+    # reliable (see Handler._majority_action), narrowing it makes both drive
+    # gestures easier to reach.
+    thumb_up_threshold_deg: float = 70.0
+    thumb_down_threshold_deg: float = 135.0
 
 
 @dataclass

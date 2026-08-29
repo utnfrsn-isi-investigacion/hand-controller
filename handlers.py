@@ -5,7 +5,7 @@ from enum import Enum
 from typing import Dict, Optional, List
 
 from esp32 import Esp32
-from hand import Hand, HandType, IndexOrientation, PalmOrientation
+from hand import Hand, HandType, IndexOrientation, VerticalOrientation
 
 
 class Handler(abc.ABC):
@@ -88,7 +88,7 @@ class Handler(abc.ABC):
         default buffer_size of 10 (~0.13s at 30 FPS). A hand flicked from
         pointing up to pointing down faster than that yields ACCELERATE
         followed directly by REVERSE, with no STOP in between. Enlarging the
-        NEUTRAL pitch band buys crossing frames; a hard interlock would need
+        NEUTRAL thumb band buys crossing frames; a hard interlock would need
         explicit state here.
         """
         hand_type = hand.get_hand_type()
@@ -166,19 +166,19 @@ class CarHandler(Handler):
         hand_type = hand.get_hand_type()
 
         if hand_type == HandType.LEFT:
-            # A closed hand is the fast, unambiguous stop; only an open hand
-            # steers the throttle, and then its pitch picks the direction.
-            if not hand.is_open():
+            # An open palm is the fast, unambiguous stop. Driving takes a
+            # closed hand, and then the thumb picks the direction.
+            if hand.is_open():
                 return CarAction.STOP
-            orientation = hand.get_palm_orientation()
-            if orientation == PalmOrientation.UP:
+            orientation = hand.get_thumb_orientation()
+            if orientation == VerticalOrientation.UP:
                 return CarAction.ACCELERATE
-            elif orientation == PalmOrientation.DOWN:
+            elif orientation == VerticalOrientation.DOWN:
                 return CarAction.REVERSE
             else:
-                # Roughly horizontal: the neutral band a hand crosses on its way
-                # between ACCELERATE and REVERSE. This is a soft interlock, not a
-                # guarantee -- see the note on the majority vote in Handler.
+                # Thumb sideways, i.e. a plain fist: the neutral pose a thumb
+                # crosses on its way between ACCELERATE and REVERSE. A soft
+                # interlock, not a guarantee -- see Handler._majority_action.
                 return CarAction.STOP
 
         elif hand_type == HandType.RIGHT:

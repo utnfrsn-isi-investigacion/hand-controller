@@ -34,8 +34,8 @@ def main() -> None:
         max_hands=config.hand_detection.max_hands,
         open_threshold_ratio=config.hand_detection.open_threshold_ratio,
         index_orientation_threshold=config.hand_detection.index_orientation_threshold,
-        pitch_up_threshold_deg=config.hand_detection.pitch_up_threshold_deg,
-        pitch_down_threshold_deg=config.hand_detection.pitch_down_threshold_deg
+        thumb_up_threshold_deg=config.hand_detection.thumb_up_threshold_deg,
+        thumb_down_threshold_deg=config.hand_detection.thumb_down_threshold_deg
     )
 
     # Initialize ESP32 client with config

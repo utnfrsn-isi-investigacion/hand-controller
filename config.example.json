@@ -15,8 +15,8 @@
     "min_tracking_confidence": 0.5,
     "open_threshold_ratio": 0.6,
     "index_orientation_threshold": 0.05,
-    "pitch_up_threshold_deg": 60.0,
-    "pitch_down_threshold_deg": 120.0
+    "thumb_up_threshold_deg": 70.0,
+    "thumb_down_threshold_deg": 135.0
   },
   "display": {
     "show_overlays": true,

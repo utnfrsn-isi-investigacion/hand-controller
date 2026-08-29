@@ -7,7 +7,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from handlers import CarHandler, CarAction  # noqa: E402
-from hand import Hand, HandType, IndexOrientation, PalmOrientation  # noqa: E402
+from hand import Hand, HandType, IndexOrientation, VerticalOrientation  # noqa: E402
 
 
 class TestCarHandler(unittest.TestCase):
@@ -19,23 +19,22 @@ class TestCarHandler(unittest.TestCase):
         # Large refresh interval so tests only observe change-driven sends
         self.handler = CarHandler(self.mock_esp32, refresh_interval=3600)
 
-    def create_mock_hand(self, hand_type, is_open, orientation, palm=PalmOrientation.UP):
+    def create_mock_hand(self, hand_type, is_open, orientation, thumb=VerticalOrientation.UP):
         """Helper to create a mock Hand object with specific properties.
 
-        The palm orientation defaults to UP so an open left hand accelerates,
-        which is what most of these tests mean by "open".
+        The thumb orientation defaults to UP, so a closed left hand accelerates.
         """
         mock_hand = Mock(spec=Hand)
         mock_hand.get_hand_type.return_value = hand_type
         mock_hand.is_open.return_value = is_open
         mock_hand.get_index_orientation.return_value = orientation
-        mock_hand.get_palm_orientation.return_value = palm
+        mock_hand.get_thumb_orientation.return_value = thumb
         return mock_hand
 
-    def _left(self, palm):
-        """An open left hand with the given palm orientation."""
-        return self.create_mock_hand(HandType.LEFT, is_open=True,
-                                     orientation=IndexOrientation.STRAIGHT, palm=palm)
+    def _left(self, thumb):
+        """A closed left hand with the given thumb orientation."""
+        return self.create_mock_hand(HandType.LEFT, is_open=False,
+                                     orientation=IndexOrientation.STRAIGHT, thumb=thumb)
 
     def _right(self):
         """A right hand pointing straight ahead."""
@@ -43,48 +42,54 @@ class TestCarHandler(unittest.TestCase):
                                      orientation=IndexOrientation.STRAIGHT)
 
     def test_left_hand_accelerate(self):
-        """Test that an open left hand triggers ACCELERATE."""
-        left_hand_open = self.create_mock_hand(HandType.LEFT, is_open=True, orientation=IndexOrientation.STRAIGHT)
+        """Test that a left thumbs-up triggers ACCELERATE."""
+        left_accelerate = self.create_mock_hand(HandType.LEFT, is_open=False, orientation=IndexOrientation.STRAIGHT)
         right_hand = self.create_mock_hand(HandType.RIGHT, is_open=True, orientation=IndexOrientation.STRAIGHT)
-        self.handler.process_hands([left_hand_open, right_hand])
+        self.handler.process_hands([left_accelerate, right_hand])
         # It should send ACCELERATE for the left hand and STRAIGHT for the right hand
         self.mock_esp32.send_action.assert_any_call(CarAction.ACCELERATE.value)
         self.mock_esp32.send_action.assert_any_call(CarAction.DIRECTION_STRAIGHT.value)
         self.assertEqual(self.mock_esp32.send_action.call_count, 2)
 
     def test_left_hand_stop(self):
-        """Test that a closed left hand triggers STOP."""
-        left_hand_closed = self.create_mock_hand(HandType.LEFT, is_open=False, orientation=IndexOrientation.STRAIGHT)
+        """Test that an open left palm triggers STOP."""
+        left_stop = self.create_mock_hand(HandType.LEFT, is_open=True, orientation=IndexOrientation.STRAIGHT)
         right_hand = self.create_mock_hand(HandType.RIGHT, is_open=False, orientation=IndexOrientation.STRAIGHT)
-        self.handler.process_hands([left_hand_closed, right_hand])
+        self.handler.process_hands([left_stop, right_hand])
         self.mock_esp32.send_action.assert_any_call(CarAction.STOP.value)
         self.mock_esp32.send_action.assert_any_call(CarAction.DIRECTION_STRAIGHT.value)
         self.assertEqual(self.mock_esp32.send_action.call_count, 2)
 
     def test_left_hand_reverse(self):
-        """An open left hand pointing down triggers REVERSE."""
-        self.handler.process_hands([self._left(PalmOrientation.DOWN), self._right()])
+        """A left thumbs-down triggers REVERSE."""
+        self.handler.process_hands([self._left(VerticalOrientation.DOWN), self._right()])
         self.mock_esp32.send_action.assert_any_call(CarAction.REVERSE.value)
         self.mock_esp32.send_action.assert_any_call(CarAction.DIRECTION_STRAIGHT.value)
         self.assertEqual(self.mock_esp32.send_action.call_count, 2)
 
-    def test_left_hand_neutral_pitch_stops(self):
-        """A roughly horizontal open left hand lands in the dead band and stops."""
-        self.handler.process_hands([self._left(PalmOrientation.NEUTRAL), self._right()])
+    def test_left_hand_neutral_thumb_stops(self):
+        """A sideways thumb lands in the dead band and stops."""
+        self.handler.process_hands([self._left(VerticalOrientation.NEUTRAL), self._right()])
         self.mock_esp32.send_action.assert_any_call(CarAction.STOP.value)
         self.assertNotIn(
             ((CarAction.ACCELERATE.value,),),
             [(c.args,) for c in self.mock_esp32.send_action.call_args_list])
 
-    def test_closed_hand_stops_regardless_of_pitch(self):
-        """The fist fast-path wins over palm orientation, pointing down included."""
-        for palm in (PalmOrientation.UP, PalmOrientation.DOWN, PalmOrientation.NEUTRAL):
-            with self.subTest(palm=palm):
+    def test_open_palm_stops_regardless_of_thumb(self):
+        """The open-palm fast path wins over thumb orientation, thumb down included."""
+        for thumb in (VerticalOrientation.UP, VerticalOrientation.DOWN, VerticalOrientation.NEUTRAL):
+            with self.subTest(thumb=thumb):
                 handler = CarHandler(self.mock_esp32, refresh_interval=3600)
-                closed = self.create_mock_hand(HandType.LEFT, is_open=False,
-                                               orientation=IndexOrientation.STRAIGHT, palm=palm)
-                actions = handler.process_hands([closed, self._right()])
+                palm = self.create_mock_hand(HandType.LEFT, is_open=True,
+                                             orientation=IndexOrientation.STRAIGHT, thumb=thumb)
+                actions = handler.process_hands([palm, self._right()])
                 self.assertEqual(actions[HandType.LEFT], CarAction.STOP)
+
+    def test_plain_fist_stops(self):
+        """A closed hand with the thumb sideways is the neutral pose and stops."""
+        actions = self.handler.process_hands(
+            [self._left(VerticalOrientation.NEUTRAL), self._right()])
+        self.assertEqual(actions[HandType.LEFT], CarAction.STOP)
 
     def _rotate_down(self, neutral_frames, buffer_size=10):
         """Saturate the buffer with ACCELERATE, then rotate down through NEUTRAL.
@@ -94,10 +99,10 @@ class TestCarHandler(unittest.TestCase):
         handler = CarHandler(self.mock_esp32, buffer_size=buffer_size, refresh_interval=3600)
         right = self._right()
         for _ in range(buffer_size):
-            handler.process_hands([self._left(PalmOrientation.UP), right])
-        self.assertEqual(handler.get_action(self._left(PalmOrientation.UP)), CarAction.ACCELERATE)
+            handler.process_hands([self._left(VerticalOrientation.UP), right])
+        self.assertEqual(handler.get_action(self._left(VerticalOrientation.UP)), CarAction.ACCELERATE)
 
-        palms = [PalmOrientation.NEUTRAL] * neutral_frames + [PalmOrientation.DOWN] * 12
+        palms = [VerticalOrientation.NEUTRAL] * neutral_frames + [VerticalOrientation.DOWN] * 12
         return [handler.process_hands([self._left(p), right])[HandType.LEFT] for p in palms]
 
     def test_unhurried_rotation_stops_before_reversing(self):
@@ -134,7 +139,7 @@ class TestCarHandler(unittest.TestCase):
     def test_right_hand_direction_right(self):
         """Test right hand direction controls: RIGHT orientation."""
         right_hand_right = self.create_mock_hand(HandType.RIGHT, is_open=True, orientation=IndexOrientation.RIGHT)
-        left_hand = self.create_mock_hand(HandType.LEFT, is_open=False, orientation=IndexOrientation.LEFT)
+        left_hand = self.create_mock_hand(HandType.LEFT, is_open=True, orientation=IndexOrientation.LEFT)
         self.handler.process_hands([right_hand_right, left_hand])
         self.mock_esp32.send_action.assert_any_call(CarAction.STOP.value)
         self.mock_esp32.send_action.assert_any_call(CarAction.DIRECTION_RIGHT.value)
@@ -142,7 +147,7 @@ class TestCarHandler(unittest.TestCase):
     def test_right_hand_direction_left(self):
         """Test right hand direction controls: LEFT orientation."""
         right_hand_left = self.create_mock_hand(HandType.RIGHT, is_open=True, orientation=IndexOrientation.LEFT)
-        left_hand = self.create_mock_hand(HandType.LEFT, is_open=False, orientation=IndexOrientation.LEFT)
+        left_hand = self.create_mock_hand(HandType.LEFT, is_open=True, orientation=IndexOrientation.LEFT)
         self.handler.process_hands([right_hand_left, left_hand])
         self.mock_esp32.send_action.assert_any_call(CarAction.STOP.value)
         self.mock_esp32.send_action.assert_any_call(CarAction.DIRECTION_LEFT.value)
@@ -156,16 +161,16 @@ class TestCarHandler(unittest.TestCase):
 
     def test_process_hands_returns_actions(self):
         """Test that process_hands returns the actions it determined."""
-        left_hand_open = self.create_mock_hand(HandType.LEFT, is_open=True, orientation=IndexOrientation.STRAIGHT)
+        left_accelerate = self.create_mock_hand(HandType.LEFT, is_open=False, orientation=IndexOrientation.STRAIGHT)
         right_hand_right = self.create_mock_hand(HandType.RIGHT, is_open=True, orientation=IndexOrientation.RIGHT)
-        actions = self.handler.process_hands([left_hand_open, right_hand_right])
+        actions = self.handler.process_hands([left_accelerate, right_hand_right])
         self.assertEqual(actions[HandType.LEFT], CarAction.ACCELERATE)
         self.assertEqual(actions[HandType.RIGHT], CarAction.DIRECTION_RIGHT)
 
     def test_single_hand_uses_defaults_and_keeps_buffers_clean(self):
         """Test that with only one hand detected, defaults are used and buffers stay empty."""
-        left_hand_open = self.create_mock_hand(HandType.LEFT, is_open=True, orientation=IndexOrientation.STRAIGHT)
-        actions = self.handler.process_hands([left_hand_open])
+        left_accelerate = self.create_mock_hand(HandType.LEFT, is_open=False, orientation=IndexOrientation.STRAIGHT)
+        actions = self.handler.process_hands([left_accelerate])
         self.assertEqual(actions[HandType.LEFT], CarAction.STOP)
         self.assertEqual(actions[HandType.RIGHT], CarAction.DIRECTION_STRAIGHT)
         self.assertEqual(len(self.handler._action_buffers[HandType.LEFT]), 0)
@@ -173,63 +178,63 @@ class TestCarHandler(unittest.TestCase):
 
     def test_action_sent_only_once_when_unchanged(self):
         """Test that the same actions are not sent repeatedly."""
-        left_hand_open = self.create_mock_hand(HandType.LEFT, is_open=True, orientation=IndexOrientation.STRAIGHT)
+        left_accelerate = self.create_mock_hand(HandType.LEFT, is_open=False, orientation=IndexOrientation.STRAIGHT)
 
         # First call should send actions
-        self.handler.process_hands([left_hand_open])
+        self.handler.process_hands([left_accelerate])
         self.assertEqual(self.mock_esp32.send_action.call_count, 2)
 
         # Subsequent calls with the same state should not send more actions
-        self.handler.process_hands([left_hand_open])
-        self.handler.process_hands([left_hand_open])
+        self.handler.process_hands([left_accelerate])
+        self.handler.process_hands([left_accelerate])
         self.assertEqual(self.mock_esp32.send_action.call_count, 2)
 
     def test_unchanged_action_resent_after_refresh_interval(self):
         """Test the keepalive: unchanged actions are resent once the refresh interval elapses."""
         handler = CarHandler(self.mock_esp32, refresh_interval=0)
-        left_hand_open = self.create_mock_hand(HandType.LEFT, is_open=True, orientation=IndexOrientation.STRAIGHT)
+        left_accelerate = self.create_mock_hand(HandType.LEFT, is_open=False, orientation=IndexOrientation.STRAIGHT)
 
-        handler.process_hands([left_hand_open])
+        handler.process_hands([left_accelerate])
         self.assertEqual(self.mock_esp32.send_action.call_count, 2)
 
         # Same state, but refresh_interval=0 means every call resends
-        handler.process_hands([left_hand_open])
+        handler.process_hands([left_accelerate])
         self.assertEqual(self.mock_esp32.send_action.call_count, 4)
 
     def test_failed_send_is_retried_until_success(self):
         """Test that actions keep being attempted while sending fails."""
         self.mock_esp32.send_action.return_value = False
-        left_hand_open = self.create_mock_hand(HandType.LEFT, is_open=True, orientation=IndexOrientation.STRAIGHT)
+        left_accelerate = self.create_mock_hand(HandType.LEFT, is_open=False, orientation=IndexOrientation.STRAIGHT)
 
-        self.handler.process_hands([left_hand_open])
-        self.handler.process_hands([left_hand_open])
+        self.handler.process_hands([left_accelerate])
+        self.handler.process_hands([left_accelerate])
         # Failed sends are not recorded as "last action", so both frames retry
         self.assertEqual(self.mock_esp32.send_action.call_count, 4)
 
         # Once sending succeeds, the action is recorded and no longer resent
         self.mock_esp32.send_action.return_value = True
-        self.handler.process_hands([left_hand_open])
+        self.handler.process_hands([left_accelerate])
         self.assertEqual(self.mock_esp32.send_action.call_count, 6)
-        self.handler.process_hands([left_hand_open])
+        self.handler.process_hands([left_accelerate])
         self.assertEqual(self.mock_esp32.send_action.call_count, 6)
 
     def test_get_action_is_read_only(self):
         """Test that get_action does not modify the action buffers."""
-        left_hand_open = self.create_mock_hand(HandType.LEFT, is_open=True, orientation=IndexOrientation.STRAIGHT)
+        left_accelerate = self.create_mock_hand(HandType.LEFT, is_open=False, orientation=IndexOrientation.STRAIGHT)
 
-        action = self.handler.get_action(left_hand_open)
+        action = self.handler.get_action(left_accelerate)
 
         self.assertEqual(action, CarAction.ACCELERATE)
         self.assertEqual(len(self.handler._action_buffers[HandType.LEFT]), 0)
 
     def test_record_action_populates_buffer(self):
         """Test that _record_action adds actions to the buffer and returns the correct action."""
-        left_hand_open = self.create_mock_hand(HandType.LEFT, is_open=True, orientation=IndexOrientation.STRAIGHT)
+        left_accelerate = self.create_mock_hand(HandType.LEFT, is_open=False, orientation=IndexOrientation.STRAIGHT)
 
         # Initially buffer should be empty
         self.assertEqual(len(self.handler._action_buffers[HandType.LEFT]), 0)
 
-        action = self.handler._record_action(left_hand_open)
+        action = self.handler._record_action(left_accelerate)
 
         # Buffer should now have one element and action should be correct
         self.assertEqual(len(self.handler._action_buffers[HandType.LEFT]), 1)
@@ -245,44 +250,44 @@ class TestCarHandler(unittest.TestCase):
 
     def test_stop_is_smoothed_like_any_other_action(self):
         """STOP gets no special treatment: it must win the majority vote to take effect."""
-        left_hand_open = self.create_mock_hand(HandType.LEFT, is_open=True, orientation=IndexOrientation.STRAIGHT)
-        left_hand_closed = self.create_mock_hand(HandType.LEFT, is_open=False, orientation=IndexOrientation.STRAIGHT)
+        left_accelerate = self.create_mock_hand(HandType.LEFT, is_open=False, orientation=IndexOrientation.STRAIGHT)
+        left_stop = self.create_mock_hand(HandType.LEFT, is_open=True, orientation=IndexOrientation.STRAIGHT)
 
         # Fill the buffer with ACCELERATE
         for _ in range(10):
-            self.handler._record_action(left_hand_open)
+            self.handler._record_action(left_accelerate)
 
         # A single closed-hand frame is outvoted by the ACCELERATE majority
-        self.assertEqual(self.handler._record_action(left_hand_closed), CarAction.ACCELERATE)
+        self.assertEqual(self.handler._record_action(left_stop), CarAction.ACCELERATE)
         # The read-only path agrees
-        self.assertEqual(self.handler.get_action(left_hand_closed), CarAction.ACCELERATE)
+        self.assertEqual(self.handler.get_action(left_stop), CarAction.ACCELERATE)
 
         # Once closed frames outnumber the open ones, STOP wins
         for _ in range(10):
-            self.handler._record_action(left_hand_closed)
-        self.assertEqual(self.handler._record_action(left_hand_closed), CarAction.STOP)
+            self.handler._record_action(left_stop)
+        self.assertEqual(self.handler._record_action(left_stop), CarAction.STOP)
 
     def test_accelerate_still_smoothed_by_majority(self):
         """One open frame can't override a STOP majority."""
-        left_hand_open = self.create_mock_hand(HandType.LEFT, is_open=True, orientation=IndexOrientation.STRAIGHT)
-        left_hand_closed = self.create_mock_hand(HandType.LEFT, is_open=False, orientation=IndexOrientation.STRAIGHT)
+        left_accelerate = self.create_mock_hand(HandType.LEFT, is_open=False, orientation=IndexOrientation.STRAIGHT)
+        left_stop = self.create_mock_hand(HandType.LEFT, is_open=True, orientation=IndexOrientation.STRAIGHT)
 
         # Fill the buffer with STOP
         for _ in range(10):
-            self.handler._record_action(left_hand_closed)
+            self.handler._record_action(left_stop)
 
         # A single open-hand frame is outvoted by the STOP majority
-        action = self.handler._record_action(left_hand_open)
+        action = self.handler._record_action(left_accelerate)
         self.assertEqual(action, CarAction.STOP)
 
     def test_buffer_respects_max_size(self):
         """Test that buffer doesn't exceed the specified max size."""
         handler = CarHandler(self.mock_esp32, buffer_size=5)
-        left_hand_open = self.create_mock_hand(HandType.LEFT, is_open=True, orientation=IndexOrientation.STRAIGHT)
+        left_accelerate = self.create_mock_hand(HandType.LEFT, is_open=False, orientation=IndexOrientation.STRAIGHT)
 
         # Add more actions than buffer size
         for _ in range(10):
-            handler._record_action(left_hand_open)
+            handler._record_action(left_accelerate)
 
         # Buffer should only contain buffer_size elements
         self.assertEqual(len(handler._action_buffers[HandType.LEFT]), 5)
@@ -290,29 +295,29 @@ class TestCarHandler(unittest.TestCase):
     def test_buffer_fifo_behavior(self):
         """Test that buffer uses FIFO (first in, first out) behavior."""
         handler = CarHandler(self.mock_esp32, buffer_size=3)
-        left_hand_open = self.create_mock_hand(HandType.LEFT, is_open=True, orientation=IndexOrientation.STRAIGHT)
-        left_hand_closed = self.create_mock_hand(HandType.LEFT, is_open=False, orientation=IndexOrientation.STRAIGHT)
+        left_accelerate = self.create_mock_hand(HandType.LEFT, is_open=False, orientation=IndexOrientation.STRAIGHT)
+        left_stop = self.create_mock_hand(HandType.LEFT, is_open=True, orientation=IndexOrientation.STRAIGHT)
 
         # Add 2 STOP actions
-        handler._record_action(left_hand_closed)
-        handler._record_action(left_hand_closed)
+        handler._record_action(left_stop)
+        handler._record_action(left_stop)
 
         # Add 3 ACCELERATE actions (should push out the STOP actions)
-        handler._record_action(left_hand_open)
-        handler._record_action(left_hand_open)
-        action = handler._record_action(left_hand_open)
+        handler._record_action(left_accelerate)
+        handler._record_action(left_accelerate)
+        action = handler._record_action(left_accelerate)
 
         # After buffer fills and old actions are pushed out, should return ACCELERATE
         self.assertEqual(action, CarAction.ACCELERATE)
 
     def test_separate_buffers_for_left_and_right_hands(self):
         """Test that left and right hands have separate buffers."""
-        left_hand_open = self.create_mock_hand(HandType.LEFT, is_open=True, orientation=IndexOrientation.STRAIGHT)
+        left_accelerate = self.create_mock_hand(HandType.LEFT, is_open=False, orientation=IndexOrientation.STRAIGHT)
         right_hand_right = self.create_mock_hand(HandType.RIGHT, is_open=True, orientation=IndexOrientation.RIGHT)
 
         # Add actions for both hands
-        self.handler._record_action(left_hand_open)
-        self.handler._record_action(left_hand_open)
+        self.handler._record_action(left_accelerate)
+        self.handler._record_action(left_accelerate)
         self.handler._record_action(right_hand_right)
 
         # Check buffers are independent
@@ -342,8 +347,8 @@ class TestCarHandler(unittest.TestCase):
 
     def test_action_confidence_reflects_buffer_share(self):
         """Test that get_action_confidence returns the winning action's buffer share."""
-        left_hand_open = self.create_mock_hand(HandType.LEFT, is_open=True, orientation=IndexOrientation.STRAIGHT)
-        left_hand_closed = self.create_mock_hand(HandType.LEFT, is_open=False, orientation=IndexOrientation.STRAIGHT)
+        left_accelerate = self.create_mock_hand(HandType.LEFT, is_open=False, orientation=IndexOrientation.STRAIGHT)
+        left_stop = self.create_mock_hand(HandType.LEFT, is_open=True, orientation=IndexOrientation.STRAIGHT)
 
         # Empty buffer -> no confidence
         self.assertIsNone(self.handler.get_action_confidence(HandType.LEFT))
@@ -352,8 +357,8 @@ class TestCarHandler(unittest.TestCase):
 
         # 4 ACCELERATE + 1 STOP -> 80% confidence
         for _ in range(4):
-            self.handler._record_action(left_hand_open)
-        self.handler._record_action(left_hand_closed)
+            self.handler._record_action(left_accelerate)
+        self.handler._record_action(left_stop)
         self.assertEqual(self.handler.get_action_confidence(HandType.LEFT), 0.8)
 
     def test_right_hand_buffer_with_direction_changes(self):

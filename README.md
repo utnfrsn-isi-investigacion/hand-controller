@@ -134,8 +134,8 @@ Edit `config.json` to customize settings:
     "min_tracking_confidence": 0.5,
     "open_threshold_ratio": 0.6,    // Finger extension ratio for "open hand"
     "index_orientation_threshold": 0.05, // X offset for left/right pointing
-    "pitch_up_threshold_deg": 60.0,  // At or below this, an open hand accelerates
-    "pitch_down_threshold_deg": 120.0 // At or above this, an open hand reverses
+    "thumb_up_threshold_deg": 70.0,  // At or below this, a closed hand accelerates
+    "thumb_down_threshold_deg": 135.0 // At or above this, a closed hand reverses
   },
   "display": {
     "show_overlays": true,          // Master toggle for all overlays
@@ -175,14 +175,15 @@ Edit `config.json` to customize settings:
 - **index_orientation_threshold**: How far (in normalized image coordinates) the index
   fingertip must deviate horizontally from its knuckle to count as pointing
   left/right instead of straight (default: 0.05). Lower = more sensitive steering.
-- **pitch_up_threshold_deg** / **pitch_down_threshold_deg**: Where the palm axis
-  (wrist to middle knuckle) has to point for an open left hand to accelerate or
-  reverse, measured in degrees away from straight up — 0 is fingers up, 90 is
-  horizontal, 180 is fingers down (defaults: 60 and 120). Anything between the
-  two is the neutral band and stops the car. Held poses measure close to 11
-  and 165 degrees, so the defaults leave roughly 45 degrees of margin on each
-  side; widen the band to make the forward/reverse interlock more reliable,
-  narrow it to make both gestures easier to reach.
+- **thumb_up_threshold_deg** / **thumb_down_threshold_deg**: Where the thumb has
+  to point for a closed left hand to accelerate or reverse, measured as the angle
+  of the index-knuckle-to-thumb-tip vector away from straight up — 0 is thumb up,
+  90 is sideways, 180 is thumb down (defaults: 70 and 135). Anything between the
+  two is the neutral band and stops the car. Held poses measure about 33 degrees
+  (thumbs up), 112 (plain fist) and 158 (thumbs down), so the defaults centre the
+  fist with roughly 23 degrees of margin either side. Widen the band to make the
+  forward/reverse interlock more reliable, narrow it to make both drive gestures
+  easier to reach.
 
 #### Handler Settings
 - **buffer_size**: Number of frames to buffer for action smoothing (default: 10)
@@ -231,12 +232,13 @@ The handler uses a majority voting system across the buffer to determine the mos
 
 The preview is mirrored (like a selfie camera), so gestures behave intuitively:
 
-- **Accelerate**: Open your **left** hand with the fingers pointing **up**
-- **Reverse**: Open your **left** hand with the fingers pointing **down**
-- **Stop**: Close your **left** hand into a fist, or hold it open and roughly
-  **horizontal** — that neutral band is what a hand crosses when rotating
-  between accelerate and reverse, so the car normally stops before it reverses
-  (see the note on `buffer_size` below for how reliably)
+- **Accelerate**: **Left** hand closed, **thumbs up**
+- **Reverse**: **Left** hand closed, **thumbs down**
+- **Stop**: Open your **left** hand palm-out, or close it with the thumb
+  sideways (a plain fist). Anything the detector is unsure about stops the car,
+  and a thumb rotating between up and down has to cross the fist pose, so the
+  car normally stops before it reverses (see the note on `buffer_size` below
+  for how reliably)
 - **Direction Left**: Point your **right** index finger to the left
 - **Direction Right**: Point your **right** index finger to the right
 - **Direction Straight**: Point your **right** index finger up
