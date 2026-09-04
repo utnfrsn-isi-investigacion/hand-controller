@@ -998,21 +998,38 @@ footer.doc a:hover{ color:var(--data-ink); }
   <p class="small dim">Moraleja general: la tabla de verdad está en la hoja de datos de <em>tu</em> chip, y es media página. Vale la pena leerla una vez.</p>
 
   <h3>Qué escribe el firmware de este repositorio</h3>
-  <p>De <span class="mono">_esp32/main/config.h</span>: <code>MOTOR_PIN_A = 16</code> y <code>MOTOR_PIN_B = 17</code>. Suponiendo que van a IN1 e IN2:</p>
+  <p>De <span class="mono">_esp32/main/config.h</span>: <code>MOTOR_PIN_A = 16</code> y <code>MOTOR_PIN_B = 17</code>. Suponiendo que van a IN1 e IN2, las tres órdenes de tracción quedan así:</p>
   <pre class="code"><span class="cm">// accelerate() — main.ino</span>
-<span class="kw">digitalWrite</span>(MOTOR_PIN_B, LOW);   <span class="cm">// IN2 = LOW</span>
-<span class="kw">digitalWrite</span>(MOTOR_PIN_A, HIGH);  <span class="cm">// IN1 = HIGH  → adelante</span>
+<span class="kw">engageDrive</span>(DRIVE_FORWARD, HIGH, LOW);  <span class="cm">// IN1 = HIGH, IN2 = LOW → adelante</span>
 
-<span class="cm">// applyStop() — usa las constantes de config.h</span>
+<span class="cm">// reverse() — los niveles salen de config.h</span>
+MOTOR_REVERSE_LEVEL_A = LOW;          <span class="cm">// IN1 = LOW</span>
+MOTOR_REVERSE_LEVEL_B = HIGH;         <span class="cm">// IN2 = HIGH → atrás</span>
+
+<span class="cm">// applyStop() — ídem</span>
 MOTOR_STOP_LEVEL_A = LOW;             <span class="cm">// IN1 = LOW</span>
-MOTOR_STOP_LEVEL_B = HIGH;            <span class="cm">// IN2 = HIGH → ...</span></pre>
+MOTOR_STOP_LEVEL_B = LOW;             <span class="cm">// IN2 = LOW → freno o libre</span></pre>
 
   <div class="callout stop">
-    <h4>Mirá esas dos últimas líneas contra la tabla</h4>
-    <p><span class="mono">IN1 = LOW</span> con <span class="mono">IN2 = HIGH</span> es la segunda fila: <strong>gira al revés</strong>. En cualquiera de los tres chips. Si esos pines van a las entradas de un puente H, la acción “parar” estaría mandando marcha atrás, no parada — y el corte por hombre muerto de la diapositiva 15 haría lo mismo.</p>
-    <p style="margin-bottom:0">El propio <span class="mono">config.h</span> lo advierte en un comentario: esos valores conservan el comportamiento del firmware original, y hay que <strong>verificarlos contra el cableado real antes de confiar en el failsafe</strong>. Para frenar habría que poner los dos pines iguales; para soltar, los dos en bajo (o bajar ENA, en el L298N). Son dos constantes en un archivo de configuración.</p>
+    <h4>Ese último LOW es un bug que estuvo ahí desde el principio</h4>
+    <p>Hasta hace poco <span class="mono">MOTOR_STOP_LEVEL_B</span> valía <span class="mono">HIGH</span>, heredado del firmware original. Y <span class="mono">IN1 = LOW</span> con <span class="mono">IN2 = HIGH</span> es la segunda fila de la tabla: <strong>gira al revés</strong>, en cualquiera de los tres chips. Si esos pines van a las entradas de un puente H, la acción “parar” estaba mandando marcha atrás, y el corte por hombre muerto de la diapositiva 15 hacía lo mismo.</p>
+    <p>Lo que lo destapó fue agregar la marcha atrás de verdad: los niveles que hacían falta para <span class="mono">REVERSE</span> resultaron ser exactamente los que el firmware ya usaba para parar. Los dos no podían estar bien.</p>
+    <p style="margin-bottom:0">La corrección son dos letras: <span class="mono">LOW/LOW</span> es el único par que no mueve el motor en ninguno de los tres chips — freno en el L298N con ENA puesto, libre en un DRV8833 o TB6612FNG — y es, además, lo que el canal de dirección ya usaba para “centrado”. Sigue haciendo falta <strong>verificarlo contra el cableado real</strong>, con las ruedas en el aire, antes de confiar en el failsafe.</p>
   </div>
   <p>Es un buen ejemplo de algo que en el software no se ve: el código está bien escrito, tiene tests, y la lógica es correcta. Pero <strong>“parar” no es una propiedad del código, es una propiedad del circuito</strong>. El mismo programa, con el motor cableado al revés, hace exactamente lo contrario de lo que dice su nombre. Eso sólo se cierra midiendo en el banco, con las ruedas en el aire.</p>
+
+  <h3>Lo otro que trajo la marcha atrás</h3>
+  <p>Con el cable puesto y los niveles corregidos, el auto ya puede ir para atrás. Falta lo que no aparece en ninguna tabla de verdad: <strong>no se puede pasar de adelante a atrás de golpe</strong>.</p>
+  <p>La razón es la fuerza contraelectromotriz de la <a href="#motor">sección 4</a>. Mientras el motor gira genera una tensión que se opone a la que le estás dando — por eso la corriente baja sola apenas arranca. Si invertís el puente con el motor todavía girando, esa tensión deja de restar y <strong>pasa a sumar</strong>:</p>
+  <div class="eq">6 V de la fuente + ~4 V de fcem = ~10 V sobre el bobinado<span class="an">Contra los 6 V del arranque: casi el doble de la corriente de rotor bloqueado</span></div>
+  <p>Dura un instante, pero son varios amperes, y encima con el motor frenando mecánicamente al mismo tiempo. Lo que cede es el puente, el motor, o el regulador del que cuelga el ESP32. De los tres el peor es el motor: es el que está encastrado en el chasis.</p>
+
+  <div class="callout warn">
+    <h4>La espera va en el firmware, no en la computadora</h4>
+    <p>Antes de invertir hay que frenar <em>y esperar a que el motor pare de verdad</em>. No milisegundos: la parada es mecánica, así que son segundos. En el repo es <span class="mono">REVERSAL_DWELL_MS = 3000</span>, y la orden que llega durante la espera se <strong>rechaza, no se encola</strong> — la computadora reenvía la orden actual cada medio segundo, así que si seguís con el pulgar para abajo la marcha atrás entra sola apenas se cumple el tiempo. Arrancar otra vez para el mismo lado no espera nada; sólo la inversión.</p>
+    <p style="margin-bottom:0">Podría haber ido del lado de Python, al lado del suavizado de gestos, y habría estado mal por dos motivos: el ESP32 le obedece a cualquiera que se conecte al puerto 1234, y la <a href="vision-y-software.html#votacion">votación por mayoría</a> sólo llega a producir unos 65 ms de parada entre un gesto y el otro. <strong>Una protección que salva un motor no puede depender de que el cliente se porte bien.</strong></p>
+  </div>
+  <p class="small dim">Es la misma idea que el hombre muerto: el firmware es el que tiene el motor en la mano, así que es el que decide. El software de arriba propone.</p>
 
   <h3>El L298N es viejo, y se nota</h3>
   <p>Está hecho con transistores bipolares, y cada uno de esos “casi 0,7 V” de la sección 6 se paga dos veces, una por cada llave del camino:</p>

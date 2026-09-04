@@ -189,11 +189,12 @@ Edit `config.json` to customize settings:
 - **buffer_size**: Number of frames to buffer for action smoothing (default: 10)
   - Higher values = smoother transitions but slower response — including a slower stop
   - Lower values = faster response but more jittery
-  - It also sets how soft the forward/reverse interlock is. A hand rotating from
-    accelerate to reverse has to spend about a quarter of the buffer in the
-    neutral band for STOP to win the vote — 4 frames at the default, roughly
-    0.13s at 30 FPS. Flick faster than that and the car goes from ACCELERATE
-    straight to REVERSE with no STOP in between.
+  - It also sets how readily the car stops on its own between forward and
+    reverse. A hand rotating from accelerate to reverse has to spend about a
+    quarter of the buffer in the neutral band for STOP to win the vote — 4
+    frames at the default, roughly 0.13s at 30 FPS. Flick faster than that and
+    the client sends ACCELERATE then REVERSE back to back; the firmware's
+    reversal dwell (below) is what keeps that from reaching the motor.
   - Recommended range: 8-20 frames
   - Example: At 30 FPS, buffer_size=10 smooths over about a third of a second
 - **refresh_interval**: Seconds between keepalive resends of the current action (default: 0.5)
@@ -203,6 +204,26 @@ Edit `config.json` to customize settings:
   - Must stay well below the firmware timeout
 
 The handler uses a majority voting system across the buffer to determine the most consistent action, reducing noise and false detections in hand gesture recognition. Every action votes, STOP included, so `buffer_size` is what sets stop latency: flipping a saturated buffer takes about half the buffer in frames (~0.2s at the default 10 frames / 30 FPS). The fast paths that do not vote are the undetected-hand default (STOP) and the firmware's dead-man timeout.
+
+#### Reversal Dwell (firmware)
+
+Driving a motor the other way while it is still spinning puts the supply across
+the winding on top of its own back-EMF, and the current spike takes out the
+H-bridge, the motor, or the regulator the ESP32 runs off. So the firmware —
+not the client — enforces the direction change:
+
+- `REVERSAL_DWELL_MS` in `_esp32/main/config.h` (default 3000) is how long the
+  motor must sit stopped before the opposite direction is engaged.
+- An opposing drive command **brakes the motor and is refused**, not queued.
+  The client's keepalive resend retries it every `refresh_interval`, so the
+  direction engages within half a second of the dwell expiring — hold the
+  gesture and it will go.
+- Pulling away from a stop in the direction you were already going is
+  immediate; only a genuine reversal waits.
+
+It lives in the firmware because the ESP32 serves whatever TCP client connects,
+and because the gesture smoothing above can only promise a stop of a few frames.
+`tests/test_firmware_safety.py` guards it.
 
 ## 🎮 Usage
 
@@ -238,7 +259,9 @@ The preview is mirrored (like a selfie camera), so gestures behave intuitively:
   sideways (a plain fist). Anything the detector is unsure about stops the car,
   and a thumb rotating between up and down has to cross the fist pose, so the
   car normally stops before it reverses (see the note on `buffer_size` below
-  for how reliably)
+  for how reliably). Switching between accelerate and reverse takes a few
+  seconds regardless: the firmware brakes first and waits out the
+  [reversal dwell](#reversal-dwell-firmware) before driving the other way
 - **Direction Left**: Point your **right** index finger to the left
 - **Direction Right**: Point your **right** index finger to the right
 - **Direction Straight**: Point your **right** index finger up

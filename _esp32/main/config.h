@@ -30,24 +30,34 @@ const int MOTOR_PIN_A = 16;  // Motor control A
 const int MOTOR_PIN_B = 17;  // Motor control B
 
 // Pin levels that stop the motor (used by STOP and the failsafe).
-// These defaults preserve the original firmware behavior, but NOTE:
-// on an L298N-style H-bridge (IN1/IN2), A=LOW/B=HIGH drives REVERSE;
-// coast is LOW/LOW and brake is HIGH/HIGH. Verify against your wiring
-// before trusting the failsafe, and adjust these two values if needed.
+// LOW/LOW is the one pair that cannot drive the motor on any of the usual
+// drivers: on an L298N with ENA jumpered the datasheet calls it "fast
+// motor stop" (brake), on a DRV8833/TB6612FNG it coasts.
 const int MOTOR_STOP_LEVEL_A = LOW;
-const int MOTOR_STOP_LEVEL_B = HIGH;
+const int MOTOR_STOP_LEVEL_B = LOW;
 
 // Pin levels that drive the motor backwards (used by REVERSE).
-// !! UNVERIFIED AND CURRENTLY IDENTICAL TO THE STOP LEVELS ABOVE !!
-// On a plain IN1/IN2 H-bridge, reverse is the inverse of ACCELERATE
-// (which drives A=HIGH/B=LOW), i.e. A=LOW/B=HIGH -- the very levels this
-// firmware uses for "stop". Both cannot be right: if the wiring really is
-// a plain L298N then today's STOP is already driving the car backwards,
-// and REVERSE will be indistinguishable from it. Resolve the wiring first
-// (see issue #22), then set STOP to coast (LOW/LOW) or brake (HIGH/HIGH)
-// and leave these as the reverse pair.
+// The inverse of ACCELERATE (A=HIGH/B=LOW), i.e. the second row of the
+// H-bridge truth table -- identical on the L298N, DRV8833 and TB6612FNG.
+// Assumes MOTOR_PIN_A -> IN1 and MOTOR_PIN_B -> IN2.
 const int MOTOR_REVERSE_LEVEL_A = LOW;
 const int MOTOR_REVERSE_LEVEL_B = HIGH;
+
+// Minimum time the motor must sit at the stop levels before the firmware will
+// drive it the other way. Reversing a motor that is still spinning puts the
+// supply across the winding on top of its own back-EMF; the resulting spike is
+// roughly twice stall current, and what gives way is the H-bridge, the motor,
+// or the regulator the ESP32 runs off.
+// This has to live in the firmware because it must hold for whatever client
+// connects: the Python side's gesture smoothing only produces a stop of a few
+// frames (~65ms at the default buffer_size), and a fast enough flick emits
+// ACCELERATE followed directly by REVERSE.
+// Seconds, not milliseconds -- it covers the mechanical spin-down of a loaded
+// drivetrain, not just the electrical transient. A drive command arriving
+// during the dwell is refused, never queued: the client's keepalive resend
+// (handler.refresh_interval, default 0.5s) retries it, so the direction
+// engages within one refresh of the dwell expiring.
+const unsigned long REVERSAL_DWELL_MS = 3000;
 
 // Direction control pins
 const int DIRECTION_PIN_LEFT = 4;   // Direction left control

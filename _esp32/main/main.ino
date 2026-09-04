@@ -7,6 +7,20 @@
 WiFiServer tcpServer(TCP_PORT);
 
 //////////////////////
+// DRIVE STATE
+//////////////////////
+// What the traction channel is doing now, which way it last turned, and when
+// it stopped. Together these carry the reversal dwell (REVERSAL_DWELL_MS in
+// config.h): lastDriveDirection is what distinguishes "stopped after driving
+// the other way", which owes a spin-down, from "stopped after driving this
+// way" and "never driven", which do not -- so pulling away from a stop in the
+// direction you were already going stays immediate.
+enum DriveState { DRIVE_STOPPED, DRIVE_FORWARD, DRIVE_REVERSE };
+DriveState driveState = DRIVE_STOPPED;
+DriveState lastDriveDirection = DRIVE_STOPPED;
+unsigned long driveStoppedAtMs = 0;
+
+//////////////////////
 // ACTIONS
 //////////////////////
 struct Action {
@@ -21,6 +35,46 @@ void applyStop() {
   // driver wiring (see the note there).
   digitalWrite(MOTOR_PIN_B, MOTOR_STOP_LEVEL_B);
   digitalWrite(MOTOR_PIN_A, MOTOR_STOP_LEVEL_A);
+  // Start the spin-down clock on the transition only: the client resends the
+  // current action every refresh_interval, and re-stamping on each repeated
+  // STOP would push the dwell permanently out of reach.
+  if (driveState != DRIVE_STOPPED) {
+    driveState = DRIVE_STOPPED;
+    driveStoppedAtMs = millis();
+  }
+}
+
+// Drive the traction motor, enforcing the reversal dwell. Returns false when
+// the request was held off, leaving the motor stopped; the caller does not
+// need to retry, because the client's keepalive resend does it.
+bool engageDrive(DriveState wanted, int levelA, int levelB) {
+  if (driveState != wanted) {
+    if (driveState != DRIVE_STOPPED) {
+      // Turning the other way right now: brake and start the clock. The
+      // earliest this request can be honoured is REVERSAL_DWELL_MS from here.
+      applyStop();
+      Serial.printf("Reversal: braking first, holding for %lu ms\n", REVERSAL_DWELL_MS);
+      return false;
+    }
+    if (lastDriveDirection != DRIVE_STOPPED && lastDriveDirection != wanted &&
+        millis() - driveStoppedAtMs < REVERSAL_DWELL_MS) {
+      // Stopped, but still spinning down from the opposite direction.
+      return false;
+    }
+  }
+  digitalWrite(LED_PIN, HIGH);
+  // Drop the pin that goes low before raising the other, so the bridge is
+  // never briefly driven on both sides.
+  if (levelA == LOW) {
+    digitalWrite(MOTOR_PIN_A, levelA);
+    digitalWrite(MOTOR_PIN_B, levelB);
+  } else {
+    digitalWrite(MOTOR_PIN_B, levelB);
+    digitalWrite(MOTOR_PIN_A, levelA);
+  }
+  driveState = wanted;
+  lastDriveDirection = wanted;
+  return true;
 }
 
 void applyStraight() {
@@ -35,22 +89,25 @@ void failsafeStop() {
   Serial.println("Failsafe: stopping motors");
 }
 
-// Action handlers
+// Action handlers. Both drive handlers go through engageDrive() -- writing the
+// motor pins directly here would bypass the reversal dwell.
 void accelerate(WiFiClient& client) {
-  digitalWrite(LED_PIN, HIGH);
-  digitalWrite(MOTOR_PIN_B, LOW);
-  digitalWrite(MOTOR_PIN_A, HIGH);
-  client.println("ACCELERATE (LED ON)");
+  // IN1 = HIGH / IN2 = LOW: the forward row of the H-bridge truth table.
+  if (engageDrive(DRIVE_FORWARD, HIGH, LOW)) {
+    client.println("ACCELERATE (LED ON)");
+  } else {
+    client.println("ACCELERATE held: reversal dwell");
+  }
 }
 
 void reverse(WiFiClient& client) {
-  digitalWrite(LED_PIN, HIGH);
-  // Drop the opposing pin before raising the other, so the H-bridge is never
-  // briefly driven on both sides. Levels come from config.h -- read the
-  // warning there before trusting this on real hardware.
-  digitalWrite(MOTOR_PIN_A, MOTOR_REVERSE_LEVEL_A);
-  digitalWrite(MOTOR_PIN_B, MOTOR_REVERSE_LEVEL_B);
-  client.println("REVERSE (LED ON)");
+  // Levels come from config.h -- read the note there before trusting this on
+  // real hardware.
+  if (engageDrive(DRIVE_REVERSE, MOTOR_REVERSE_LEVEL_A, MOTOR_REVERSE_LEVEL_B)) {
+    client.println("REVERSE (LED ON)");
+  } else {
+    client.println("REVERSE held: reversal dwell");
+  }
 }
 
 void stopAction(WiFiClient& client) {

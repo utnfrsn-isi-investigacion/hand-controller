@@ -49,9 +49,10 @@ class HandDetectionConfig:
     # fist) and ~158 (thumbs down), so these defaults centre the fist with
     # roughly 23 degrees of margin either side. The neutral band is a real pose
     # rather than something you sweep through, which is what makes it a usable
-    # resting state; widening it makes the forward/reverse interlock more
-    # reliable (see Handler._majority_action), narrowing it makes both drive
-    # gestures easier to reach.
+    # resting state; widening it makes the car more likely to stop of its own
+    # accord between forward and reverse (see Handler._majority_action; the
+    # guarantee is the firmware's reversal dwell, not this), narrowing it makes
+    # both drive gestures easier to reach.
     thumb_up_threshold_deg: float = 70.0
     thumb_down_threshold_deg: float = 135.0
 

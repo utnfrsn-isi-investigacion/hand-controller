@@ -81,15 +81,22 @@ class Handler(abc.ABC):
     def _majority_action(self, hand: Hand) -> Optional[Enum]:
         """Most common action in this hand's buffer, or None when it is empty.
 
-        This vote is also what carries the forward/reverse interlock, and it
-        only carries it so far. Starting from a buffer saturated with one
-        action, an intermediate action has to occupy enough of the buffer to
-        outvote both neighbours -- roughly a quarter of it, so ~4 frames at the
-        default buffer_size of 10 (~0.13s at 30 FPS). A hand flicked from
-        pointing up to pointing down faster than that yields ACCELERATE
-        followed directly by REVERSE, with no STOP in between. Enlarging the
-        NEUTRAL thumb band buys crossing frames; a hard interlock would need
-        explicit state here.
+        This vote is also the client's half of the forward/reverse interlock,
+        and it only carries it so far. Starting from a buffer saturated with
+        one action, an intermediate action has to occupy enough of the buffer
+        to outvote both neighbours -- roughly a quarter of it, so ~4 frames at
+        the default buffer_size of 10 (~0.13s at 30 FPS), and it then holds the
+        majority for only ~2 more. A hand flicked from pointing up to pointing
+        down faster than that yields ACCELERATE followed directly by REVERSE,
+        with no STOP in between. Enlarging the NEUTRAL thumb band buys crossing
+        frames.
+
+        What actually protects the motor is downstream, in the firmware:
+        REVERSAL_DWELL_MS holds off a drive command that opposes the current
+        direction until the motor has sat stopped for seconds (see engageDrive
+        in _esp32/main/main.ino). The vote only makes the gesture feel right;
+        it is not, and cannot be, the safety guarantee -- the ESP32 serves
+        whatever client connects.
         """
         hand_type = hand.get_hand_type()
         if hand_type not in self._action_buffers:
@@ -177,8 +184,10 @@ class CarHandler(Handler):
                 return CarAction.REVERSE
             else:
                 # Thumb sideways, i.e. a plain fist: the neutral pose a thumb
-                # crosses on its way between ACCELERATE and REVERSE. A soft
-                # interlock, not a guarantee -- see Handler._majority_action.
+                # crosses on its way between ACCELERATE and REVERSE. Makes the
+                # stop deliberate rather than guaranteed -- the firmware's
+                # reversal dwell is what enforces it (see
+                # Handler._majority_action).
                 return CarAction.STOP
 
         elif hand_type == HandType.RIGHT:

@@ -118,8 +118,10 @@ class TestCarHandler(unittest.TestCase):
         STOP only reaches the wire if the neutral crossing outvotes both
         neighbours in the buffer, which takes a quarter of it -- 4 frames at
         the default size of 10. This is a documented limitation, not a
-        guarantee: a faster flick emits ACCELERATE then REVERSE back to back,
-        which is exactly what a hard interlock would have to prevent.
+        guarantee: a faster flick emits ACCELERATE then REVERSE back to back.
+        The motor survives that because the firmware refuses the reversal
+        until it has been stopped for REVERSAL_DWELL_MS (see
+        tests/test_firmware_safety.py), not because of anything here.
         """
         for neutral_frames in (0, 1, 2, 3):
             with self.subTest(neutral_frames=neutral_frames, expected="no stop"):
