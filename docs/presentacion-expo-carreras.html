@@ -480,8 +480,8 @@ kbd{
     <div class="cols-3">
       <div class="card">
         <h3>Mano izquierda</h3>
-        <p><strong>Abierta</strong> → el auto acelera.<br><strong>Puño cerrado</strong> → el auto para.</p>
-        <p style="color:var(--ink-2)">Es el pedal. Abierto o cerrado, nada en el medio.</p>
+        <p><strong>Palma abierta</strong> → el auto para.<br><strong>Cerrada, pulgar arriba</strong> → acelera.<br><strong>Cerrada, pulgar abajo</strong> → marcha atrás.</p>
+        <p style="color:var(--ink-2)">Manejar es tener la mano cerrada. Abrirla de golpe —lo que hace cualquiera cuando algo sale mal— es el freno.</p>
       </div>
       <div class="card">
         <h3>Mano derecha</h3>
@@ -622,8 +622,8 @@ kbd{
 <!-- ══ 06 ══════════════════════════════════════════════════ -->
 <section class="sheet" data-sec="Visión">
   <header class="sh-head tight">
-    <p class="eyebrow">Etapa 2 <span class="sep">/</span> El acelerador</p>
-    <h2>¿Mano abierta o puño? Se resuelve con una división</h2>
+    <p class="eyebrow">Etapa 2 <span class="sep">/</span> El freno y el acelerador</p>
+    <h2>¿Palma abierta o puño? Se resuelve con una división</h2>
   </header>
   <div class="sh-body mid">
     <div class="cols-side">
@@ -646,7 +646,7 @@ kbd{
           </g>
           <text class="m" x="59" y="113" font-size="12" fill="var(--power-ink)" font-weight="700">H</text>
           <text class="m" x="59" y="57" font-size="12" fill="var(--marcha)" font-weight="700">d</text>
-          <text class="cap" x="52" y="170" text-anchor="middle" fill="var(--marcha)">mano abierta</text>
+          <text class="cap" x="52" y="170" text-anchor="middle" fill="var(--ink-2)">mano abierta</text>
 
           <g transform="translate(150,-10) scale(0.62)">
             <g class="wire">
@@ -661,21 +661,25 @@ kbd{
             <circle cx="100" cy="150" r="5.5" fill="var(--power)"/>
             <circle cx="117" cy="124" r="5.5" fill="var(--parada)"/>
           </g>
-          <text class="cap" x="225" y="170" text-anchor="middle" fill="var(--parada)">puño cerrado</text>
+          <text class="cap" x="225" y="170" text-anchor="middle" fill="var(--ink-2)">puño cerrado</text>
         </svg>
-        <figcaption>Fig. 03 — La misma medición, dos resultados: acelerar o parar</figcaption>
+        <figcaption>Fig. 03 — La misma medición, dos caminos: parar, o pasar a mirar el pulgar</figcaption>
       </figure>
       <div class="stack">
         <ol class="steps">
           <li>Medí <strong>H</strong>: la distancia de la muñeca al nudillo del dedo mayor. Ese es el “tamaño” de esa mano.</li>
           <li>Para cada dedo, medí <strong>d</strong>: la distancia de la yema a su propio nudillo.</li>
-          <li>Si <span class="mono">d / H &gt; 0,6</span> en los <strong>cinco</strong> dedos, la mano está abierta. Si alguno no llega, es un puño.</li>
+          <li>Si <span class="mono">d / H &gt; 0,6</span> en los <strong>cinco</strong> dedos, la mano está abierta, y eso es <strong>parar</strong>. Si alguno no llega, es un puño — y ahí entra la segunda pregunta.</li>
         </ol>
         <div class="callout">
           <h3>¿Por qué dividir por H?</h3>
           <p style="margin:0">Porque la relación <span class="mono">d/H</span> no tiene unidad. Si acercás la mano a la cámara, <strong>d y H crecen juntos</strong> y el cociente no cambia. Es el mismo recurso que usás con la escala de un plano: no importa el tamaño del dibujo, importa la proporción.</p>
         </div>
-        <p style="color:var(--ink-2)">Ese <span class="mono">0,6</span> vive en un archivo de configuración, no enterrado en el código. Si cuesta que acelere, se baja; si acelera solo, se sube. Nadie recompila nada.</p>
+        <div class="callout go">
+          <h3>Y el pulgar decide para dónde</h3>
+          <p style="margin:0">Con la mano cerrada, una segunda cuenta mide el <strong>ángulo del pulgar</strong>: unos 33° si apunta arriba, 112° de costado, 158° abajo. Arriba <strong>acelera</strong>, abajo es <strong>marcha atrás</strong>, y el puño de costado también para. Para ir de adelante a atrás, el pulgar está obligado a pasar por el medio.</p>
+        </div>
+        <p style="color:var(--ink-2)">Ese <span class="mono">0,6</span> y esos dos ángulos viven en un archivo de configuración, no enterrados en el código. Si cuesta que la palma frene, se baja; si frena sola, se sube. Nadie recompila nada.</p>
       </div>
     </div>
   </div>
@@ -734,15 +738,17 @@ kbd{
 <section class="sheet" data-sec="Visión">
   <header class="sh-head">
     <p class="eyebrow">Resumen de la etapa</p>
-    <h2>Cinco gestos, cinco órdenes</h2>
+    <h2>Siete gestos, seis órdenes</h2>
   </header>
   <div class="sh-body mid">
     <div class="tw">
       <table class="d">
         <thead><tr><th>Gesto</th><th>Mano</th><th>Acción</th><th class="c">Código</th><th>Qué hace</th></tr></thead>
         <tbody>
-          <tr><td>Mano abierta</td><td class="dim">Izquierda</td><td><span class="chip go">ACELERAR</span></td><td class="c">001</td><td class="dim">Alimenta el motor de tracción</td></tr>
-          <tr><td>Puño cerrado</td><td class="dim">Izquierda</td><td><span class="chip no">PARAR</span></td><td class="c">000</td><td class="dim">Corta el motor</td></tr>
+          <tr><td>Palma abierta</td><td class="dim">Izquierda</td><td><span class="chip no">PARAR</span></td><td class="c">000</td><td class="dim">Corta el motor</td></tr>
+          <tr><td>Puño, pulgar arriba</td><td class="dim">Izquierda</td><td><span class="chip go">ACELERAR</span></td><td class="c">001</td><td class="dim">Alimenta el motor de tracción</td></tr>
+          <tr><td>Puño, pulgar abajo</td><td class="dim">Izquierda</td><td><span class="chip go">MARCHA ATRÁS</span></td><td class="c">010</td><td class="dim">Los mismos pines, al revés</td></tr>
+          <tr><td>Puño, pulgar de costado</td><td class="dim">Izquierda</td><td><span class="chip no">PARAR</span></td><td class="c">000</td><td class="dim">La pose de descanso entre las otras dos</td></tr>
           <tr><td>Índice inclinado a la izquierda</td><td class="dim">Derecha</td><td><span class="chip dir">DIRECCIÓN IZQ.</span></td><td class="c">101</td><td class="dim">Activa el actuador de giro izquierdo</td></tr>
           <tr><td>Índice inclinado a la derecha</td><td class="dim">Derecha</td><td><span class="chip dir">DIRECCIÓN DER.</span></td><td class="c">110</td><td class="dim">Activa el actuador de giro derecho</td></tr>
           <tr><td>Índice apuntando arriba</td><td class="dim">Derecha</td><td><span class="chip dir">RECTO</span></td><td class="c">111</td><td class="dim">Centra la dirección</td></tr>
@@ -755,7 +761,7 @@ kbd{
         <p style="margin:0">Una mano maneja la <strong>potencia</strong> y la otra la <strong>dirección</strong>. Es el mismo reparto que en un auto de verdad: pedal por un lado, volante por el otro. Acá son dos manos y ningún pie.</p>
       </div>
       <div class="callout warn">
-        <p style="margin:0">Fijate que la acción por defecto —cuando el sistema no entiende lo que ve— es <strong>parar</strong>. No “seguir como venía”. Volvemos sobre esto varias veces.</p>
+        <p style="margin:0">Fijate que la acción por defecto —cuando el sistema no entiende lo que ve— es <strong>parar</strong>. No “seguir como venía”. Y que <strong>dos</strong> de los siete paran: para ir de acelerar a marcha atrás, el pulgar está obligado a cruzar el puño. Volvemos sobre esto varias veces.</p>
       </div>
     </div>
   </div>
@@ -1081,6 +1087,7 @@ Action actions[] = {
           <li>Con ese margen se pueden <strong>perder tres mensajes seguidos</strong> y el auto ni se entera. El Wi-Fi pierde paquetes todo el tiempo.</li>
           <li>Si el reenvío fuera cada 1,8 s, cualquier hipo de la red frenaría el auto en seco: molesto e inseguro.</li>
           <li>Si el corte fuera a los 10 s, un auto descontrolado seguiría solo diez segundos. Una eternidad.</li>
+          <li>Y hay un tercer número, de otra naturaleza: los <strong>3 s</strong> que el motor tiene que estar quieto antes de invertir el giro. Ése no lo pide la red, lo pide el puente H.</li>
         </ul>
         <div class="callout warn">
           <p style="margin:0"><strong>Invariante del proyecto:</strong> el período de reenvío tiene que quedar muy por debajo del tiempo de corte. Si alguien toca uno de los dos números, está obligado a revisar el otro.</p>
@@ -1088,12 +1095,13 @@ Action actions[] = {
       </div>
       <div class="stack">
         <div class="card">
-          <h3>Los cuatro momentos en que frena solo</h3>
+          <h3>Los cinco momentos en que frena solo</h3>
           <ul class="tick">
             <li>Al encender el ESP32 — antes incluso de conectarse al Wi-Fi</li>
             <li>Si el cliente se desconecta</li>
             <li>Si pasan dos segundos en silencio</li>
             <li>Cuando empieza una actualización de firmware</li>
+            <li>Si le pedís la dirección contraria a la que está girando: frena, y <strong>espera tres segundos</strong> antes de invertir</li>
           </ul>
           <p style="margin:.7em 0 0;font-size:.9em;color:var(--ink-2)">Y del lado de la computadora: si falta una mano en el cuadro, se manda parar.</p>
         </div>
@@ -1191,9 +1199,9 @@ Action actions[] = {
       <div class="card">
         <h3>Ideas que quedaron pendientes, a propósito</h3>
         <ul class="tick">
-          <li><strong>Velocidad proporcional.</strong> Hoy el motor está en todo o nada. Con PWM, cuánto abrís la mano podría ser cuánto acelera</li>
+          <li><strong>Velocidad proporcional.</strong> Hoy el motor está en todo o nada. Con PWM, cuánto inclinás el pulgar podría ser cuánto acelera</li>
           <li><strong>Un servo para la dirección</strong>, en lugar de dos pines con tres posiciones</li>
-          <li><strong>Un gesto nuevo:</strong> bocina, marcha atrás, luces</li>
+          <li><strong>Un gesto nuevo:</strong> bocina, luces. La marcha atrás salió de esta misma lista</li>
           <li><strong>Un sensor de distancia</strong> que ignore la orden de acelerar si hay algo adelante</li>
         </ul>
         <p style="margin:.8em 0 0;font-size:.9em;color:var(--ink-2)">Ninguna de las cuatro está hecha.</p>
