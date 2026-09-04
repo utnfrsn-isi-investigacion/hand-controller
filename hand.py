@@ -10,6 +10,10 @@ logger = logging.getLogger(__name__)
 mp_drawing = mp.solutions.drawing_utils  # type: ignore[attr-defined]
 mp_hands = mp.solutions.hands  # type: ignore[attr-defined]
 
+# Wrist-to-knuckle distance below which the landmarks have collapsed onto each
+# other and every ratio or angle taken from them is noise.
+DEGENERATE_HAND_SIZE = 1e-6
+
 # Type aliases for MediaPipe types
 HandLandmarkList = Any
 Handedness = Any
@@ -73,23 +77,41 @@ class Hand:
         label = self.handedness.classification[0].label
         return HandType[label.upper()]
 
-    def is_open(self, threshold_ratio: Optional[float] = None) -> bool:
-        """Check if the hand is open by measuring finger extension."""
-        if threshold_ratio is None:
-            threshold_ratio = self._open_threshold_ratio
-        if not self.landmarks:
-            return False
+    def _hand_size(self) -> float:
+        """Wrist-to-middle-knuckle distance, cached for the life of this Hand.
 
+        A Hand lives for a single frame, so the cache cannot go stale.
+        """
         if self._hand_size_cache is None:
             self._hand_size_cache = self._calculate_3d_distance(
                 self.landmarks.landmark[mp_hands.HandLandmark.WRIST],
                 self.landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_MCP]
             )
+        return self._hand_size_cache
 
-        hand_size = self._hand_size_cache
-        if hand_size < 1e-6:
-            logger.warning("Hand size too small (%s), cannot determine if open.", hand_size)
+    def has_usable_geometry(self) -> bool:
+        """Whether the landmarks are far enough apart to measure a gesture.
+
+        When they collapse onto each other, every predicate below becomes
+        meaningless in a different way: is_open() would divide by the hand
+        size, and get_thumb_orientation() would take the angle between two
+        points that have become the same point -- landing on UP or DOWN, never
+        NEUTRAL. Callers deciding what the car should do have to read this as
+        "no gesture" rather than as a fist.
+        """
+        if not self.landmarks:
             return False
+        return self._hand_size() >= DEGENERATE_HAND_SIZE
+
+    def is_open(self, threshold_ratio: Optional[float] = None) -> bool:
+        """Check if the hand is open by measuring finger extension."""
+        if threshold_ratio is None:
+            threshold_ratio = self._open_threshold_ratio
+        if not self.has_usable_geometry():
+            logger.warning("Hand geometry unusable, cannot determine if open.")
+            return False
+
+        hand_size = self._hand_size()
 
         finger_tips = [
             mp_hands.HandLandmark.THUMB_TIP,

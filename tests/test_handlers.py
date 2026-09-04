@@ -19,13 +19,16 @@ class TestCarHandler(unittest.TestCase):
         # Large refresh interval so tests only observe change-driven sends
         self.handler = CarHandler(self.mock_esp32, refresh_interval=3600)
 
-    def create_mock_hand(self, hand_type, is_open, orientation, thumb=VerticalOrientation.UP):
+    def create_mock_hand(self, hand_type, is_open, orientation, thumb=VerticalOrientation.UP,
+                         usable=True):
         """Helper to create a mock Hand object with specific properties.
 
         The thumb orientation defaults to UP, so a closed left hand accelerates.
+        Geometry is usable unless a test is exercising the degenerate path.
         """
         mock_hand = Mock(spec=Hand)
         mock_hand.get_hand_type.return_value = hand_type
+        mock_hand.has_usable_geometry.return_value = usable
         mock_hand.is_open.return_value = is_open
         mock_hand.get_index_orientation.return_value = orientation
         mock_hand.get_thumb_orientation.return_value = thumb
@@ -66,6 +69,20 @@ class TestCarHandler(unittest.TestCase):
         self.mock_esp32.send_action.assert_any_call(CarAction.REVERSE.value)
         self.mock_esp32.send_action.assert_any_call(CarAction.DIRECTION_STRAIGHT.value)
         self.assertEqual(self.mock_esp32.send_action.call_count, 2)
+
+    def test_left_hand_with_unusable_geometry_stops(self):
+        """Degenerate landmarks are no gesture at all, so they stop the car.
+
+        The thumb angle cannot come back NEUTRAL when the points collapse onto
+        each other -- it lands on UP or DOWN -- so without the geometry gate in
+        the handler this hand would read as ACCELERATE.
+        """
+        garbage = self.create_mock_hand(HandType.LEFT, is_open=False,
+                                        orientation=IndexOrientation.STRAIGHT,
+                                        thumb=VerticalOrientation.UP, usable=False)
+        actions = self.handler.process_hands([garbage, self._right()])
+        self.assertEqual(actions[HandType.LEFT], CarAction.STOP)
+        self.mock_esp32.send_action.assert_any_call(CarAction.STOP.value)
 
     def test_left_hand_neutral_thumb_stops(self):
         """A sideways thumb lands in the dead band and stops."""

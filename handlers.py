@@ -173,6 +173,14 @@ class CarHandler(Handler):
         hand_type = hand.get_hand_type()
 
         if hand_type == HandType.LEFT:
+            # Landmarks too collapsed to measure are not a gesture at all, and
+            # the only safe reading of "no gesture" is STOP. Without this the
+            # hand falls through to the thumb angle, which on degenerate points
+            # cannot return NEUTRAL -- so garbage would read as ACCELERATE or
+            # REVERSE. This is the branch that keeps "every error path ends in
+            # a stop" true after the gesture set was inverted.
+            if not hand.has_usable_geometry():
+                return CarAction.STOP
             # An open palm is the fast, unambiguous stop. Driving takes a
             # closed hand, and then the thumb picks the direction.
             if hand.is_open():

@@ -121,6 +121,23 @@ class TestHand(unittest.TestCase):
         # A per-call threshold overrides the configured one
         self.assertTrue(strict_hand.is_open(threshold_ratio=0.6))
 
+    def test_has_usable_geometry(self):
+        """Landmarks collapsed onto each other cannot be measured at all."""
+        landmarks_data = [(0.0, 0.0, 0.0)] * 21
+        landmarks_data[mp_hands.HandLandmark.WRIST] = (0.5, 0.9, 0.0)
+        landmarks_data[mp_hands.HandLandmark.MIDDLE_FINGER_MCP] = (0.5, 0.7, 0.0)
+        self.assertTrue(self.create_mock_hand(landmarks_data).has_usable_geometry())
+
+        # Wrist and middle knuckle on the same point: hand size is zero, so
+        # every ratio and angle taken from these points is noise.
+        self.assertFalse(self.create_mock_hand([(0.5, 0.5, 0.0)] * 21).has_usable_geometry())
+
+    def test_degenerate_hand_is_not_open(self):
+        """is_open() warns and refuses rather than dividing by zero."""
+        degenerate = self.create_mock_hand([(0.5, 0.5, 0.0)] * 21)
+        with self.assertLogs('hand', level='WARNING'):
+            self.assertFalse(degenerate.is_open())
+
     def test_get_index_orientation(self):
         """Test the index finger orientation logic on a mirrored (selfie-view) frame."""
         landmarks_data = [(0.0, 0.0, 0.0)] * 21
