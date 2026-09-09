@@ -165,7 +165,20 @@ class CarHandler(Handler):
             # Hand is detected - record it and use the buffered (smoothed) action
             return self._record_action(hand)  # type: ignore[return-value]
         else:
-            # Hand not detected - return default action without polluting the buffer
+            # Hand not detected. Drop the history as well as returning the
+            # default: a buffer left saturated with the pre-loss action would
+            # outvote the first frames of whatever gesture comes back, so the
+            # car would replay ACCELERATE for a few frames at a user already
+            # signalling REVERSE -- and that burst re-arms the firmware's
+            # lastDriveDirection, making the real reversal pay the full dwell.
+            # The cost is that the frame after reacquisition is unsmoothed,
+            # since a one-entry buffer is its own majority, so a misread there
+            # reaches the wire. What it cannot do is invert a spinning motor:
+            # a reversal still brakes and waits out the firmware dwell. A
+            # misread in the direction already being driven is a twitch of a
+            # frame or two, which is the accepted trade against replaying the
+            # pre-loss action for six.
+            self._action_buffers[hand_type].clear()
             return self._default_actions[hand_type]
 
     def _get_action(self, hand: Hand) -> CarAction:

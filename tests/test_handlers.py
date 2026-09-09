@@ -195,6 +195,27 @@ class TestCarHandler(unittest.TestCase):
         self.assertEqual(len(self.handler._action_buffers[HandType.LEFT]), 0)
         self.assertEqual(len(self.handler._action_buffers[HandType.RIGHT]), 0)
 
+    def test_reacquired_hand_is_not_outvoted_by_the_pre_loss_action(self):
+        """Losing a hand clears its buffer, so the gesture that comes back wins.
+
+        Without the clear, the buffer is still saturated with the action from
+        before the hand left: the first REVERSE frames lose the vote to
+        ACCELERATE and the car pulls forward at a user already signalling
+        reverse -- which also re-arms the firmware's lastDriveDirection, so
+        the real reversal then pays the full REVERSAL_DWELL_MS.
+        """
+        right = self._right()
+        for _ in range(10):
+            self.handler.process_hands([self._left(VerticalOrientation.UP), right])
+        self.assertEqual(self.handler.get_action(self._left(VerticalOrientation.UP)),
+                         CarAction.ACCELERATE)
+
+        self.handler.process_hands([])
+        self.assertEqual(len(self.handler._action_buffers[HandType.LEFT]), 0)
+
+        actions = self.handler.process_hands([self._left(VerticalOrientation.DOWN), right])
+        self.assertEqual(actions[HandType.LEFT], CarAction.REVERSE)
+
     def test_action_sent_only_once_when_unchanged(self):
         """Test that the same actions are not sent repeatedly."""
         left_accelerate = self.create_mock_hand(HandType.LEFT, is_open=False, orientation=IndexOrientation.STRAIGHT)

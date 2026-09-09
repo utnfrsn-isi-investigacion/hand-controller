@@ -19,6 +19,13 @@ enum DriveState { DRIVE_STOPPED, DRIVE_FORWARD, DRIVE_REVERSE };
 DriveState driveState = DRIVE_STOPPED;
 DriveState lastDriveDirection = DRIVE_STOPPED;
 unsigned long driveStoppedAtMs = 0;
+// Stamped only when a drive command is refused because the motor was turning
+// the other way. Deriving the dwell from driveStoppedAtMs alone was not
+// enough: that clock is restarted by every brake, and the gesture vote emits
+// a stray same-direction command mid-flick (see Handler._majority_action),
+// which used to be honoured and then braked again, deferring the reversal for
+// as long as the hand wavered. This one latches the deadline instead.
+unsigned long reversalBrakedAtMs = 0;
 
 //////////////////////
 // ACTIONS
@@ -48,30 +55,49 @@ void applyStop() {
 // the request was held off, leaving the motor stopped; the caller does not
 // need to retry, because the client's keepalive resend does it.
 bool engageDrive(DriveState wanted, int levelA, int levelB) {
-  if (driveState != wanted) {
-    if (driveState != DRIVE_STOPPED) {
-      // Turning the other way right now: brake and start the clock. The
-      // earliest this request can be honoured is REVERSAL_DWELL_MS from here.
-      applyStop();
-      Serial.printf("Reversal: braking first, holding for %lu ms\n", REVERSAL_DWELL_MS);
-      return false;
-    }
-    if (lastDriveDirection != DRIVE_STOPPED && lastDriveDirection != wanted &&
-        millis() - driveStoppedAtMs < REVERSAL_DWELL_MS) {
-      // Stopped, but still spinning down from the opposite direction.
-      return false;
-    }
+  if (driveState != wanted && driveState != DRIVE_STOPPED) {
+    // Turning the other way right now: brake, and latch the deadline the
+    // whole dwell hangs off. The earliest anything can drive again is
+    // REVERSAL_DWELL_MS from here.
+    applyStop();
+    reversalBrakedAtMs = millis();
+    Serial.printf("Reversal: braking first, holding for %lu ms\n", REVERSAL_DWELL_MS);
+    return false;
+  }
+  if (millis() - reversalBrakedAtMs < REVERSAL_DWELL_MS) {
+    // Inside a latched dwell, so refuse every direction rather than only the
+    // opposing one. Checking the direction here is what let the dwell be
+    // restarted forever: a stray same-direction command from the gesture vote
+    // passed, re-energised the motor mid spin-down, and the next opposing
+    // command braked and re-stamped the clock. While the hand wavered the
+    // reversal never engaged and the car kept lurching the old way.
+    // The price is that a user flicking forward-neutral-forward waits out the
+    // dwell too. That is the safe direction to err.
+    // Elapsed-since-stamp, not millis() < deadline: unsigned subtraction is
+    // correct across the ~49-day millis() wrap.
+    // The initial 0 also holds off the first REVERSAL_DWELL_MS of uptime.
+    // Usually the Wi-Fi join outlasts it, but not always -- a fast
+    // association can have a client connected inside the window, and its
+    // drive commands then no-op until the next keepalive. Keeping it: the
+    // pins were floating moments earlier and the motor state is unknown, so
+    // refusing to drive for the first three seconds is the right default.
+    return false;
+  }
+  if (driveState != wanted && lastDriveDirection != DRIVE_STOPPED &&
+      lastDriveDirection != wanted && millis() - driveStoppedAtMs < REVERSAL_DWELL_MS) {
+    // Stopped before this command arrived, but still spinning down from the
+    // opposite direction -- nothing braked here, so there is no latch to
+    // consult and the stop clock is what dates the spin-down.
+    return false;
   }
   digitalWrite(LED_PIN, HIGH);
-  // Drop the pin that goes low before raising the other, so the bridge is
-  // never briefly driven on both sides.
-  if (levelA == LOW) {
-    digitalWrite(MOTOR_PIN_A, levelA);
-    digitalWrite(MOTOR_PIN_B, levelB);
-  } else {
-    digitalWrite(MOTOR_PIN_B, levelB);
-    digitalWrite(MOTOR_PIN_A, levelA);
-  }
+  // Written in either order: there is no both-sides-driven moment to avoid.
+  // Arriving from DRIVE_STOPPED the pins are at the stop levels, because the
+  // conflicting-direction case brakes and returns above; arriving with
+  // driveState already == wanted they are at these very levels and both
+  // writes are no-ops. Neither case can cross the bridge over.
+  digitalWrite(MOTOR_PIN_A, levelA);
+  digitalWrite(MOTOR_PIN_B, levelB);
   driveState = wanted;
   lastDriveDirection = wanted;
   return true;
@@ -184,9 +210,12 @@ void setupOTA() {
 // SETUP
 //////////////////////
 void setup() {
-  Serial.begin(SERIAL_BAUD);
-  delay(1000);
-
+  // Pins first, before the serial port and its settle delay. Every GPIO is an
+  // input until pinMode runs, so the H-bridge inputs float and the motor can
+  // twitch on whatever they pick up; anything ahead of these lines is time
+  // spent in that state. This only shortens the window to the boot ROM and
+  // bootloader we cannot touch -- it does not close it. Pull-downs on the
+  // driver inputs are what hold the bridge off while nobody is driving it.
   pinMode(LED_PIN, OUTPUT);
   pinMode(DIRECTION_PIN_LEFT, OUTPUT);
   pinMode(DIRECTION_PIN_RIGHT, OUTPUT);
@@ -196,6 +225,9 @@ void setup() {
   // Start from a known-safe output state
   applyStop();
   applyStraight();
+
+  Serial.begin(SERIAL_BAUD);
+  delay(1000);
 
   // Connect to Wi-Fi using secrets
   Serial.printf("Connecting to %s ...\n", WIFI_SSID);

@@ -703,7 +703,8 @@ both = HandType.LEFT <span class="kw">in</span> detected <span class="kw">and</s
 
   <div class="callout go">
     <h4>El camino rápido</h4>
-    <p style="margin:0">Cuando falta una mano, el valor por defecto se devuelve <strong>sin pasar por el filtro de la sección 7</strong>. Es a propósito: el filtro suaviza, y suavizar una parada es demorarla. Todo lo demás vota; perder la mano, no. Es el atajo que hace que el freno sea inmediato mientras el resto del sistema sigue siendo tranquilo.</p>
+    <p>Cuando falta una mano, el valor por defecto se devuelve <strong>sin pasar por el filtro de la sección 7</strong>. Es a propósito: el filtro suaviza, y suavizar una parada es demorarla. Todo lo demás vota; perder la mano, no. Es el atajo que hace que el freno sea inmediato mientras el resto del sistema sigue siendo tranquilo.</p>
+    <p style="margin:0">Y de paso <strong>se borra la cola de votos</strong> de esa mano. Si no, al volver ganaría unos cuadros el gesto de antes de perderla, que es justo cuando menos conviene — está contado en la sección 7.</p>
   </div>
 </section>
 
@@ -788,7 +789,8 @@ counter = collections.<span class="kw">Counter</span>(self._action_buffers[hand_
   <div class="callout warn">
     <h4>Dos detalles que sorprenden al leer el código</h4>
     <p><strong>Parar también vota.</strong> Podría parecer razonable dejar que PARAR se saltee la cola — es la acción segura. Pero entonces cualquier lectura basura frenaría el auto en seco a mitad de camino, treinta veces por segundo, y sería imposible manejarlo. El atajo existe, pero está un escalón más arriba: en la mano que desaparece (sección 6).</p>
-    <p style="margin-bottom:0"><strong>La cola nunca se vacía.</strong> Si bajás la mano y la volvés a subir, adentro quedaron las votaciones viejas. Durante los primeros cuadros del regreso, el gesto anterior todavía pesa. El efecto está acotado — a los seis cuadros el gesto nuevo ya ganó — pero es real, y es la clase de detalle que sólo aparece leyendo el código, no la documentación.</p>
+    <p><strong>La cola se vacía cuando se pierde la mano.</strong> Hasta hace poco no: si bajabas la mano y la volvías a subir, adentro quedaban las votaciones viejas y durante los primeros cuadros del regreso ganaba el gesto anterior. Con la cola llena de ACELERAR, volver mostrando el pulgar para abajo daba <strong>ACELERAR</strong> unos cuadros más — el auto tiraba para adelante mientras vos pedías marcha atrás, y de paso le avisaba al firmware que la dirección actual era “adelante”, así que la marcha atrás de verdad después pagaba la espera de inversión entera.</p>
+    <p style="margin-bottom:0">Justo en el momento en que las manos vuelven es cuando menos conviene repetir lo de antes, así que ahora la cola de esa mano se borra. El primer cuadro del regreso gana su propia votación, sin suavizar — una cola de un solo elemento es su propia mayoría — y si eso implica cambiar de dirección, quien pone el freno es la espera de inversión del firmware, que para eso está.</p>
   </div>
 
   <h3>El cruce de adelante a atrás</h3>

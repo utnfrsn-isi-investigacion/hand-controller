@@ -203,7 +203,7 @@ Edit `config.json` to customize settings:
     so the client reconnects instead of talking to a socket nobody is reading
   - Must stay well below the firmware timeout
 
-The handler uses a majority voting system across the buffer to determine the most consistent action, reducing noise and false detections in hand gesture recognition. Every action votes, STOP included, so `buffer_size` is what sets stop latency: flipping a saturated buffer takes about half the buffer in frames (~0.2s at the default 10 frames / 30 FPS). The fast paths that do not vote are the undetected-hand default (STOP) and the firmware's dead-man timeout.
+The handler uses a majority voting system across the buffer to determine the most consistent action, reducing noise and false detections in hand gesture recognition. Every action votes, STOP included, so `buffer_size` is what sets stop latency: flipping a saturated buffer takes about half the buffer in frames (~0.2s at the default 10 frames / 30 FPS). The fast paths that do not vote are the undetected-hand default (STOP) and the firmware's dead-man timeout. Losing a hand also clears its buffer, so the gesture you come back with wins its own vote instead of being outvoted by whatever you were doing before the hand left the frame.
 
 #### Reversal Dwell (firmware)
 
@@ -218,8 +218,20 @@ not the client — enforces the direction change:
   The client's keepalive resend retries it every `refresh_interval`, so the
   direction engages within half a second of the dwell expiring — hold the
   gesture and it will go.
-- Pulling away from a stop in the direction you were already going is
-  immediate; only a genuine reversal waits.
+- That brake **latches a deadline**, and until it passes every direction is
+  refused, not just the opposing one. The gesture vote emits a stray
+  same-direction action mid-flick; honouring it would re-energise the motor
+  during the spin-down and let the next opposing command restart the clock, so
+  a wavering hand could defer the reversal indefinitely. The price is that a
+  forward-flick user waits out the dwell too, which is the safe way to be
+  wrong.
+- Pulling away after a plain STOP, in the direction you were already going, is
+  immediate. Only a reversal starts the clock.
+- The one exception is boot: the latch starts at zero, so the firmware refuses
+  every drive command for the first `REVERSAL_DWELL_MS` of uptime. The Wi-Fi
+  join usually covers that, but a fast association can leave a connected
+  client's commands doing nothing until the next keepalive. It is deliberate —
+  the pins were floating moments earlier and the motor state is unknown.
 
 It lives in the firmware because the ESP32 serves whatever TCP client connects,
 and because the gesture smoothing above can only promise a stop of a few frames.

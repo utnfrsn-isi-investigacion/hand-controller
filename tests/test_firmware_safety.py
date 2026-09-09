@@ -7,7 +7,14 @@ that guarantee -- the ESP32 serves whatever TCP client connects, and the
 gesture smoothing only produces a stop of a few frames -- so these tests pin
 the ways the firmware could silently lose it: the constant shrinking below a
 spin-down, a drive handler writing the motor pins directly instead of going
-through engageDrive(), and the stop clock being restarted by the keepalive.
+through engageDrive(), the stop clock being restarted by the keepalive, and
+the dwell decaying back into a direction comparison that a wavering gesture
+can restart forever.
+
+The boot window is here for the same reason: between power-up and the first
+pinMode() every GPIO is an input, so the bridge sees floating inputs and the
+motor can twitch. Nothing in setup() may be reordered ahead of the safe-state
+writes.
 
 They read the firmware sources as text, the way test_protocol.py does: nothing
 here is compiled by CI, so a lost interlock would otherwise only show up as a
@@ -81,6 +88,75 @@ class TestReversalInterlock(unittest.TestCase):
         body = _function_body(self.main, 'engageDrive')
         self.assertIsNotNone(body, f"engageDrive() not found in {_MAIN_INO}")
         self.assertIn('REVERSAL_DWELL_MS', body, "engageDrive() no longer applies the dwell")
+
+    def test_dwell_is_a_latched_deadline_not_a_direction_comparison(self):
+        """The dwell must survive a same-direction command during spin-down.
+
+        engageDrive() used to refuse only when the requested direction opposed
+        lastDriveDirection. The gesture vote emits a stray same-direction
+        action mid-flick, which passed that check, drove the motor again and
+        left the next opposing command to brake and re-stamp the stop clock --
+        so a wavering hand deferred the reversal indefinitely while the motor
+        kept being re-energised the old way. The fix latches a deadline on the
+        brake and honours it whatever direction is asked for, so this test
+        pins the shape rather than the wording: a millis() stamp taken on the
+        braking path, and a guard that consults it without looking at the
+        direction.
+        """
+        body = _function_body(self.main, 'engageDrive')
+        self.assertIsNotNone(body, f"engageDrive() not found in {_MAIN_INO}")
+
+        # The stamp: a millis() assignment on the branch that brakes, to some
+        # variable other than the stop clock applyStop() already keeps.
+        brake_block = re.search(r'applyStop\(\);(.*?)return false;', body, re.DOTALL)
+        self.assertIsNotNone(brake_block, "engageDrive() no longer brakes before refusing")
+        stamps = [name for name in re.findall(r'(\w+)\s*=\s*millis\(\)\s*;', brake_block.group(1))
+                  if name != 'driveStoppedAtMs']
+        self.assertTrue(stamps, "engageDrive() brakes without latching a dwell deadline")
+        latch = stamps[0]
+
+        self.assertRegex(
+            self.main, rf'unsigned\s+long\s+{latch}\s*=',
+            f"{latch} is not a file-scope unsigned long, so the dwell cannot outlive the call")
+
+        # The guard: consults the latch and the dwell, and does not narrow
+        # itself to the opposing direction.
+        conditions = re.findall(r'if\s*\((.*?)\)\s*\{', body, re.DOTALL)
+        direction_blind = [c for c in conditions
+                           if latch in c and 'REVERSAL_DWELL_MS' in c and 'lastDriveDirection' not in c]
+        self.assertTrue(
+            direction_blind,
+            "the dwell is only enforced against lastDriveDirection, so a same-direction "
+            "command during the spin-down still gets through and restarts it")
+
+    def test_setup_drives_the_pins_before_anything_else(self):
+        """Pin init and the safe-state writes must lead setup().
+
+        Every GPIO is an input until pinMode() runs, so the H-bridge inputs
+        float and the motor can twitch on the noise they pick up. Serial and
+        its settle delay used to run first, holding that state for an extra
+        second. Reordering only shortens the window to the boot ROM and
+        bootloader; pull-downs on the driver inputs are what actually close
+        it, so this test guards the part the firmware controls.
+        """
+        body = _function_body(self.main, 'setup')
+        self.assertIsNotNone(body, f"setup() not found in {_MAIN_INO}")
+
+        motor_pin_mode = re.search(r'pinMode\(MOTOR_PIN_', body)
+        serial_begin = re.search(r'Serial\.begin\(', body)
+        apply_stop = re.search(r'applyStop\(\)', body)
+        first_delay = re.search(r'delay\(', body)
+        for name, match in (('pinMode(MOTOR_PIN_*)', motor_pin_mode), ('Serial.begin()', serial_begin),
+                            ('applyStop()', apply_stop), ('delay()', first_delay)):
+            self.assertIsNotNone(match, f"{name} not found in setup()")
+
+        self.assertLess(
+            motor_pin_mode.start(), serial_begin.start(),
+            "setup() opens the serial port before driving the motor pins, which leaves the "
+            "bridge inputs floating for longer than it has to")
+        self.assertLess(
+            apply_stop.start(), first_delay.start(),
+            "setup() delays before writing the safe output state")
 
     def test_stop_clock_only_restarts_on_the_transition(self):
         """applyStop() must stamp the clock only when it was actually driving.
