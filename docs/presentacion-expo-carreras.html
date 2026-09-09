@@ -458,6 +458,14 @@ kbd{
   font-family:'DeckMono', monospace; font-size:1.5em; color:var(--data-ink); line-height:1;
 }
 .vote .opt p{ margin:0; font-size:.98em; }
+
+/* ── Materia del plan, como etiqueta ───────────────────────── */
+/* Real subject names from the 2023 plan, so a first-year timetable and
+   this sheet agree. Small and grey on purpose: the sentence is the point. */
+.mat{
+  font-family:'Narrow', sans-serif; text-transform:uppercase; letter-spacing:.1em;
+  font-size:.66em; color:var(--data-ink); white-space:nowrap; margin-left:.55em;
+}
 </style>
 
 <div class="app">
@@ -577,6 +585,7 @@ kbd{
       </div>
     </div>
     <p class="big" style="margin-top:1.1em;max-width:none">La carrera vive en la frontera entre las dos.</p>
+    <p style="margin-top:.5em;color:var(--ink-2);max-width:none">A la izquierda, materias como Algoritmos y Estructuras de Datos, Sistemas Operativos y Redes de Datos. A la derecha, Física, Arquitectura de Computadoras y Tecnologías para la Automatización.</p>
   </div>
 </section>
 
@@ -620,6 +629,7 @@ kbd{
         </div>
         <p>Se mide cada dedo, se divide por el tamaño de la mano, y si los cinco pasan de <span class="mono">0,6</span>, está abierta.</p>
         <p class="big">Es una división.<br>Matemática de la secundaria.</p>
+        <p style="color:var(--ink-2)">La librería que encuentra la mano es Inteligencia Artificial, de quinto año. La división es de primero.</p>
       </div>
     </div>
   </div>
@@ -693,11 +703,11 @@ kbd{
   <div class="sh-body mid">
     <div class="cols-2u">
       <ul class="tick" style="font-size:1.08em;gap:.8em">
-        <li><strong>Medimos con un tester</strong> y descubrimos que el plano estaba mal.</li>
-        <li>Elegimos <strong>medio segundo</strong>, y dejamos escrito por qué.</li>
-        <li>Escribimos <strong>pruebas que corren solas</strong>, para que el próximo cambie sin miedo.</li>
-        <li>Decidimos que <strong>no pida contraseña</strong>, y escribimos por qué es aceptable.</li>
-        <li>Se lo <strong>explicamos a una escuela</strong>.</li>
+        <li><strong>Medimos con un tester</strong> y descubrimos que el plano estaba mal. <span class="mat">Arquitectura de Computadoras · 1º</span></li>
+        <li>Elegimos <strong>medio segundo</strong>, y dejamos escrito por qué. <span class="mat">Redes de Datos · 3º</span></li>
+        <li>Escribimos <strong>pruebas que corren solas</strong>, para que el próximo cambie sin miedo. <span class="mat">Ingeniería y Calidad de Software · 4º</span></li>
+        <li>Decidimos que <strong>no pida contraseña</strong>, y escribimos por qué es aceptable. <span class="mat">Seguridad en los Sistemas de Información · 5º</span></li>
+        <li>Se lo <strong>explicamos a una escuela</strong>. <span class="mat">Ingeniería y Sociedad · 1º</span></li>
       </ul>
       <div class="stack">
         <p class="big">Poco de eso es “programar”.</p>
