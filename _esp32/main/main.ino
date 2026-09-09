@@ -3,29 +3,31 @@
 #include <WiFi.h>
 #include <ESPmDNS.h>
 #include <ArduinoOTA.h>
+#include <DriveControl.h>
 
 WiFiServer tcpServer(TCP_PORT);
 
 //////////////////////
 // DRIVE STATE
 //////////////////////
-// What the traction channel is doing now, which way it last turned, and when
-// it stopped. Together these carry the reversal dwell (REVERSAL_DWELL_MS in
-// config.h): lastDriveDirection is what distinguishes "stopped after driving
-// the other way", which owes a spin-down, from "stopped after driving this
-// way" and "never driven", which do not -- so pulling away from a stop in the
-// direction you were already going stays immediate.
-enum DriveState { DRIVE_STOPPED, DRIVE_FORWARD, DRIVE_REVERSE };
-DriveState driveState = DRIVE_STOPPED;
-DriveState lastDriveDirection = DRIVE_STOPPED;
-unsigned long driveStoppedAtMs = 0;
-// Stamped only when a drive command is refused because the motor was turning
-// the other way. Deriving the dwell from driveStoppedAtMs alone was not
-// enough: that clock is restarted by every brake, and the gesture vote emits
-// a stray same-direction command mid-flick (see Handler._majority_action),
-// which used to be honoured and then braked again, deferring the reversal for
-// as long as the hand wavered. This one latches the deadline instead.
-unsigned long reversalBrakedAtMs = 0;
+// The traction and steering state machine lives in lib/DriveControl so it can
+// run on the host: the reversal dwell is what protects the H-bridge, and
+// `make test` exercises it against the values below without a board. This
+// file only wires it to the real clock and GPIOs -- the one digitalWrite in
+// the sketch is the adaptor right here.
+static void writePin(int pin, int level) {
+  digitalWrite(pin, level);
+}
+
+static const DriveConfig DRIVE_CONFIG = {
+  LED_PIN,
+  MOTOR_PIN_A, MOTOR_PIN_B,
+  MOTOR_STOP_LEVEL_A, MOTOR_STOP_LEVEL_B,
+  DIRECTION_PIN_LEFT, DIRECTION_PIN_RIGHT,
+  REVERSAL_DWELL_MS
+};
+
+DriveControl drive(DRIVE_CONFIG, writePin);
 
 //////////////////////
 // ACTIONS
@@ -35,126 +37,54 @@ struct Action {
   void (*handler)(WiFiClient&);
 };
 
-// Pin-level helpers, usable without a connected client (failsafe path)
-void applyStop() {
-  digitalWrite(LED_PIN, LOW);
-  // Stop levels are defined in config.h — verify them against the motor
-  // driver wiring (see the note there).
-  digitalWrite(MOTOR_PIN_B, MOTOR_STOP_LEVEL_B);
-  digitalWrite(MOTOR_PIN_A, MOTOR_STOP_LEVEL_A);
-  // Start the spin-down clock on the transition only: the client resends the
-  // current action every refresh_interval, and re-stamping on each repeated
-  // STOP would push the dwell permanently out of reach.
-  if (driveState != DRIVE_STOPPED) {
-    driveState = DRIVE_STOPPED;
-    driveStoppedAtMs = millis();
-  }
-}
-
-// Drive the traction motor, enforcing the reversal dwell. Returns false when
-// the request was held off, leaving the motor stopped; the caller does not
-// need to retry, because the client's keepalive resend does it.
-bool engageDrive(DriveState wanted, int levelA, int levelB) {
-  if (driveState != wanted && driveState != DRIVE_STOPPED) {
-    // Turning the other way right now: brake, and latch the deadline the
-    // whole dwell hangs off. The earliest anything can drive again is
-    // REVERSAL_DWELL_MS from here.
-    applyStop();
-    reversalBrakedAtMs = millis();
-    Serial.printf("Reversal: braking first, holding for %lu ms\n", REVERSAL_DWELL_MS);
-    return false;
-  }
-  if (millis() - reversalBrakedAtMs < REVERSAL_DWELL_MS) {
-    // Inside a latched dwell, so refuse every direction rather than only the
-    // opposing one. Checking the direction here is what let the dwell be
-    // restarted forever: a stray same-direction command from the gesture vote
-    // passed, re-energised the motor mid spin-down, and the next opposing
-    // command braked and re-stamped the clock. While the hand wavered the
-    // reversal never engaged and the car kept lurching the old way.
-    // The price is that a user flicking forward-neutral-forward waits out the
-    // dwell too. That is the safe direction to err.
-    // Elapsed-since-stamp, not millis() < deadline: unsigned subtraction is
-    // correct across the ~49-day millis() wrap.
-    // The initial 0 also holds off the first REVERSAL_DWELL_MS of uptime.
-    // Usually the Wi-Fi join outlasts it, but not always -- a fast
-    // association can have a client connected inside the window, and its
-    // drive commands then no-op until the next keepalive. Keeping it: the
-    // pins were floating moments earlier and the motor state is unknown, so
-    // refusing to drive for the first three seconds is the right default.
-    return false;
-  }
-  if (driveState != wanted && lastDriveDirection != DRIVE_STOPPED &&
-      lastDriveDirection != wanted && millis() - driveStoppedAtMs < REVERSAL_DWELL_MS) {
-    // Stopped before this command arrived, but still spinning down from the
-    // opposite direction -- nothing braked here, so there is no latch to
-    // consult and the stop clock is what dates the spin-down.
-    return false;
-  }
-  digitalWrite(LED_PIN, HIGH);
-  // Written in either order: there is no both-sides-driven moment to avoid.
-  // Arriving from DRIVE_STOPPED the pins are at the stop levels, because the
-  // conflicting-direction case brakes and returns above; arriving with
-  // driveState already == wanted they are at these very levels and both
-  // writes are no-ops. Neither case can cross the bridge over.
-  digitalWrite(MOTOR_PIN_A, levelA);
-  digitalWrite(MOTOR_PIN_B, levelB);
-  driveState = wanted;
-  lastDriveDirection = wanted;
-  return true;
-}
-
-void applyStraight() {
-  digitalWrite(DIRECTION_PIN_RIGHT, LOW);
-  digitalWrite(DIRECTION_PIN_LEFT, LOW);
-}
-
 // Stop motors and center direction when the client is gone or silent
 void failsafeStop() {
-  applyStop();
-  applyStraight();
+  drive.failsafe(millis());
   Serial.println("Failsafe: stopping motors");
 }
 
-// Action handlers. Both drive handlers go through engageDrive() -- writing the
-// motor pins directly here would bypass the reversal dwell.
+// The brake is the one refusal worth a serial line: it is the moment the
+// dwell starts, and the only one the client cannot tell apart from a held
+// retry by its own behaviour.
+static void replyDrive(WiFiClient& client, DriveResult result, const char* engaged, const char* held) {
+  if (result == DRIVE_BRAKED) {
+    Serial.printf("Reversal: braking first, holding for %lu ms\n", REVERSAL_DWELL_MS);
+  }
+  client.println(result == DRIVE_ENGAGED ? engaged : held);
+}
+
+// Action handlers. Both drive handlers go through drive.engage() -- writing
+// the motor pins directly here would bypass the reversal dwell.
 void accelerate(WiFiClient& client) {
   // IN1 = HIGH / IN2 = LOW: the forward row of the H-bridge truth table.
-  if (engageDrive(DRIVE_FORWARD, HIGH, LOW)) {
-    client.println("ACCELERATE (LED ON)");
-  } else {
-    client.println("ACCELERATE held: reversal dwell");
-  }
+  replyDrive(client, drive.engage(DRIVE_FORWARD, HIGH, LOW, millis()),
+             "ACCELERATE (LED ON)", "ACCELERATE held: reversal dwell");
 }
 
 void reverse(WiFiClient& client) {
   // Levels come from config.h -- read the note there before trusting this on
   // real hardware.
-  if (engageDrive(DRIVE_REVERSE, MOTOR_REVERSE_LEVEL_A, MOTOR_REVERSE_LEVEL_B)) {
-    client.println("REVERSE (LED ON)");
-  } else {
-    client.println("REVERSE held: reversal dwell");
-  }
+  replyDrive(client, drive.engage(DRIVE_REVERSE, MOTOR_REVERSE_LEVEL_A, MOTOR_REVERSE_LEVEL_B, millis()),
+             "REVERSE (LED ON)", "REVERSE held: reversal dwell");
 }
 
 void stopAction(WiFiClient& client) {
-  applyStop();
+  drive.stop(millis());
   client.println("STOP (LED OFF)");
 }
 
 void directionLeft(WiFiClient& client) {
-  digitalWrite(DIRECTION_PIN_LEFT, HIGH);
-  digitalWrite(DIRECTION_PIN_RIGHT, LOW);
+  drive.steerLeft();
   client.println("DIRECTION LEFT");
 }
 
 void directionRight(WiFiClient& client) {
-  digitalWrite(DIRECTION_PIN_RIGHT, HIGH);
-  digitalWrite(DIRECTION_PIN_LEFT, LOW);
+  drive.steerRight();
   client.println("DIRECTION RIGHT");
 }
 
 void directionStraight(WiFiClient& client) {
-  applyStraight();
+  drive.steerStraight();
   client.println("DIRECTION STRAIGHT");
 }
 
@@ -223,8 +153,7 @@ void setup() {
   pinMode(MOTOR_PIN_B, OUTPUT);
 
   // Start from a known-safe output state
-  applyStop();
-  applyStraight();
+  drive.failsafe(millis());
 
   Serial.begin(SERIAL_BAUD);
   delay(1000);

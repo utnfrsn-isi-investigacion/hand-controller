@@ -1,24 +1,17 @@
-"""Guards the firmware-side reversal interlock.
+"""Guards the .ino glue around the firmware's drive state machine.
 
-Reversing a motor that is still spinning is what kills the H-bridge, so the
-firmware refuses a drive command that opposes the current direction until the
-motor has sat stopped for REVERSAL_DWELL_MS. The Python client cannot carry
-that guarantee -- the ESP32 serves whatever TCP client connects, and the
-gesture smoothing only produces a stop of a few frames -- so these tests pin
-the ways the firmware could silently lose it: the constant shrinking below a
-spin-down, a drive handler writing the motor pins directly instead of going
-through engageDrive(), the stop clock being restarted by the keepalive, and
-the dwell decaying back into a direction comparison that a wavering gesture
-can restart forever.
+The reversal interlock itself -- the dwell, its latch, the stop clock -- lives
+in _esp32/lib/DriveControl and runs on the host under Unity
+(_esp32/test/test_drive, `make test-firmware`), compiled and executed by CI.
+What cannot run on a host is the sketch that wires it to the board, and that
+is what this file reads as text, the way test_protocol.py does:
 
-The boot window is here for the same reason: between power-up and the first
-pinMode() every GPIO is an input, so the bridge sees floating inputs and the
-motor can twitch. Nothing in setup() may be reordered ahead of the safe-state
-writes.
-
-They read the firmware sources as text, the way test_protocol.py does: nothing
-here is compiled by CI, so a lost interlock would otherwise only show up as a
-dead H-bridge on the bench.
+- the action handlers reach the motor only through DriveControl, because a
+  digitalWrite(MOTOR_PIN_*) anywhere in main.ino drives the bridge without
+  consulting the dwell;
+- setup() drives the pins to their safe state before anything else, because
+  every GPIO is an input until pinMode() runs and the bridge sees floating
+  inputs until then.
 """
 import os
 import re
@@ -28,19 +21,11 @@ import unittest
 # Add the root directory to the Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-_FIRMWARE_DIR = os.path.join(os.path.dirname(__file__), '..', '_esp32', 'main')
-_CONFIG_H = os.path.join(_FIRMWARE_DIR, 'config.h')
-_MAIN_INO = os.path.join(_FIRMWARE_DIR, 'main.ino')
+_MAIN_INO = os.path.join(os.path.dirname(__file__), '..', '_esp32', 'main', 'main.ino')
 
-# const unsigned long REVERSAL_DWELL_MS = 3000;
-_DWELL_RE = re.compile(r'const\s+unsigned\s+long\s+REVERSAL_DWELL_MS\s*=\s*(\d+)\s*;')
 # The body of a top-level function definition, up to the closing brace in
 # column 0. Anchored at the start of a line so call sites do not match.
 _FUNCTION_BODY_RE = r'^(?:\w+\s+)+{name}\s*\([^)]*\)\s*\{{(.*?)\n\}}'
-
-# The mechanical spin-down this has to cover is a matter of seconds; anything
-# below this would be back to protecting only against the electrical transient.
-_MIN_DWELL_MS = 1000
 
 
 def _read(path):
@@ -53,81 +38,39 @@ def _function_body(source, name):
     return match.group(1) if match else None
 
 
-class TestReversalInterlock(unittest.TestCase):
+class TestSketchGlue(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.config = _read(_CONFIG_H)
         cls.main = _read(_MAIN_INO)
 
-    def test_dwell_constant_covers_a_spin_down(self):
-        """The dwell exists and is still seconds-scale."""
-        match = _DWELL_RE.search(self.config)
-        self.assertIsNotNone(match, f"REVERSAL_DWELL_MS not found in {_CONFIG_H}")
-        self.assertGreaterEqual(
-            int(match.group(1)), _MIN_DWELL_MS,
-            "REVERSAL_DWELL_MS is too short to cover the motor spinning down")
+    def test_drive_handlers_go_through_drive_control(self):
+        """The handlers must reach the motor only through the state machine.
 
-    def test_drive_handlers_go_through_engage_drive(self):
-        """accelerate() and reverse() must not touch the motor pins directly.
-
-        A direct digitalWrite(MOTOR_PIN_*) in either handler drives the bridge
-        without consulting the dwell, which is exactly the failure this
-        interlock exists to prevent.
+        A direct pin write in a handler drives the bridge without consulting
+        the dwell, which is exactly the failure the interlock exists to
+        prevent -- and the one thing the native tests cannot see, because
+        they never compile this file.
         """
-        for name in ('accelerate', 'reverse'):
+        for name, call in (('accelerate', 'drive.engage('), ('reverse', 'drive.engage('),
+                           ('stopAction', 'drive.stop(')):
             with self.subTest(handler=name):
                 body = _function_body(self.main, name)
                 self.assertIsNotNone(body, f"handler {name}() not found in {_MAIN_INO}")
-                self.assertIn('engageDrive(', body, f"{name}() bypasses the reversal dwell")
-                self.assertNotIn('digitalWrite(MOTOR_PIN_', body,
-                                 f"{name}() writes the motor pins directly")
+                self.assertIn(call, body, f"{name}() bypasses DriveControl")
+                self.assertNotIn('digitalWrite(', body, f"{name}() writes a pin directly")
 
-    def test_engage_drive_consults_the_dwell(self):
-        """Guard against the interlock being reduced to a state assignment."""
-        body = _function_body(self.main, 'engageDrive')
-        self.assertIsNotNone(body, f"engageDrive() not found in {_MAIN_INO}")
-        self.assertIn('REVERSAL_DWELL_MS', body, "engageDrive() no longer applies the dwell")
+    def test_the_only_pin_write_is_the_adaptor(self):
+        """Every GPIO write goes through the injected writer.
 
-    def test_dwell_is_a_latched_deadline_not_a_direction_comparison(self):
-        """The dwell must survive a same-direction command during spin-down.
-
-        engageDrive() used to refuse only when the requested direction opposed
-        lastDriveDirection. The gesture vote emits a stray same-direction
-        action mid-flick, which passed that check, drove the motor again and
-        left the next opposing command to brake and re-stamp the stop clock --
-        so a wavering hand deferred the reversal indefinitely while the motor
-        kept being re-energised the old way. The fix latches a deadline on the
-        brake and honours it whatever direction is asked for, so this test
-        pins the shape rather than the wording: a millis() stamp taken on the
-        braking path, and a guard that consults it without looking at the
-        direction.
+        Once a second digitalWrite appears in the sketch, some path to the
+        bridge exists that the host tests do not exercise.
         """
-        body = _function_body(self.main, 'engageDrive')
-        self.assertIsNotNone(body, f"engageDrive() not found in {_MAIN_INO}")
-
-        # The stamp: a millis() assignment on the branch that brakes, to some
-        # variable other than the stop clock applyStop() already keeps.
-        brake_block = re.search(r'applyStop\(\);(.*?)return false;', body, re.DOTALL)
-        self.assertIsNotNone(brake_block, "engageDrive() no longer brakes before refusing")
-        stamps = [name for name in re.findall(r'(\w+)\s*=\s*millis\(\)\s*;', brake_block.group(1))
-                  if name != 'driveStoppedAtMs']
-        self.assertTrue(stamps, "engageDrive() brakes without latching a dwell deadline")
-        latch = stamps[0]
-
-        self.assertRegex(
-            self.main, rf'unsigned\s+long\s+{latch}\s*=',
-            f"{latch} is not a file-scope unsigned long, so the dwell cannot outlive the call")
-
-        # The guard: consults the latch and the dwell, and does not narrow
-        # itself to the opposing direction.
-        conditions = re.findall(r'if\s*\((.*?)\)\s*\{', body, re.DOTALL)
-        direction_blind = [c for c in conditions
-                           if latch in c and 'REVERSAL_DWELL_MS' in c and 'lastDriveDirection' not in c]
-        self.assertTrue(
-            direction_blind,
-            "the dwell is only enforced against lastDriveDirection, so a same-direction "
-            "command during the spin-down still gets through and restarts it")
+        adaptor = _function_body(self.main, 'writePin')
+        self.assertIsNotNone(adaptor, f"writePin() adaptor not found in {_MAIN_INO}")
+        self.assertIn('digitalWrite(', adaptor)
+        self.assertEqual(self.main.count('digitalWrite('), 1,
+                         "main.ino writes a pin somewhere other than the writePin() adaptor")
 
     def test_setup_drives_the_pins_before_anything_else(self):
         """Pin init and the safe-state writes must lead setup().
@@ -144,10 +87,10 @@ class TestReversalInterlock(unittest.TestCase):
 
         motor_pin_mode = re.search(r'pinMode\(MOTOR_PIN_', body)
         serial_begin = re.search(r'Serial\.begin\(', body)
-        apply_stop = re.search(r'applyStop\(\)', body)
+        safe_state = re.search(r'drive\.failsafe\(', body)
         first_delay = re.search(r'delay\(', body)
         for name, match in (('pinMode(MOTOR_PIN_*)', motor_pin_mode), ('Serial.begin()', serial_begin),
-                            ('applyStop()', apply_stop), ('delay()', first_delay)):
+                            ('drive.failsafe()', safe_state), ('delay()', first_delay)):
             self.assertIsNotNone(match, f"{name} not found in setup()")
 
         self.assertLess(
@@ -155,21 +98,8 @@ class TestReversalInterlock(unittest.TestCase):
             "setup() opens the serial port before driving the motor pins, which leaves the "
             "bridge inputs floating for longer than it has to")
         self.assertLess(
-            apply_stop.start(), first_delay.start(),
+            safe_state.start(), first_delay.start(),
             "setup() delays before writing the safe output state")
-
-    def test_stop_clock_only_restarts_on_the_transition(self):
-        """applyStop() must stamp the clock only when it was actually driving.
-
-        The client resends the current action every refresh_interval, so an
-        unconditional stamp would restart the dwell on every repeated STOP and
-        the opposite direction would never engage.
-        """
-        body = _function_body(self.main, 'applyStop')
-        self.assertIsNotNone(body, f"applyStop() not found in {_MAIN_INO}")
-        self.assertRegex(
-            body, r'if\s*\(\s*driveState\s*!=\s*DRIVE_STOPPED\s*\)[^}]*driveStoppedAtMs\s*=',
-            "applyStop() stamps driveStoppedAtMs outside the transition guard")
 
 
 if __name__ == '__main__':

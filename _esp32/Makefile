@@ -1,7 +1,9 @@
 .DEFAULT_GOAL := help
-PIO           := pio
+# pio is on PATH when installed with pip; the installer script leaves it in
+# its own venv instead, so fall back to that rather than needing shell setup.
+PIO           ?= $(shell command -v pio 2>/dev/null || echo $(HOME)/.platformio/penv/bin/pio)
 
-.PHONY: help build upload monitor upload-monitor upload-ota clean secrets
+.PHONY: help build test upload monitor upload-monitor upload-ota clean secrets
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -9,6 +11,9 @@ help:
 
 build: ## Compile firmware
 	$(PIO) run
+
+test: ## Run the drive state-machine tests on this machine (no board needed)
+	$(PIO) test -e native
 
 upload: ## Compile and flash firmware to connected ESP32 over USB
 	$(PIO) run --target upload
