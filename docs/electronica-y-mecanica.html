@@ -486,7 +486,7 @@ footer.doc a:hover{ color:var(--data-ink); }
     <h4>El detalle que conecta con la diapositiva 14</h4>
     <p>Entre que le das energía al ESP32 y que corre la primera línea de <span class="mono">setup()</span> pasan cientos de milisegundos. Durante todo ese rato <strong>los pines están como entradas, flotando</strong>. Si el puente H está alimentado, sus entradas ven ruido y el motor puede pegar un tirón antes de que tu código exista.</p>
     <p>Por eso <span class="mono">setup()</span> arranca poniendo los pines en salida y escribiendo el estado seguro, <em>antes</em> del puerto serie y del Wi-Fi. Todo lo que se ponga delante de esas líneas es tiempo con las entradas del puente al aire: hasta hace poco iban primero <span class="mono">Serial.begin()</span> y su espera de un segundo, y esa ventana duraba más de un segundo de más.</p>
-    <p style="margin-bottom:0">Reordenar <strong>acorta</strong> la ventana, no la cierra. Lo que queda es el arranque de la ROM y del gestor de arranque, que desde el firmware no se tocan. Cerrarla de verdad es cosa del hardware: resistencias de 10 kΩ a masa en las entradas del puente, para que mientras nadie mande nada manden ellas. <strong>Conviene mirar la placa y confirmar que estén puestas</strong> antes de darlo por hecho. Es la misma filosofía del hombre muerto de la diapositiva 15, pero resuelta con dos resistencias en vez de con código.</p>
+    <p style="margin-bottom:0">Reordenar <strong>acorta</strong> la ventana, no la cierra. Lo que queda es el arranque de la ROM y del gestor de arranque, que desde el firmware no se tocan. Cerrarla de verdad es cosa del hardware: resistencias de 10 kΩ a masa en las entradas del puente, para que mientras nadie mande nada manden ellas. <strong>En esta placa no están puestas</strong>: es la mejora recomendada, no algo que ya esté, y por eso el tirón al encender de la tabla de problemas es un síntoma real de este auto y no una hipótesis. Es la misma filosofía del hombre muerto de la diapositiva 15, pero resuelta con dos resistencias en vez de con código.</p>
   </div>
 </section>
 
@@ -999,23 +999,23 @@ footer.doc a:hover{ color:var(--data-ink); }
   <p class="small dim">Moraleja general: la tabla de verdad está en la hoja de datos de <em>tu</em> chip, y es media página. Vale la pena leerla una vez.</p>
 
   <h3>Qué escribe el firmware de este repositorio</h3>
-  <p>De <span class="mono">_esp32/main/config.h</span>: <code>MOTOR_PIN_A = 16</code> y <code>MOTOR_PIN_B = 17</code>. Suponiendo que van a IN1 e IN2, las tres órdenes de tracción quedan así:</p>
+  <p>De <span class="mono">_esp32/main/config.h</span>: <code>MOTOR_PIN_A = 16</code> y <code>MOTOR_PIN_B = 17</code>. Van a <strong>IN4 e IN3</strong> — el canal B del módulo, y en ese orden cruzado, que es la trampa — así que las tres órdenes de tracción quedan así (la tabla de verdad es la misma, fila por fila, en cualquiera de los dos canales):</p>
   <pre class="code"><span class="cm">// accelerate() — main.ino</span>
-<span class="kw">drive.engage</span>(DRIVE_FORWARD, HIGH, LOW, millis());  <span class="cm">// IN1 = HIGH, IN2 = LOW → adelante</span>
+<span class="kw">drive.engage</span>(DRIVE_FORWARD, HIGH, LOW, millis());  <span class="cm">// IN4 = HIGH, IN3 = LOW → adelante</span>
 
 <span class="cm">// reverse() — los niveles salen de config.h</span>
-MOTOR_REVERSE_LEVEL_A = LOW;          <span class="cm">// IN1 = LOW</span>
-MOTOR_REVERSE_LEVEL_B = HIGH;         <span class="cm">// IN2 = HIGH → atrás</span>
+MOTOR_REVERSE_LEVEL_A = LOW;          <span class="cm">// IN4 = LOW</span>
+MOTOR_REVERSE_LEVEL_B = HIGH;         <span class="cm">// IN3 = HIGH → atrás</span>
 
 <span class="cm">// DriveControl::stop() — ídem</span>
-MOTOR_STOP_LEVEL_A = LOW;             <span class="cm">// IN1 = LOW</span>
-MOTOR_STOP_LEVEL_B = LOW;             <span class="cm">// IN2 = LOW → freno o libre</span></pre>
+MOTOR_STOP_LEVEL_A = LOW;             <span class="cm">// IN4 = LOW</span>
+MOTOR_STOP_LEVEL_B = LOW;             <span class="cm">// IN3 = LOW → freno o libre</span></pre>
 
   <div class="callout stop">
     <h4>Ese último LOW es un bug que estuvo ahí desde el principio</h4>
-    <p>Hasta hace poco <span class="mono">MOTOR_STOP_LEVEL_B</span> valía <span class="mono">HIGH</span>, heredado del firmware original. Y <span class="mono">IN1 = LOW</span> con <span class="mono">IN2 = HIGH</span> es la segunda fila de la tabla: <strong>gira al revés</strong>, en cualquiera de los tres chips. Si esos pines van a las entradas de un puente H, la acción “parar” estaba mandando marcha atrás, y el corte por hombre muerto de la diapositiva 15 hacía lo mismo.</p>
+    <p>Hasta hace poco <span class="mono">MOTOR_STOP_LEVEL_B</span> valía <span class="mono">HIGH</span>, heredado del firmware original. Y <span class="mono">IN4 = LOW</span> con <span class="mono">IN3 = HIGH</span> es la segunda fila de la tabla: <strong>gira al revés</strong>, en cualquiera de los tres chips. Si esos pines van a las entradas de un puente H, la acción “parar” estaba mandando marcha atrás, y el corte por hombre muerto de la diapositiva 15 hacía lo mismo.</p>
     <p>Lo que lo destapó fue agregar la marcha atrás de verdad: los niveles que hacían falta para <span class="mono">REVERSE</span> resultaron ser exactamente los que el firmware ya usaba para parar. Los dos no podían estar bien.</p>
-    <p style="margin-bottom:0">La corrección son dos letras: <span class="mono">LOW/LOW</span> es el único par que no mueve el motor en ninguno de los tres chips — freno en el L298N con ENA puesto, libre en un DRV8833 o TB6612FNG — y es, además, lo que el canal de dirección ya usaba para “centrado”. Sigue haciendo falta <strong>verificarlo contra el cableado real</strong>, con las ruedas en el aire, antes de confiar en el failsafe.</p>
+    <p style="margin-bottom:0">La corrección son dos letras: <span class="mono">LOW/LOW</span> es el único par que no mueve el motor en ninguno de los tres chips — freno en el L298N con el <i>enable</i> del canal puesto (ENB para la tracción), libre en un DRV8833 o TB6612FNG — y es, además, lo que el canal de dirección ya usaba para “centrado”. Sigue haciendo falta <strong>verificarlo contra el cableado real</strong>, con las ruedas en el aire, antes de confiar en el failsafe.</p>
   </div>
   <p>Es un buen ejemplo de algo que en el software no se ve: el código está bien escrito, tiene tests, y la lógica es correcta. Pero <strong>“parar” no es una propiedad del código, es una propiedad del circuito</strong>. El mismo programa, con el motor cableado al revés, hace exactamente lo contrario de lo que dice su nombre. Eso sólo se cierra midiendo en el banco, con las ruedas en el aire.</p>
 
@@ -1053,9 +1053,9 @@ MOTOR_STOP_LEVEL_B = LOW;             <span class="cm">// IN2 = LOW → freno o 
   <ol class="steps">
     <li>Negativo de la batería &rarr; GND del módulo &rarr; GND del ESP32. <strong>Los tres unidos.</strong></li>
     <li>Positivo de la batería &rarr; +12V / Vs del módulo. Nunca al ESP32.</li>
-    <li>GPIO 16 &rarr; IN1, GPIO 17 &rarr; IN2.</li>
-    <li>ENA con el <i>jumper</i> puesto (todo o nada), o a un pin con PWM si vas a regular velocidad.</li>
-    <li>OUT1 y OUT2 &rarr; los dos cables del motor. Si gira al revés de lo que esperabas, dalos vuelta — o cambiá el HIGH por el LOW en el firmware, que es gratis.</li>
+    <li>GPIO 16 &rarr; IN4, GPIO 17 &rarr; IN3: tracción, canal B. GPIO 4 &rarr; IN1, GPIO 5 &rarr; IN2: dirección, canal A. El mapa completo está en <span class="mono">config.h</span>; fijate que el orden A/B del firmware va cruzado respecto de IN3/IN4.</li>
+    <li>ENA y ENB con el <i>jumper</i> puesto (todo o nada), o el ENB a un pin con PWM si vas a regular la velocidad de tracción.</li>
+    <li>OUT3 y OUT4 &rarr; los dos cables del motor de tracción; OUT1 y OUT2 &rarr; los del de dirección. Si la tracción gira al revés de lo que esperabas, dalos vuelta — o cambiá el HIGH por el LOW en el firmware, que es gratis.</li>
     <li>El ESP32 se alimenta aparte: por USB, o por su pin VIN con 5 V. <strong>Nunca del pin de 3,3 V hacia afuera.</strong></li>
   </ol>
 </section>
@@ -1102,7 +1102,7 @@ MOTOR_STOP_LEVEL_B = LOW;             <span class="cm">// IN2 = LOW → freno o 
 <span class="kw">ledcSetup</span>(0, 5000, 8);
 <span class="kw">ledcAttachPin</span>(ENA_PIN, 0);
 <span class="kw">ledcWrite</span>(0, 160);</pre>
-  <p>El PWM va al pin <span class="mono">ENA</span> del puente, no a IN1/IN2: el sentido lo siguen decidiendo los dos bits de siempre, y el <i>enable</i> decide cuánta potencia pasa. Sentido y velocidad quedan separados, que es justo lo que querés.</p>
+  <p>El PWM va al pin de <i>enable</i> del canal (<span class="mono">ENB</span> para la tracción), no a IN3/IN4: el sentido lo siguen decidiendo los dos bits de siempre, y el <i>enable</i> decide cuánta potencia pasa. Sentido y velocidad quedan separados, que es justo lo que querés.</p>
 
   <div class="callout warn">
     <h4>La zona muerta, que te va a morder</h4>
@@ -1173,7 +1173,7 @@ MOTOR_STOP_LEVEL_B = LOW;             <span class="cm">// IN2 = LOW → freno o 
     <li><strong>¿Prende el LED del pin 2 cuando hacés el gesto?</strong> Si prende, la cámara, la red, el TCP y el firmware están bien: el problema es del pin para adelante. Si no prende, el problema es del pin para atrás, y se depura con <span class="mono">print</span>.</li>
     <li><strong>Medí GPIO 16 y GPIO 17 contra masa</strong> mientras alguien hace el gesto. Tienen que cambiar entre 0 y 3,3 V. Si no cambian, el firmware no está haciendo lo que creés.</li>
     <li><strong>Medí la entrada de potencia del puente</strong> (Vs contra GND). Si ahí no hay 6 V, no hay nada que discutir más adelante: batería, llave o cable.</li>
-    <li><strong>Medí entre OUT1 y OUT2</strong>, con el gesto puesto. Tiene que aparecer la tensión de batería menos la caída del puente. Si las entradas cambian y las salidas no, el puente está muerto o le falta el <i>jumper</i> de ENA.</li>
+    <li><strong>Medí entre OUT3 y OUT4</strong>, con el gesto puesto. Tiene que aparecer la tensión de batería menos la caída del puente. Si las entradas cambian y las salidas no, el puente está muerto o le falta el <i>jumper</i> de ENB.</li>
     <li><strong>Conectá el motor directo a la batería</strong> un segundo. Si no gira, el problema es el motor o la mecánica, y estuviste dos horas mirando el circuito equivocado.</li>
     <li><strong>Verificá las masas con el continuímetro</strong>, sin alimentar: ESP32 contra módulo, y módulo contra negativo de batería. Tiene que pitar.</li>
     <li><strong>Mirá el monitor serie</strong> a 115200. Un <span class="mono">Brownout detector was triggered</span> ahí cambia todo el diagnóstico: no es de señal, es de alimentación.</li>
@@ -1196,9 +1196,9 @@ MOTOR_STOP_LEVEL_B = LOW;             <span class="cm">// IN2 = LOW → freno o 
         <tr><td>Gira al revés</td><td>OUT1 y OUT2 invertidos</td><td>Dar vuelta los cables, o los <span class="mono">HIGH</span> del firmware</td></tr>
         <tr><td>El puente quema, y quema mucho</td><td>Caída del L298N, o motor exigido</td><td>Disipador; o cambiar a DRV8833</td></tr>
         <tr><td>Se rompió un pin, y sólo uno</td><td>5 V en una entrada de 3,3 V, o consumo excesivo</td><td>Divisor o adaptador de nivel; transistor para cargas</td></tr>
-        <tr><td>Da un tirón al encender</td><td>Pines flotando antes de <span class="mono">setup()</span></td><td>Resistencias de 10 kΩ a masa en las entradas del puente</td></tr>
+        <tr><td>Da un tirón al encender</td><td>Pines flotando antes de <span class="mono">setup()</span></td><td>Resistencias de 10 kΩ a masa en las entradas del puente — esta placa no las tiene</td></tr>
         <tr><td>Anda un rato y se cuelga</td><td>Ruido de escobillas o cables largos como antena</td><td>Capacitores de 100 nF en el motor; cables cortos</td></tr>
-        <tr><td>Todo parece bien y no pasa nada</td><td>El <i>jumper</i> de ENA, que nadie mira</td><td>Ponerlo, o mandarle PWM a ese pin</td></tr>
+        <tr><td>Todo parece bien y no pasa nada</td><td>El <i>jumper</i> de ENB (tracción) o ENA (dirección), que nadie mira</td><td>Ponerlo, o mandarle PWM a ese pin</td></tr>
       </tbody>
     </table>
   </div>

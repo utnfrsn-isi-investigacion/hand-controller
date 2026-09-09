@@ -56,7 +56,9 @@ static void replyDrive(WiFiClient& client, DriveResult result, const char* engag
 // Action handlers. Both drive handlers go through drive.engage() -- writing
 // the motor pins directly here would bypass the reversal dwell.
 void accelerate(WiFiClient& client) {
-  // IN1 = HIGH / IN2 = LOW: the forward row of the H-bridge truth table.
+  // A = HIGH / B = LOW, i.e. IN4 high and IN3 low on the traction channel
+  // (see the wiring map in config.h). That this row is forward was settled
+  // on the bench, not read off the pins.
   replyDrive(client, drive.engage(DRIVE_FORWARD, HIGH, LOW, millis()),
              "ACCELERATE (LED ON)", "ACCELERATE held: reversal dwell");
 }
@@ -145,7 +147,8 @@ void setup() {
   // twitch on whatever they pick up; anything ahead of these lines is time
   // spent in that state. This only shortens the window to the boot ROM and
   // bootloader we cannot touch -- it does not close it. Pull-downs on the
-  // driver inputs are what hold the bridge off while nobody is driving it.
+  // driver inputs would hold the bridge off while nobody is driving it;
+  // this board does not have them, so the twitch at power-up is real.
   pinMode(LED_PIN, OUTPUT);
   pinMode(DIRECTION_PIN_LEFT, OUTPUT);
   pinMode(DIRECTION_PIN_RIGHT, OUTPUT);
