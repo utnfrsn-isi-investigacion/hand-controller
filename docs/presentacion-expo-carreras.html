@@ -420,91 +420,78 @@ kbd{
   .sh-body{ overflow:visible; }
   .hud{ display:none; }
 }
+
+/* ── Pregunta para la sala ─────────────────────────────────── */
+/* One per sheet at most. The presenter reads it aloud and waits; the
+   sheet stays up while the room thinks, so it has to read from the back. */
+.ask{
+  border:1px solid var(--data);
+  background: color-mix(in srgb, var(--data) 6%, transparent);
+  padding:1em 1.2em; margin-top:1.2em;
+}
+.ask .eyebrow{ margin-bottom:.35em; }
+.ask .q{
+  font-family:'Narrow', sans-serif; font-weight:700;
+  font-size:1.5em; line-height:1.12; text-wrap:balance;
+  margin:0 0 .35em; max-width:36ch; color:var(--ink);
+}
+.ask .a{ font-size:.88em; color:var(--ink-2); margin:0; max-width:60ch; }
 </style>
 
 <div class="app">
 <div class="stage" id="stage" tabindex="0">
 
 <!-- ══ 01 ══════════════════════════════════════════════════ -->
-<section class="sheet" data-sec="Portada">
+<section class="sheet" data-sec="Portada" data-t="15">
   <div class="cover">
     <p class="eyebrow">UTN · Facultad Regional San Nicolás <span class="sep">/</span> Expo Carreras</p>
     <h1>Hand<br>Controller<span>.</span></h1>
-    <p class="lead">Un auto que se maneja moviendo las manos en el aire. Sin control remoto, sin joystick, sin tocar nada.</p>
+    <p class="lead">Un auto que se maneja moviendo las manos frente a una cámara. Sin control remoto, sin joystick, sin tocar nada.</p>
     <dl class="kv">
       <dt>Carrera</dt><dd>Ingeniería en Sistemas de Información</dd>
       <dt>Área</dt><dd>Investigación — proyecto de muestra</dd>
-      <dt>Para</dt><dd>Estudiantes de último año de escuela técnica o bachiller</dd>
+      <dt>Para</dt><dd>Estudiantes de secundaria. No hace falta saber programar ni saber electrónica.</dd>
+      <dt>Duración</dt><dd>Cinco minutos, y después las preguntas de ustedes.</dd>
     </dl>
     <p class="hint">Avanzá con <kbd>→</kbd> <kbd>espacio</kbd> · volvé con <kbd>←</kbd></p>
   </div>
 </section>
 
 <!-- ══ 02 ══════════════════════════════════════════════════ -->
-<section class="sheet" data-sec="Presentación">
-  <header class="sh-head">
-    <p class="eyebrow">Antes de empezar</p>
-    <h2>Qué es esto, y por qué te lo contamos a vos</h2>
-  </header>
-  <div class="sh-body mid">
-    <div class="cols-2">
-      <div class="card">
-        <h3>El proyecto</h3>
-        <p>Es un proyecto de muestra. No es un producto, no se vende, no resuelve ningún problema real.</p>
-        <p>Es la oportunidad de aprender los distintos y variados aspectos que componen la ingeniería de software.</p>
-      </div>
-      <div class="card">
-        <h3>Por qué te puede interesar</h3>
-        <p>Vos ya sabés cómo gira un motor, qué hace un contactor y por qué un circuito lleva protección.</p>
-        <p>Lo que viene es lo que pasa cuando a todo eso le agregás <strong>software</strong>: la misma máquina de siempre, pero tomando decisiones sola, treinta veces por segundo.</p>
-      </div>
-    </div>
-    <div class="callout" style="margin-top:1.3em">
-      <h3>Tres preguntas que vas a poder contestar al final</h3>
-      <ol class="steps">
-        <li>¿Cómo hace una computadora para <em>ver</em> una mano?</li>
-        <li>¿Cómo llega esa orden desde tu mano hasta un motor que gira?</li>
-        <li>¿Por qué la parte más importante del sistema es la que lo hace <em>frenar</em>?</li>
-      </ol>
-    </div>
-  </div>
-</section>
-
-<!-- ══ 03 ══════════════════════════════════════════════════ -->
-<section class="sheet" data-sec="Presentación">
+<section class="sheet" data-sec="La idea" data-t="35">
   <header class="sh-head">
     <p class="eyebrow">La idea</p>
-    <h2>Ponés las manos frente a una webcam.<br>La izquierda es el acelerador. La derecha, el volante.</h2>
+    <h2>Las manos frente a una cámara.<br>La izquierda acelera. La derecha dobla.</h2>
   </header>
   <div class="sh-body mid">
     <div class="cols-3">
       <div class="card">
         <h3>Mano izquierda</h3>
         <p><strong>Palma abierta</strong> → el auto para.<br><strong>Cerrada, pulgar arriba</strong> → acelera.<br><strong>Cerrada, pulgar abajo</strong> → marcha atrás.</p>
-        <p style="color:var(--ink-2)">Manejar es tener la mano cerrada. Abrirla de golpe —lo que hace cualquiera cuando algo sale mal— es el freno.</p>
+        <p style="color:var(--ink-2)">Abrir la mano es el reflejo de cualquiera cuando algo sale mal. Por eso ese gesto es el freno.</p>
       </div>
       <div class="card">
         <h3>Mano derecha</h3>
-        <p>El <strong>dedo índice</strong> inclinado a la izquierda, a la derecha o apuntando arriba decide hacia dónde dobla.</p>
+        <p>El <strong>dedo índice</strong> inclinado a la izquierda o a la derecha decide hacia dónde dobla. Apuntando arriba, va recto.</p>
         <p style="color:var(--ink-2)">Es el volante, con tres posiciones.</p>
       </div>
       <div class="card">
         <h3>Las dos juntas</h3>
-        <p>Si en la imagen <strong>falta una mano</strong>, o se sale del cuadro, el auto para y endereza la dirección.</p>
-        <p style="color:var(--ink-2)">No hay manejo con una sola mano.</p>
+        <p>Si en la imagen <strong>falta una mano</strong>, el auto para y endereza la dirección.</p>
+        <p style="color:var(--ink-2)">No se maneja con una sola mano.</p>
       </div>
     </div>
     <div class="callout" style="margin-top:1.3em">
-      <p style="margin:0"><strong>El hardware “raro” de todo esto es un chip de cinco dólares.</strong> La cámara ya la tenés en la notebook, y el resto son dos librerías de Python que se instalan en un minuto.</p>
+      <p style="margin:0"><strong>Todo el equipo cabe en una mochila:</strong> una notebook con su cámara, un chip con Wi-Fi que cuesta unos cinco dólares, un pequeño circuito para motores y un auto de juguete.</p>
     </div>
   </div>
 </section>
 
-<!-- ══ 04 ══════════════════════════════════════════════════ -->
-<section class="sheet" data-sec="Arquitectura">
+<!-- ══ 03 ══════════════════════════════════════════════════ -->
+<section class="sheet" data-sec="La cadena" data-t="30">
   <header class="sh-head tight">
     <p class="eyebrow">La cadena completa</p>
-    <h2>De tu mano al motor, en siete escalones</h2>
+    <h2>De la mano al motor, en siete pasos</h2>
   </header>
   <div class="sh-body mid">
     <figure>
@@ -559,24 +546,25 @@ kbd{
 
         <text class="sub" x="440" y="200" text-anchor="middle">todo esto se repite unas 30 veces por segundo</text>
       </svg>
-      <figcaption>Fig. 01 — Cadena de control completa</figcaption>
+      <figcaption>Fig. 01 — La cadena completa, de la mano al motor</figcaption>
     </figure>
     <div class="cols-2" style="margin-top:1.1em">
       <div class="callout">
-        <p style="margin:0">Los primeros cinco bloques mueven <strong>información</strong>: números, mensajes, decisiones. Consumen lo que consume una notebook.</p>
+        <p style="margin:0">Los primeros cinco bloques mueven <strong>información</strong>: números, mensajes, decisiones. Es la parte que se programa.</p>
       </div>
       <div class="callout warn">
-        <p style="margin:0">Los dos últimos mueven <strong>energía</strong>: amperes que salen de una batería y hacen girar un eje.</p>
+        <p style="margin:0">Los dos últimos mueven <strong>energía</strong>: corriente que sale de una batería y hace girar una rueda. Es la parte que se cablea.</p>
       </div>
     </div>
+    <p style="margin-top:1em;color:var(--ink-2)">La carrera vive en la frontera entre las dos mitades. Hoy recorremos la cadena de izquierda a derecha, y nos detenemos en tres lugares.</p>
   </div>
 </section>
 
-<!-- ══ 05 ══════════════════════════════════════════════════ -->
-<section class="sheet" data-sec="Visión">
+<!-- ══ 04 ══════════════════════════════════════════════════ -->
+<section class="sheet" data-sec="Visión" data-t="45">
   <header class="sh-head tight">
-    <p class="eyebrow">Etapa 1 <span class="sep">/</span> La cámara</p>
-    <h2>La computadora no ve una mano. Ve 21 números.</h2>
+    <p class="eyebrow">Parada 1 <span class="sep">/</span> La cámara</p>
+    <h2>La computadora no ve una mano. Ve 21 puntos.</h2>
   </header>
   <div class="sh-body mid">
     <div class="cols-side">
@@ -606,23 +594,22 @@ kbd{
         <figcaption>Fig. 02 — Los 21 puntos de una mano</figcaption>
       </figure>
       <div class="stack">
-        <p><strong>MediaPipe</strong>, una librería gratuita de Google, recibe la imagen y devuelve veintiún puntos por cada mano: la muñeca, los nudillos, cada articulación y cada yema.</p>
-        <p>Cada punto viene como una coordenada <span class="mono">(x, y, z)</span>. Nada más que eso.</p>
-        <div class="callout">
-          <h3>El detalle que importa</h3>
-          <p style="margin:0">Las coordenadas están <strong>normalizadas entre 0 y 1</strong>, no en píxeles. <span class="mono">x = 0,5</span> es el centro de la imagen, sea una cámara de 640 o de 1920 puntos de ancho. El programa funciona igual con cualquier cámara.</p>
+        <p><strong>MediaPipe</strong>, una librería gratuita de Google, recibe cada imagen y devuelve veintiún puntos por mano: la muñeca, cada nudillo, cada articulación y cada yema.</p>
+        <p>Cada punto es un par de coordenadas, como una posición en un plano. Nada más que eso. A partir de acá no hay más inteligencia artificial: todo lo que sigue es geometría de la escuela.</p>
+        <div class="ask">
+          <p class="eyebrow">Pregunta para la sala</p>
+          <p class="q">Con estos veintiún puntos, y nada más, ¿cómo distinguirían una mano abierta de un puño?</p>
+          <p class="a">Cualquier idea sirve. La que usa el programa cabe en una cuenta de dos líneas, y está en la hoja siguiente.</p>
         </div>
-        <p style="color:var(--ink-2)">Pensalo como recibir una pieza <strong>ya acotada</strong>. A partir de acá no hay más magia: todo lo que sigue es geometría de escuela técnica — medir distancias y compararlas.</p>
-        <p style="font-size:.93em;margin-top:.2em"><a class="lnk" href="vision-y-software.html#modelo">Qué devuelve el modelo, y qué hacemos con eso →</a></p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ══ 06 ══════════════════════════════════════════════════ -->
-<section class="sheet" data-sec="Visión">
+<!-- ══ 05 ══════════════════════════════════════════════════ -->
+<section class="sheet" data-sec="Visión" data-t="35">
   <header class="sh-head tight">
-    <p class="eyebrow">Etapa 2 <span class="sep">/</span> El freno y el acelerador</p>
+    <p class="eyebrow">Parada 1 <span class="sep">/</span> El freno y el acelerador</p>
     <h2>¿Palma abierta o puño? Se resuelve con una división</h2>
   </header>
   <div class="sh-body mid">
@@ -663,118 +650,35 @@ kbd{
           </g>
           <text class="cap" x="225" y="170" text-anchor="middle" fill="var(--ink-2)">puño cerrado</text>
         </svg>
-        <figcaption>Fig. 03 — La misma medición, dos caminos: parar, o pasar a mirar el pulgar</figcaption>
+        <figcaption>Fig. 03 — La misma medición, dos resultados: parar, o pasar a mirar el pulgar</figcaption>
       </figure>
       <div class="stack">
         <ol class="steps">
-          <li>Medí <strong>H</strong>: la distancia de la muñeca al nudillo del dedo mayor. Ese es el “tamaño” de esa mano.</li>
-          <li>Para cada dedo, medí <strong>d</strong>: la distancia de la yema a su propio nudillo.</li>
-          <li>Si <span class="mono">d / H &gt; 0,6</span> en los <strong>cinco</strong> dedos, la mano está abierta, y eso es <strong>parar</strong>. Si alguno no llega, es un puño — y ahí entra la segunda pregunta.</li>
+          <li>Medir <strong>H</strong>: la distancia de la muñeca al nudillo del dedo mayor. Es el “tamaño” de esa mano.</li>
+          <li>Para cada dedo, medir <strong>d</strong>: la distancia de la yema a su propio nudillo.</li>
+          <li>Si <span class="mono">d / H</span> pasa de <span class="mono">0,6</span> en los <strong>cinco</strong> dedos, la mano está abierta: parar. Si a alguno no le alcanza, es un puño, y entonces se mira el pulgar.</li>
         </ol>
         <div class="callout">
           <h3>¿Por qué dividir por H?</h3>
-          <p style="margin:0">Porque la relación <span class="mono">d/H</span> no tiene unidad. Si acercás la mano a la cámara, <strong>d y H crecen juntos</strong> y el cociente no cambia. Es el mismo recurso que usás con la escala de un plano: no importa el tamaño del dibujo, importa la proporción.</p>
+          <p style="margin:0">Si acercan la mano a la cámara, <strong>d y H crecen juntos</strong> y el cociente no cambia. Es la misma idea que la escala de un mapa: no importa el tamaño del dibujo, importa la proporción.</p>
         </div>
         <div class="callout go">
           <h3>Y el pulgar decide para dónde</h3>
-          <p style="margin:0">Con la mano cerrada, una segunda cuenta mide el <strong>ángulo del pulgar</strong>: unos 33° si apunta arriba, 112° de costado, 158° abajo. Arriba <strong>acelera</strong>, abajo es <strong>marcha atrás</strong>, y el puño de costado también para. Para ir de adelante a atrás, el pulgar está obligado a pasar por el medio.</p>
+          <p style="margin:0">Con la mano cerrada, una segunda cuenta mide el ángulo del pulgar. Arriba <strong>acelera</strong>, abajo es <strong>marcha atrás</strong>, y de costado, para. Para pasar de adelante a atrás el pulgar tiene que cruzar por el medio, así que el auto se detiene solo entre una y otra.</p>
         </div>
-        <p style="color:var(--ink-2)">Ese <span class="mono">0,6</span> y esos dos ángulos viven en un archivo de configuración, no enterrados en el código. Si cuesta que la palma frene, se baja; si frena sola, se sube. Nadie recompila nada.</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ══ 07 ══════════════════════════════════════════════════ -->
-<section class="sheet" data-sec="Visión">
+<!-- ══ 06 ══════════════════════════════════════════════════ -->
+<section class="sheet" data-sec="Filtrado" data-t="30">
   <header class="sh-head tight">
-    <p class="eyebrow">Etapa 3 <span class="sep">/</span> El volante</p>
-    <h2>¿Hacia dónde apunta el índice? Una resta y una zona muerta</h2>
-  </header>
-  <div class="sh-body mid">
-    <figure>
-      <svg viewBox="0 0 900 200" role="img" aria-label="Eje horizontal con la banda muerta del dedo índice">
-        <g transform="translate(120,20)">
-          <line class="wire" x1="30" y1="60" x2="6" y2="8"/><circle cx="30" cy="60" r="4" fill="var(--power)"/><circle cx="6" cy="8" r="4" fill="var(--data)"/>
-        </g>
-        <text class="cap" x="140" y="105" text-anchor="middle" fill="var(--data-ink)">izquierda</text>
-        <g transform="translate(440,20)">
-          <line class="wire" x1="18" y1="60" x2="18" y2="8"/><circle cx="18" cy="60" r="4" fill="var(--power)"/><circle cx="18" cy="8" r="4" fill="var(--data)"/>
-        </g>
-        <text class="cap" x="458" y="105" text-anchor="middle" fill="var(--ink-3)">recto</text>
-        <g transform="translate(740,20)">
-          <line class="wire" x1="6" y1="60" x2="30" y2="8"/><circle cx="6" cy="60" r="4" fill="var(--power)"/><circle cx="30" cy="8" r="4" fill="var(--data)"/>
-        </g>
-        <text class="cap" x="770" y="105" text-anchor="middle" fill="var(--data-ink)">derecha</text>
-
-        <rect x="380" y="126" width="150" height="26" fill="color-mix(in srgb, var(--ink-3) 16%, transparent)"/>
-        <line x1="30" y1="139" x2="870" y2="139" stroke="var(--rule)" stroke-width="1.5"/>
-        <line x1="380" y1="120" x2="380" y2="158" stroke="var(--power)" stroke-width="1.6"/>
-        <line x1="530" y1="120" x2="530" y2="158" stroke="var(--power)" stroke-width="1.6"/>
-        <line x1="455" y1="132" x2="455" y2="146" stroke="var(--ink-3)" stroke-width="1"/>
-
-        <text class="m sub" x="380" y="176" text-anchor="middle" fill="var(--power-ink)">−0,05</text>
-        <text class="m sub" x="530" y="176" text-anchor="middle" fill="var(--power-ink)">+0,05</text>
-        <text class="m sub" x="455" y="176" text-anchor="middle">0</text>
-        <text class="cap" x="455" y="118" text-anchor="middle" fill="var(--power-ink)">banda muerta</text>
-        <text class="m sub" x="30" y="176">diff</text>
-      </svg>
-      <figcaption>Fig. 04 — <span class="mono">diff = x(yema del índice) − x(nudillo del índice)</span></figcaption>
-    </figure>
-    <div class="cols-2" style="margin-top:1.2em">
-      <div class="callout warn">
-        <h3>Para qué está la banda muerta</h3>
-        <p style="margin:0">Ese <span class="mono">±0,05</span> —un 5 % del ancho de la imagen, unos 32 píxeles en 640— no está para complicar la cuenta. <strong>Sin él, el volante temblaría entre izquierda y derecha todo el tiempo</strong>, porque el dedo nunca está perfectamente vertical. Es exactamente la zona muerta que le dejás a cualquier lazo de control para que no oscile.</p>
-      </div>
-      <div class="stack-s">
-        <p style="font-size:.94em"><strong>La imagen está espejada</strong>, como un selfie. Por eso “más x” significa más hacia <em>tu</em> derecha, y el auto dobla para el mismo lado que ves en pantalla.</p>
-        <p style="font-size:.94em;color:var(--ink-2)">Es una decisión chica que atraviesa todo el programa: si alguien saca el espejado, la dirección queda invertida y el sistema se vuelve imposible de manejar.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ══ 08 ══════════════════════════════════════════════════ -->
-<section class="sheet" data-sec="Visión">
-  <header class="sh-head">
-    <p class="eyebrow">Resumen de la etapa</p>
-    <h2>Siete gestos, seis órdenes</h2>
-  </header>
-  <div class="sh-body mid">
-    <div class="tw">
-      <table class="d">
-        <thead><tr><th>Gesto</th><th>Mano</th><th>Acción</th><th class="c">Código</th><th>Qué hace</th></tr></thead>
-        <tbody>
-          <tr><td>Palma abierta</td><td class="dim">Izquierda</td><td><span class="chip no">PARAR</span></td><td class="c">000</td><td class="dim">Corta el motor</td></tr>
-          <tr><td>Puño, pulgar arriba</td><td class="dim">Izquierda</td><td><span class="chip go">ACELERAR</span></td><td class="c">001</td><td class="dim">Alimenta el motor de tracción</td></tr>
-          <tr><td>Puño, pulgar abajo</td><td class="dim">Izquierda</td><td><span class="chip go">MARCHA ATRÁS</span></td><td class="c">010</td><td class="dim">Los mismos pines, al revés</td></tr>
-          <tr><td>Puño, pulgar de costado</td><td class="dim">Izquierda</td><td><span class="chip no">PARAR</span></td><td class="c">000</td><td class="dim">La pose de descanso entre las otras dos</td></tr>
-          <tr><td>Índice inclinado a la izquierda</td><td class="dim">Derecha</td><td><span class="chip dir">DIRECCIÓN IZQ.</span></td><td class="c">101</td><td class="dim">Activa el actuador de giro izquierdo</td></tr>
-          <tr><td>Índice inclinado a la derecha</td><td class="dim">Derecha</td><td><span class="chip dir">DIRECCIÓN DER.</span></td><td class="c">110</td><td class="dim">Activa el actuador de giro derecho</td></tr>
-          <tr><td>Índice apuntando arriba</td><td class="dim">Derecha</td><td><span class="chip dir">RECTO</span></td><td class="c">111</td><td class="dim">Centra la dirección</td></tr>
-          <tr><td><em>Falta una mano en el cuadro</em></td><td class="dim">—</td><td><span class="chip no">PARAR</span> <span class="chip dir">RECTO</span></td><td class="c">000 · 111</td><td class="dim">Estado seguro por defecto</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="cols-2" style="margin-top:1.3em">
-      <div class="callout">
-        <p style="margin:0">Una mano maneja la <strong>potencia</strong> y la otra la <strong>dirección</strong>. Es el mismo reparto que en un auto de verdad: pedal por un lado, volante por el otro. Acá son dos manos y ningún pie.</p>
-      </div>
-      <div class="callout warn">
-        <p style="margin:0">Fijate que la acción por defecto —cuando el sistema no entiende lo que ve— es <strong>parar</strong>. No “seguir como venía”. Y que <strong>dos</strong> de los siete paran: para ir de acelerar a marcha atrás, el pulgar está obligado a cruzar el puño. Volvemos sobre esto varias veces.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ══ 09 ══════════════════════════════════════════════════ -->
-<section class="sheet" data-sec="Filtrado">
-  <header class="sh-head tight">
-    <p class="eyebrow">El problema</p>
+    <p class="eyebrow">Parada 2 <span class="sep">/</span> El ruido</p>
     <h2>La mano tiembla, y treinta veces por segundo alguna lectura sale mal</h2>
   </header>
   <div class="sh-body mid">
-    <p style="max-width:76ch">La mano nunca está quieta. La cámara pierde un cuadro. Cambia la luz un instante y el modelo duda. Con treinta lecturas por segundo <strong>algunas van a salir mal</strong>, siempre — y sin ninguna protección, un solo cuadro malo se convierte en una orden equivocada que llega al motor.</p>
+    <p style="max-width:76ch">La mano nunca está quieta. La cámara pierde una imagen. Cambia la luz un instante y el modelo duda. Con treinta lecturas por segundo, <strong>algunas van a salir mal</strong>, siempre. Sin protección, una sola lectura equivocada se convierte en una orden que llega al motor.</p>
     <figure style="margin-top:.5em">
       <svg viewBox="0 0 660 132" role="img" aria-label="Diez lecturas consecutivas, una con ruido, y el resultado por mayoría">
         <text class="cap" x="8" y="14">últimas 10 lecturas — aproximadamente un tercio de segundo</text>
@@ -789,250 +693,82 @@ kbd{
         <text class="lbl" x="326" y="112" text-anchor="middle">MAYORÍA: DIRECCIÓN RECTO — 9 de 10</text>
         <text class="sub" x="326" y="128" text-anchor="middle">la lectura con ruido nunca llega al motor</text>
       </svg>
-      <figcaption>Fig. 05 — Votación por mayoría sobre la ventana de lecturas</figcaption>
+      <figcaption>Fig. 04 — Las últimas diez lecturas, y lo que decide la mayoría</figcaption>
     </figure>
     <div class="cols-2" style="margin-top:1.1em">
       <div class="callout">
-        <h3>Esto ya lo conocés: es un antirrebote</h3>
-        <p style="margin:0">Cuando leés un pulsador no confiás en una sola lectura del contacto: leés varias veces y recién ahí decidís. Acá es igual, con diez lecturas y con cinco opciones en vez de abierto/cerrado.</p>
+        <h3>La solución: preguntar diez veces y quedarse con la mayoría</h3>
+        <p style="margin:0">El programa guarda las últimas diez lecturas y obedece a la que más se repite. Es lo que hacen ustedes cuando un termómetro marca un número raro: lo miden de nuevo antes de creerle.</p>
       </div>
       <div class="callout warn">
         <h3>Y como todo filtro, se paga</h3>
-        <p style="margin:0">Más lecturas: más suave, pero más lento en reaccionar. Menos lecturas: más rápido, pero más nervioso. Y ojo: <strong>parar también vota</strong>, así que una ventana larga es una frenada larga. Diez cuadros ≈ un tercio de segundo es el punto elegido.</p>
-      </div>
-    </div>
-    <p style="font-size:.93em;margin-top:.55em"><a class="lnk" href="vision-y-software.html#votacion">El filtro por dentro, con el código →</a></p>
-  </div>
-</section>
-
-<!-- ══ 10 ══════════════════════════════════════════════════ -->
-<section class="sheet" data-sec="Protocolo">
-  <header class="sh-head tight">
-    <p class="eyebrow">La red</p>
-    <h2>Qué viaja realmente por el aire</h2>
-  </header>
-  <div class="sh-body mid">
-    <div class="cols-2u">
-      <div class="stack">
-        <p>Después de todo el trabajo de visión y filtrado, el mensaje que sale por el Wi-Fi es esto:</p>
-        <pre class="code" style="font-size:1.4em;text-align:center;padding:.7em">001\n</pre>
-        <p style="color:var(--ink-2)">Tres caracteres y un fin de línea. Nada más. Ni un formato complicado, ni una librería especial.</p>
-        <dl class="kv">
-          <dt>Protocolo</dt><dd>TCP/IP — el mismo de cualquier página web</dd>
-          <dt>Puerto</dt><dd class="mono">1234</dd>
-          <dt>Dirección</dt><dd><span class="mono">esp32.local</span> — el equipo publica su nombre en la red</dd>
-          <dt>Clientes</dt><dd>Uno por vez</dd>
-        </dl>
-      </div>
-      <div class="stack">
-        <div class="callout">
-          <h3>Por qué tan simple</h3>
-          <p style="margin:0">Lo podés probar a mano desde una terminal: te conectás con <span class="mono">nc esp32.local 1234</span>, escribís <span class="mono">001</span> y el motor arranca. Sin la cámara, sin Python, sin nada. Cuando algo no anda, <strong>poder probar una pieza sola vale más que cualquier optimización</strong>.</p>
-        </div>
-        <div class="callout warn">
-          <h3>El riesgo escondido</h3>
-          <p style="margin:0">Estos códigos están escritos en <strong>dos lugares distintos</strong>: en el programa de la computadora y en el del ESP32. Tienen que coincidir carácter por carácter. Si alguien toca uno y se olvida del otro, el auto deja de responder y no hay error que lo avise.</p>
-        </div>
+        <p style="margin:0">Más lecturas: más estable, pero más lento en reaccionar. Menos: más rápido, pero más nervioso. Y como <strong>parar también vota</strong>, una ventana larga es una frenada larga. Diez lecturas, un tercio de segundo, es el punto elegido.</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ══ 11 ══════════════════════════════════════════════════ -->
-<section class="sheet" data-sec="Hardware">
+<!-- ══ 07 ══════════════════════════════════════════════════ -->
+<section class="sheet" data-sec="Potencia" data-t="35">
   <header class="sh-head">
-    <p class="eyebrow">El microcontrolador</p>
-    <h2>El ESP32: si sabés Arduino, ya sabés esto</h2>
-  </header>
-  <div class="sh-body mid">
-    <div class="cols-2u">
-      <div class="tw">
-        <table class="d">
-          <thead><tr><th></th><th>Arduino UNO</th><th>ESP32</th></tr></thead>
-          <tbody>
-            <tr><td>Procesador</td><td class="dim">8 bits, 16 MHz</td><td>32 bits, 2 núcleos, 240 MHz</td></tr>
-            <tr><td>Memoria RAM</td><td class="dim">2 KB</td><td>520 KB</td></tr>
-            <tr><td>Tensión de trabajo</td><td class="dim">5 V</td><td><strong style="color:var(--power-ink)">3,3 V</strong></td></tr>
-            <tr><td>Conectividad</td><td class="dim">Ninguna (módulo aparte)</td><td>Wi-Fi y Bluetooth integrados</td></tr>
-            <tr><td>Pines de E/S</td><td class="dim">~14</td><td>~34</td></tr>
-            <tr><td>Precio orientativo</td><td class="dim">~USD 10</td><td>~USD 5</td></tr>
-            <tr><td>Se programa con</td><td class="dim"><span class="mono">setup()</span> y <span class="mono">loop()</span>, en C++</td><td>Exactamente igual</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="stack">
-        <div class="callout">
-          <p style="margin:0">Es <strong>más barato, más rápido y trae Wi-Fi de fábrica</strong>, y se programa con el mismo <span class="mono">setup()</span> y <span class="mono">loop()</span> de siempre. Todo lo que aprendiste con Arduino sirve tal cual.</p>
-        </div>
-        <div class="callout warn">
-          <h3>La trampa clásica</h3>
-          <p style="margin:0">Trabaja a <strong>3,3 V, no a 5 V</strong>. Si le metés 5 V directo en una entrada, lo arruinás. Sensores y módulos pensados para Arduino muchas veces necesitan un divisor o un adaptador de nivel.</p>
-        </div>
-        <p style="color:var(--ink-2);font-size:.93em">En este proyecto el ESP32 hace tres cosas: se conecta al Wi-Fi, escucha mensajes de tres caracteres, y pone cinco pines en alto o en bajo. Nada más. Toda la inteligencia quedó en la computadora.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ══ 12 ══════════════════════════════════════════════════ -->
-<section class="sheet" data-sec="Potencia">
-  <header class="sh-head">
-    <p class="eyebrow">Del código al cobre <span class="sep">/</span> 1 de 2</p>
+    <p class="eyebrow">Parada 3 <span class="sep">/</span> Del código al cobre</p>
     <h2>Esta línea de código no mueve un motor</h2>
   </header>
   <div class="sh-body mid">
-    <pre class="code" style="font-size:1.05em;text-align:center;padding:.8em"><span class="kw">digitalWrite</span>(MOTOR_PIN_A, HIGH);</pre>
+    <pre class="code" style="font-size:1.05em;text-align:center;padding:.8em"><span class="kw">digitalWrite</span>(MOTOR_PIN_A, HIGH);   <span class="cm">// poner un pin del chip en 3,3 voltios</span></pre>
     <div class="cols-2" style="margin-top:1.2em">
       <div class="card">
-        <h3 style="color:var(--data-ink)">Lo que puede entregar un pin</h3>
+        <h3 style="color:var(--data-ink)">Lo que puede entregar un pin del chip</h3>
         <div class="metrics">
           <div class="metric d"><b>3,3 V</b><span>tensión</span></div>
-          <div class="metric d"><b>20 mA</b><span>corriente recomendada</span></div>
+          <div class="metric d"><b>20 mA</b><span>corriente</span></div>
           <div class="metric d"><b>0,07 W</b><span>potencia</span></div>
         </div>
-        <p style="margin-top:.7em;color:var(--ink-2);font-size:.9em">El máximo absoluto son 40 mA, y ahí ya estás en zona de humo.</p>
+        <p style="margin-top:.7em;color:var(--ink-2);font-size:.9em">Menos que una lamparita de un llavero.</p>
       </div>
       <div class="card">
         <h3 style="color:var(--power-ink)">Lo que pide un motor de juguete</h3>
         <div class="metrics">
           <div class="metric p"><b>6–12 V</b><span>tensión</span></div>
-          <div class="metric p"><b>0,5–2 A</b><span>en marcha</span></div>
+          <div class="metric p"><b>0,5–2 A</b><span>corriente</span></div>
           <div class="metric p"><b>~10 W</b><span>potencia</span></div>
         </div>
-        <p style="margin-top:.7em;color:var(--ink-2);font-size:.9em">Y con el rotor bloqueado puede pedir 3 a 5 A durante un instante.</p>
+        <p style="margin-top:.7em;color:var(--ink-2);font-size:.9em">Y al arrancar, con el eje trabado, pide varias veces más.</p>
       </div>
     </div>
     <div class="cols-2u" style="margin-top:1.2em">
-      <p class="big">Hay un factor de cien a mil entre lo uno y lo otro.</p>
+      <p class="big">Entre uno y otro hay un factor de cien a mil.</p>
       <div class="callout warn">
-        <p style="margin:0"><strong>El pin no es la fuente de energía: es la bobina del contactor.</strong> La energía sale de la batería. El pin solamente decide si pasa o no pasa. Conectar un motor directo a un pin no es “que ande poquito”: es romper el microcontrolador.</p>
+        <p style="margin:0"><strong>El pin no es la fuente de energía: es el interruptor.</strong> La energía sale de la batería; el pin sólo decide si pasa o no pasa. En el medio hay un circuito de cuatro llaves, el <strong>puente H</strong>, que además permite invertir el giro sin tocar un cable. Conectar el motor directo al chip no es “que ande poco”: es romper el chip.</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ══ 13 ══════════════════════════════════════════════════ -->
-<section class="sheet" data-sec="Potencia">
-  <header class="sh-head tight">
-    <p class="eyebrow">Del código al cobre <span class="sep">/</span> 2 de 2</p>
-    <h2>El puente H: cuatro llaves y un motor en el medio</h2>
-  </header>
-  <div class="sh-body mid">
-    <div class="cols-side">
-      <figure>
-        <svg viewBox="0 0 340 250" role="img" aria-label="Esquema de un puente H con cuatro llaves y un motor">
-          <g class="wire">
-            <path d="M70 40 H290"/><path d="M70 210 H290"/>
-            <path d="M130 40 V95"/><path d="M130 130 V210"/>
-            <path d="M250 40 V95"/><path d="M250 130 V210"/>
-            <path d="M130 125 H162"/><path d="M218 125 H250"/>
-            <path d="M70 40 V105"/><path d="M70 145 V210"/>
-          </g>
-          <g stroke="var(--power)" stroke-width="2.2" fill="none">
-            <path d="M130 95 L146 118"/><path d="M130 130 L146 153"/>
-            <path d="M250 95 L266 118"/><path d="M250 130 L266 153"/>
-          </g>
-          <g fill="var(--ink-2)">
-            <circle cx="130" cy="95" r="3"/><circle cx="130" cy="130" r="3"/>
-            <circle cx="250" cy="95" r="3"/><circle cx="250" cy="130" r="3"/>
-          </g>
-          <circle cx="190" cy="125" r="28" fill="var(--sheet)" stroke="var(--power)" stroke-width="2"/>
-          <text class="lbl" x="190" y="131" text-anchor="middle" fill="var(--power-ink)" font-size="18">M</text>
-
-          <g stroke="var(--ink-2)" stroke-width="2">
-            <path d="M58 105 H82"/><path d="M64 118 H76"/><path d="M58 132 H82"/><path d="M64 145 H76"/>
-          </g>
-          <text class="m sub" x="30" y="129" text-anchor="middle">batería</text>
-
-          <text class="m lbl" x="100" y="90" fill="var(--power-ink)" font-size="12">S1</text>
-          <text class="m lbl" x="100" y="160" fill="var(--power-ink)" font-size="12">S2</text>
-          <text class="m lbl" x="284" y="90" fill="var(--power-ink)" font-size="12">S3</text>
-          <text class="m lbl" x="284" y="160" fill="var(--power-ink)" font-size="12">S4</text>
-        </svg>
-        <figcaption>Fig. 06 — Puente H. Las cuatro llaves son transistores dentro de un integrado, el clásico L298N</figcaption>
-      </figure>
-      <div class="stack">
-        <div class="tw">
-          <table class="d">
-            <thead><tr><th>Llaves cerradas</th><th>Resultado</th></tr></thead>
-            <tbody>
-              <tr><td class="c">S1 + S4</td><td>Gira en un sentido</td></tr>
-              <tr><td class="c">S2 + S3</td><td>Gira en el sentido contrario</td></tr>
-              <tr><td class="c">ninguna</td><td class="dim">Libre — el motor rueda por inercia</td></tr>
-              <tr><td class="c">S2 + S4</td><td class="dim">Frenado — bornes en corto entre sí</td></tr>
-              <tr><td class="c" style="color:var(--parada)">S1 + S2</td><td style="color:var(--parada)"><strong>Prohibido</strong> — cortocircuito franco sobre la batería</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <p style="font-size:.93em">Invertir el giro de un motor de corriente continua es invertir la polaridad. Con cuatro llaves y un poco de lógica, eso se hace desde el código sin tocar un cable.</p>
-        <p style="font-size:.93em;margin-top:.6em"><a class="lnk" href="electronica-y-mecanica.html#puenteh">Cómo funciona por dentro, desde cero →</a></p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ══ 14 ══════════════════════════════════════════════════ -->
-<section class="sheet" data-sec="Firmware">
-  <header class="sh-head tight">
-    <p class="eyebrow">El programa del ESP32</p>
-    <h2>Adentro del chip: <span class="mono" style="font-size:.8em">setup()</span> y <span class="mono" style="font-size:.8em">loop()</span>, como siempre</h2>
-  </header>
-  <div class="sh-body mid">
-    <div class="cols-2">
-      <div class="stack">
-        <div>
-          <h3><span class="mono">setup()</span> — una sola vez, al arrancar</h3>
-          <ol class="steps">
-            <li>Declarar los cinco pines como salida</li>
-            <li><strong>Poner todo en estado seguro</strong>, antes que cualquier otra cosa</li>
-            <li>Conectarse al Wi-Fi</li>
-            <li>Publicar el nombre <span class="mono">esp32.local</span> en la red</li>
-            <li>Abrir el servidor y esperar</li>
-          </ol>
-        </div>
-        <div>
-          <h3><span class="mono">loop()</span> — para siempre</h3>
-          <ol class="steps">
-            <li>Esperar a que alguien se conecte</li>
-            <li>Leer una línea de texto</li>
-            <li>Buscarla en la tabla de acciones</li>
-            <li>Ejecutar esa acción y volver a empezar</li>
-          </ol>
-        </div>
-      </div>
-      <div class="stack">
-        <pre class="code"><span class="cm">// La tabla completa de acciones</span>
-Action actions[] = {
-  {ACTION_ACCELERATE, accelerate},
-  {ACTION_STOP,       stopAction},
-  {ACTION_LEFT,       directionLeft},
-  {ACTION_RIGHT,      directionRight},
-  {ACTION_STRAIGHT,   directionStraight}
-};
-
-<span class="cm">// Y una acción, por dentro</span>
-<span class="kw">void</span> accelerate(WiFiClient&amp; client) {
-  <span class="kw">digitalWrite</span>(LED_PIN,     HIGH);
-  <span class="kw">digitalWrite</span>(MOTOR_PIN_B, LOW);
-  <span class="kw">digitalWrite</span>(MOTOR_PIN_A, HIGH);
-}</pre>
-        <div class="callout">
-          <p style="margin:0">Agregar un gesto nuevo del lado del firmware es <strong>agregar una fila a esa tabla</strong> y escribir una función de tres líneas. Está hecho así a propósito: el que sabe de motores puede sumar una acción sin pelearse con el resto del programa.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ══ 15 ══════════════════════════════════════════════════ -->
-<section class="sheet" data-sec="Seguridad funcional">
-  <header class="sh-head tight">
+<!-- ══ 08 ══════════════════════════════════════════════════ -->
+<section class="sheet" data-sec="Seguridad" data-t="25">
+  <header class="sh-head">
     <p class="eyebrow">La pregunta incómoda</p>
-    <h2>¿Y si se cuelga la notebook justo después de mandar “acelerar”?</h2>
+    <h2>¿Y si la notebook se cuelga justo después de mandar “acelerar”?</h2>
   </header>
   <div class="sh-body mid">
-    <p style="max-width:78ch">El ESP32 no tiene forma de darse cuenta solo: <strong>una conexión de red donde nadie habla se ve igual que una conexión tranquila.</strong> El último comando fue acelerar, así que el auto acelera. Y sigue acelerando. Para siempre.</p>
-    <figure style="margin-top:.5em;max-width:76%;margin-left:auto;margin-right:auto">
+    <p style="max-width:70ch">El chip del auto recibió “acelerar”, y después nada. <strong>Una conexión donde nadie habla se ve exactamente igual que una conexión tranquila.</strong> El último mensaje fue acelerar, así que el auto acelera. Y sigue acelerando.</p>
+    <div class="ask">
+      <p class="eyebrow">Pregunta para la sala</p>
+      <p class="q">¿Cómo puede darse cuenta el auto de que la computadora dejó de funcionar, si no le llega ningún aviso?</p>
+      <p class="a">No hay una sola respuesta correcta. La que elegimos tiene más de cien años, y no viene de la informática.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 09 ══════════════════════════════════════════════════ -->
+<section class="sheet" data-sec="Seguridad" data-t="40">
+  <header class="sh-head tight">
+    <p class="eyebrow">La respuesta</p>
+    <h2>El auto no confía: si nadie le habla, frena solo</h2>
+  </header>
+  <div class="sh-body mid">
+    <figure style="width:76%;margin:.3em auto 0">
       <svg viewBox="0 0 660 175" role="img" aria-label="Línea de tiempo del corte por falta de comandos">
         <rect x="255" y="46" width="300" height="46" fill="color-mix(in srgb, var(--power) 16%, transparent)"/>
         <line x1="30" y1="92" x2="640" y2="92" stroke="var(--rule)" stroke-width="1.5"/>
@@ -1054,106 +790,28 @@ Action actions[] = {
         <text class="lbl" x="555" y="140" text-anchor="end" fill="var(--parada)">el ESP32 corta los motores solo</text>
         <text class="sub" x="555" y="158" text-anchor="end">y centra la dirección</text>
       </svg>
-      <figcaption>Fig. 07 — Temporización del corte por falta de comandos</figcaption>
+      <figcaption>Fig. 05 — Qué pasa cuando la computadora deja de hablar</figcaption>
     </figure>
     <div class="cols-2" style="margin-top:1em">
       <div class="callout">
-        <h3>La solución: el ESP32 no confía</h3>
-        <p style="margin:0">La computadora <strong>reenvía la acción actual cada medio segundo</strong>, aunque no haya cambiado nada. Si el ESP32 pasa <strong>dos segundos sin recibir nada</strong>, corta los motores y centra la dirección por su cuenta.</p>
+        <h3>Cómo funciona</h3>
+        <p style="margin:0">La computadora <strong>repite la orden actual cada medio segundo</strong>, aunque no haya cambiado nada. Si el auto pasa <strong>dos segundos sin recibir nada</strong>, corta los motores y endereza la dirección por su cuenta.</p>
       </div>
       <div class="callout stop">
         <h3>Esto tiene nombre, y es viejo</h3>
-        <p style="margin:0">Es el <strong>dispositivo hombre muerto</strong> de una locomotora, o el mando a dos manos de una prensa. No hace falta que alguien apriete “parar”: hace falta que alguien sostenga “seguir”. Si el operador suelta, la máquina se detiene sola.</p>
+        <p style="margin:0">Es el <strong>hombre muerto</strong> de una locomotora. No hace falta que alguien apriete “parar”: hace falta que alguien sostenga “seguir”. Si el maquinista suelta, el tren se detiene solo.</p>
       </div>
+    </div>
+    <div class="callout" style="margin-top:1em">
+      <p style="margin:0"><strong>La idea para llevarse:</strong> el estado por defecto de todo el sistema es <em>detenido</em>. Hay que trabajar activamente, y sin parar, para que se mueva. Si falla el programa, la red, la cámara o la mano, el auto queda quieto.</p>
     </div>
   </div>
 </section>
 
-<!-- ══ 16 ══════════════════════════════════════════════════ -->
-<section class="sheet" data-sec="Seguridad funcional">
+<!-- ══ 10 ══════════════════════════════════════════════════ -->
+<section class="sheet" data-sec="La carrera" data-t="30">
   <header class="sh-head">
-    <p class="eyebrow">Los números no son al azar</p>
-    <h2>Por qué medio segundo y dos segundos</h2>
-  </header>
-  <div class="sh-body mid">
-    <div class="cols-2u">
-      <div class="stack">
-        <div class="metrics" style="gap:2.2em">
-          <div class="metric d"><b>0,5 s</b><span>cada cuánto se reenvía</span></div>
-          <div class="metric p"><b>2 s</b><span>silencio que dispara el corte</span></div>
-          <div class="metric"><b>4×</b><span>margen</span></div>
-        </div>
-        <ul class="tick" style="margin-top:.4em">
-          <li>Con ese margen se pueden <strong>perder tres mensajes seguidos</strong> y el auto ni se entera. El Wi-Fi pierde paquetes todo el tiempo.</li>
-          <li>Si el reenvío fuera cada 1,8 s, cualquier hipo de la red frenaría el auto en seco: molesto e inseguro.</li>
-          <li>Si el corte fuera a los 10 s, un auto descontrolado seguiría solo diez segundos. Una eternidad.</li>
-          <li>Y hay un tercer número, de otra naturaleza: los <strong>3 s</strong> que el motor tiene que estar quieto antes de invertir el giro. Ése no lo pide la red, lo pide el puente H.</li>
-        </ul>
-        <div class="callout warn">
-          <p style="margin:0"><strong>Invariante del proyecto:</strong> el período de reenvío tiene que quedar muy por debajo del tiempo de corte. Si alguien toca uno de los dos números, está obligado a revisar el otro.</p>
-        </div>
-      </div>
-      <div class="stack">
-        <div class="card">
-          <h3>Los cinco momentos en que frena solo</h3>
-          <ul class="tick">
-            <li>Al encender el ESP32 — antes incluso de conectarse al Wi-Fi</li>
-            <li>Si el cliente se desconecta</li>
-            <li>Si pasan dos segundos en silencio</li>
-            <li>Cuando empieza una actualización de firmware</li>
-            <li>Si le pedís la dirección contraria a la que está girando: frena, y <strong>espera tres segundos</strong> antes de volver a mover el motor — para cualquier lado, no sólo para el contrario</li>
-          </ul>
-          <p style="margin:.7em 0 0;font-size:.9em;color:var(--ink-2)">Y del lado de la computadora: si falta una mano en el cuadro, se manda parar.</p>
-        </div>
-        <div class="callout">
-          <h3>El patrón que vale la pena llevarse</h3>
-          <p style="margin:0">El estado por defecto de todo el sistema es <strong>detenido</strong>. Hay que trabajar activamente, y sin parar, para que se mueva. Cualquier cosa que falle —el programa, la red, la cámara, la mano— lo deja quieto.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ══ 17 ══════════════════════════════════════════════════ -->
-<section class="sheet" data-sec="Seguridad informática">
-  <header class="sh-head">
-    <p class="eyebrow">Ser honestos</p>
-    <h2>Lo que este proyecto <span style="color:var(--parada)">no</span> tiene</h2>
-  </header>
-  <div class="sh-body mid">
-    <div class="cols-2u">
-      <div class="stack">
-        <p><strong>El ESP32 no pide contraseña.</strong> Cualquiera conectado a la misma red Wi-Fi puede mandarle comandos al auto.</p>
-        <p style="color:var(--ink-2)">No es un olvido. Está escrito en la documentación como una decisión tomada, con sus motivos y sus límites.</p>
-        <div class="card">
-          <h3>Por qué se puede vivir con eso</h3>
-          <ul class="tick">
-            <li>Se usa en una red aislada — el hotspot de un celular, no el Wi-Fi de la escuela</li>
-            <li>Atiende un solo cliente por vez</li>
-            <li>El hombre muerto limita a dos segundos lo que puede durar un comando intruso</li>
-          </ul>
-        </div>
-      </div>
-      <div class="stack">
-        <div class="callout">
-          <h3>El contraste que vale la pena mirar</h3>
-          <p style="margin:0">La <strong>actualización de firmware por Wi-Fi sí tiene contraseña</strong>, y si no la configurás directamente no se habilita. ¿Por qué la diferencia, si los dos son agujeros en la misma red?</p>
-          <p style="margin:.6em 0 0"><strong>Porque un comando falso dura dos segundos. Un firmware falso dura para siempre.</strong></p>
-        </div>
-        <div class="callout stop">
-          <h3>Para discutir en el stand</h3>
-          <p style="margin:0">Decidir qué <em>no</em> vas a proteger, y dejar escrito por qué, es parte del trabajo de ingeniería. Lo grave nunca es tener un agujero conocido: es tenerlo sin saberlo.</p>
-        </div>
-        <p style="font-size:.93em;color:var(--ink-2)">Pregunta abierta, sin respuesta correcta: <strong>¿cómo lo asegurarías vos?</strong></p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ══ 18 ══════════════════════════════════════════════════ -->
-<section class="sheet" data-sec="La carrera">
-  <header class="sh-head">
-    <p class="eyebrow">La pregunta del millón</p>
+    <p class="eyebrow">Para cerrar</p>
     <h2>Y todo esto, ¿qué carrera es?</h2>
   </header>
   <div class="sh-body mid">
@@ -1163,98 +821,56 @@ Action actions[] = {
         <tbody>
           <tr><td>Encontrar la mano dentro de la imagen</td><td class="dim">Visión por computadora e inteligencia artificial</td></tr>
           <tr><td>Decidir la acción y filtrar el ruido</td><td class="dim">Algoritmos y estructuras de datos</td></tr>
-          <tr><td>Mandar el comando por la red</td><td class="dim">Comunicación de datos y redes</td></tr>
+          <tr><td>Mandar la orden por Wi-Fi</td><td class="dim">Comunicación de datos y redes</td></tr>
           <tr><td>El programa que corre adentro del chip</td><td class="dim">Sistemas embebidos y arquitectura de computadoras</td></tr>
-          <tr><td>Elegir los tiempos de reenvío y de corte</td><td class="dim">Sistemas de control y tiempo real</td></tr>
-          <tr><td>Que no se rompa cuando otro cambia algo</td><td class="dim">Ingeniería de software y pruebas automáticas</td></tr>
+          <tr><td>Elegir el medio segundo y los dos segundos</td><td class="dim">Sistemas de control y tiempo real</td></tr>
+          <tr><td>Que no se rompa cuando otra persona cambia algo</td><td class="dim">Ingeniería de software y pruebas automáticas</td></tr>
           <tr><td>Decidir qué se protege y qué no</td><td class="dim">Seguridad informática</td></tr>
           <tr><td>Que alguien más pueda entenderlo y seguirlo</td><td class="dim">Documentación y trabajo en equipo</td></tr>
         </tbody>
       </table>
     </div>
     <div class="callout" style="margin-top:1.3em">
-      <p class="big" style="margin:0;max-width:none">Un solo autito de juguete toca ocho áreas distintas. Eso es, más o menos, la carrera.</p>
+      <p class="big" style="margin:0;max-width:none">Un solo auto de juguete toca ocho áreas distintas. Eso es, a grandes rasgos, la carrera.</p>
     </div>
   </div>
 </section>
 
-<!-- ══ 19 ══════════════════════════════════════════════════ -->
-<section class="sheet" data-sec="La carrera">
-  <header class="sh-head tight">
-    <p class="eyebrow">El área de investigación</p>
-    <h2>Cómo se trabaja acá, y qué quedó sin hacer</h2>
-  </header>
-  <div class="sh-body mid">
-    <div class="cols-2">
-      <div class="card">
-        <h3>Cómo trabajamos</h3>
-        <ul class="tick">
-          <li>Todo el código está en un repositorio público, con historial: se ve quién cambió qué, cuándo y por qué</li>
-          <li>Cada cambio lo revisa otra persona antes de entrar</li>
-          <li>Hay pruebas automáticas que simulan las manos y el ESP32: se prueba la lógica <strong>sin auto y sin cámara</strong></li>
-          <li>Esas pruebas, más los controles de estilo y de seguridad, corren solos en cada cambio</li>
-        </ul>
-        <p style="margin:.8em 0 0;font-size:.9em;color:var(--ink-2)">Si algo se rompe, nos enteramos antes de que llegue al auto. Trabajar así no es burocracia: es lo que permite que alguien nuevo toque el código sin miedo.</p>
-      </div>
-      <div class="card">
-        <h3>Ideas que quedaron pendientes, a propósito</h3>
-        <ul class="tick">
-          <li><strong>Velocidad proporcional.</strong> Hoy el motor está en todo o nada. Con PWM, cuánto inclinás el pulgar podría ser cuánto acelera</li>
-          <li><strong>Un servo para la dirección</strong>, en lugar de dos pines con tres posiciones</li>
-          <li><strong>Un gesto nuevo:</strong> bocina, luces. La marcha atrás salió de esta misma lista</li>
-          <li><strong>Un sensor de distancia</strong> que ignore la orden de acelerar si hay algo adelante</li>
-        </ul>
-        <p style="margin:.8em 0 0;font-size:.9em;color:var(--ink-2)">Ninguna de las cuatro está hecha.</p>
-      </div>
-    </div>
-    <div class="callout" style="margin-top:1.2em">
-      <p style="margin:0"><strong>Si alguna de esas cuatro te dio ganas de probarla, esa es exactamente la conversación que queremos tener.</strong> Así empezaron los que hicieron este proyecto: eligiendo una cosa chica que les daba curiosidad.</p>
-    </div>
-  </div>
-</section>
-
-<!-- ══ 20 ══════════════════════════════════════════════════ -->
-<section class="sheet" data-sec="Cierre">
+<!-- ══ 11 ══════════════════════════════════════════════════ -->
+<section class="sheet" data-sec="Preguntas" data-t="0">
   <header class="sh-head">
-    <p class="eyebrow">Glosario mínimo</p>
-    <h2>Nueve palabras para llevarse</h2>
+    <p class="eyebrow">Preguntas</p>
+    <h2>Ahora les toca a ustedes</h2>
   </header>
   <div class="sh-body mid">
-    <div class="cols-2">
-      <dl class="kv">
-        <dt>Firmware</dt><dd>El programa que vive adentro del microcontrolador</dd>
-        <dt>GPIO</dt><dd>Pin de entrada/salida. El que ponés en alto o en bajo desde el código</dd>
-        <dt>TCP</dt><dd>La forma de mandar datos por red asegurando que lleguen, y en orden</dd>
-        <dt>mDNS</dt><dd>Lo que permite llamar al equipo <span class="mono">esp32.local</span> en vez de aprenderse un número</dd>
-        <dt>Latencia</dt><dd>Cuánto tarda una orden desde que la das hasta que se ejecuta</dd>
-      </dl>
-      <dl class="kv">
-        <dt>Puente H</dt><dd>El circuito de cuatro llaves que deja girar un motor en los dos sentidos</dd>
-        <dt>PWM</dt><dd>Prender y apagar muy rápido para entregar potencia parcial. Así se regula velocidad</dd>
-        <dt>OTA</dt><dd>Actualizar el firmware por Wi-Fi, sin cable y sin abrir el equipo</dd>
-        <dt>Hombre muerto</dt><dd>El mecanismo que detiene la máquina si el operador deja de dar señales</dd>
-      </dl>
-    </div>
-    <div class="rule-top" style="margin-top:1.4em">
-      <div class="cols-2u" style="align-items:end">
-        <div>
-          <p class="big" style="max-width:24ch">El auto está en el stand.<br>Vení a manejarlo.</p>
-          <div class="cta">
-            <div class="qr-box"><svg class="qr" viewBox="0 0 43 43" role="img" aria-label="Codigo QR con el enlace a la presentacion"><rect width="43" height="43" fill="#ffffff"/><path d="M3 3h7v1h-7zM11 3h1v1h-1zM15 3h3v1h-3zM22 3h4v1h-4zM28 3h1v1h-1zM33 3h7v1h-7zM3 4h1v1h-1zM9 4h1v1h-1zM11 4h3v1h-3zM16 4h2v1h-2zM19 4h7v1h-7zM27 4h1v1h-1zM29 4h1v1h-1zM33 4h1v1h-1zM39 4h1v1h-1zM3 5h1v1h-1zM5 5h3v1h-3zM9 5h1v1h-1zM13 5h3v1h-3zM17 5h1v1h-1zM20 5h1v1h-1zM24 5h1v1h-1zM31 5h1v1h-1zM33 5h1v1h-1zM35 5h3v1h-3zM39 5h1v1h-1zM3 6h1v1h-1zM5 6h3v1h-3zM9 6h1v1h-1zM12 6h1v1h-1zM20 6h3v1h-3zM24 6h1v1h-1zM26 6h3v1h-3zM30 6h2v1h-2zM33 6h1v1h-1zM35 6h3v1h-3zM39 6h1v1h-1zM3 7h1v1h-1zM5 7h3v1h-3zM9 7h1v1h-1zM13 7h4v1h-4zM20 7h4v1h-4zM25 7h2v1h-2zM33 7h1v1h-1zM35 7h3v1h-3zM39 7h1v1h-1zM3 8h1v1h-1zM9 8h1v1h-1zM13 8h2v1h-2zM18 8h3v1h-3zM22 8h1v1h-1zM27 8h1v1h-1zM29 8h1v1h-1zM31 8h1v1h-1zM33 8h1v1h-1zM39 8h1v1h-1zM3 9h7v1h-7zM11 9h1v1h-1zM13 9h1v1h-1zM15 9h1v1h-1zM17 9h1v1h-1zM19 9h1v1h-1zM21 9h1v1h-1zM23 9h1v1h-1zM25 9h1v1h-1zM27 9h1v1h-1zM29 9h1v1h-1zM31 9h1v1h-1zM33 9h7v1h-7zM16 10h1v1h-1zM18 10h2v1h-2zM22 10h1v1h-1zM25 10h2v1h-2zM30 10h2v1h-2zM4 11h1v1h-1zM9 11h3v1h-3zM13 11h4v1h-4zM18 11h2v1h-2zM25 11h5v1h-5zM31 11h2v1h-2zM38 11h2v1h-2zM3 12h6v1h-6zM11 12h1v1h-1zM15 12h1v1h-1zM18 12h2v1h-2zM24 12h3v1h-3zM28 12h1v1h-1zM30 12h1v1h-1zM34 12h2v1h-2zM37 12h1v1h-1zM3 13h1v1h-1zM8 13h2v1h-2zM11 13h3v1h-3zM15 13h1v1h-1zM17 13h2v1h-2zM20 13h5v1h-5zM27 13h4v1h-4zM33 13h2v1h-2zM38 13h2v1h-2zM4 14h3v1h-3zM13 14h2v1h-2zM16 14h2v1h-2zM19 14h2v1h-2zM22 14h1v1h-1zM25 14h1v1h-1zM29 14h3v1h-3zM33 14h4v1h-4zM38 14h1v1h-1zM3 15h1v1h-1zM5 15h1v1h-1zM7 15h3v1h-3zM11 15h2v1h-2zM14 15h1v1h-1zM18 15h2v1h-2zM23 15h1v1h-1zM26 15h2v1h-2zM33 15h2v1h-2zM36 15h1v1h-1zM38 15h2v1h-2zM4 16h1v1h-1zM6 16h1v1h-1zM8 16h1v1h-1zM11 16h1v1h-1zM17 16h1v1h-1zM20 16h1v1h-1zM22 16h2v1h-2zM26 16h1v1h-1zM29 16h4v1h-4zM37 16h1v1h-1zM3 17h3v1h-3zM8 17h3v1h-3zM14 17h1v1h-1zM16 17h3v1h-3zM20 17h1v1h-1zM22 17h4v1h-4zM27 17h5v1h-5zM35 17h2v1h-2zM39 17h1v1h-1zM3 18h1v1h-1zM6 18h3v1h-3zM10 18h1v1h-1zM12 18h2v1h-2zM15 18h1v1h-1zM26 18h1v1h-1zM29 18h1v1h-1zM31 18h4v1h-4zM36 18h2v1h-2zM3 19h1v1h-1zM8 19h2v1h-2zM13 19h2v1h-2zM16 19h1v1h-1zM18 19h6v1h-6zM25 19h5v1h-5zM33 19h1v1h-1zM35 19h1v1h-1zM37 19h2v1h-2zM4 20h5v1h-5zM11 20h4v1h-4zM16 20h1v1h-1zM18 20h2v1h-2zM21 20h1v1h-1zM25 20h2v1h-2zM28 20h1v1h-1zM30 20h2v1h-2zM34 20h1v1h-1zM36 20h2v1h-2zM3 21h1v1h-1zM9 21h5v1h-5zM15 21h1v1h-1zM18 21h3v1h-3zM23 21h1v1h-1zM25 21h6v1h-6zM37 21h1v1h-1zM39 21h1v1h-1zM3 22h2v1h-2zM8 22h1v1h-1zM10 22h1v1h-1zM12 22h1v1h-1zM14 22h2v1h-2zM17 22h4v1h-4zM22 22h1v1h-1zM36 22h1v1h-1zM39 22h1v1h-1zM3 23h2v1h-2zM6 23h1v1h-1zM9 23h2v1h-2zM13 23h1v1h-1zM19 23h2v1h-2zM22 23h2v1h-2zM25 23h5v1h-5zM32 23h7v1h-7zM3 24h2v1h-2zM6 24h2v1h-2zM17 24h3v1h-3zM21 24h1v1h-1zM23 24h1v1h-1zM26 24h2v1h-2zM30 24h2v1h-2zM34 24h2v1h-2zM4 25h1v1h-1zM6 25h7v1h-7zM15 25h8v1h-8zM25 25h1v1h-1zM27 25h2v1h-2zM30 25h1v1h-1zM33 25h1v1h-1zM38 25h2v1h-2zM3 26h1v1h-1zM6 26h1v1h-1zM8 26h1v1h-1zM12 26h1v1h-1zM14 26h2v1h-2zM17 26h1v1h-1zM25 26h3v1h-3zM30 26h1v1h-1zM32 26h1v1h-1zM34 26h1v1h-1zM36 26h1v1h-1zM39 26h1v1h-1zM4 27h1v1h-1zM9 27h3v1h-3zM13 27h1v1h-1zM15 27h3v1h-3zM20 27h1v1h-1zM22 27h1v1h-1zM26 27h1v1h-1zM31 27h1v1h-1zM33 27h2v1h-2zM36 27h1v1h-1zM38 27h1v1h-1zM3 28h1v1h-1zM5 28h1v1h-1zM10 28h1v1h-1zM14 28h1v1h-1zM16 28h1v1h-1zM24 28h1v1h-1zM26 28h1v1h-1zM30 28h2v1h-2zM36 28h2v1h-2zM3 29h1v1h-1zM5 29h1v1h-1zM7 29h3v1h-3zM11 29h1v1h-1zM13 29h1v1h-1zM15 29h6v1h-6zM22 29h2v1h-2zM25 29h1v1h-1zM29 29h3v1h-3zM33 29h1v1h-1zM36 29h4v1h-4zM3 30h1v1h-1zM5 30h2v1h-2zM11 30h1v1h-1zM13 30h4v1h-4zM18 30h6v1h-6zM26 30h2v1h-2zM30 30h1v1h-1zM32 30h1v1h-1zM34 30h6v1h-6zM3 31h1v1h-1zM6 31h4v1h-4zM11 31h3v1h-3zM16 31h1v1h-1zM18 31h2v1h-2zM21 31h3v1h-3zM27 31h3v1h-3zM31 31h7v1h-7zM39 31h1v1h-1zM11 32h4v1h-4zM18 32h1v1h-1zM21 32h1v1h-1zM26 32h1v1h-1zM29 32h1v1h-1zM31 32h1v1h-1zM35 32h2v1h-2zM3 33h7v1h-7zM11 33h3v1h-3zM16 33h2v1h-2zM19 33h2v1h-2zM25 33h4v1h-4zM31 33h1v1h-1zM33 33h1v1h-1zM35 33h3v1h-3zM39 33h1v1h-1zM3 34h1v1h-1zM9 34h1v1h-1zM12 34h3v1h-3zM16 34h1v1h-1zM18 34h6v1h-6zM29 34h3v1h-3zM35 34h2v1h-2zM38 34h1v1h-1zM3 35h1v1h-1zM5 35h3v1h-3zM9 35h1v1h-1zM12 35h1v1h-1zM16 35h1v1h-1zM19 35h1v1h-1zM21 35h2v1h-2zM27 35h9v1h-9zM37 35h1v1h-1zM39 35h1v1h-1zM3 36h1v1h-1zM5 36h3v1h-3zM9 36h1v1h-1zM12 36h5v1h-5zM18 36h3v1h-3zM23 36h4v1h-4zM30 36h1v1h-1zM33 36h1v1h-1zM38 36h1v1h-1zM3 37h1v1h-1zM5 37h3v1h-3zM9 37h1v1h-1zM15 37h3v1h-3zM19 37h1v1h-1zM23 37h1v1h-1zM25 37h1v1h-1zM29 37h1v1h-1zM32 37h1v1h-1zM34 37h1v1h-1zM39 37h1v1h-1zM3 38h1v1h-1zM9 38h1v1h-1zM11 38h3v1h-3zM16 38h1v1h-1zM18 38h2v1h-2zM21 38h3v1h-3zM25 38h2v1h-2zM29 38h1v1h-1zM31 38h2v1h-2zM34 38h3v1h-3zM39 38h1v1h-1zM3 39h7v1h-7zM12 39h1v1h-1zM15 39h1v1h-1zM19 39h3v1h-3zM23 39h1v1h-1zM27 39h1v1h-1zM31 39h1v1h-1zM33 39h1v1h-1zM39 39h1v1h-1z" fill="#101010"/></svg></div>
-            <div>
-              <p class="eyebrow" style="margin-bottom:.3em">El proyecto, online</p>
-              <a class="url-cta" href="https://utnfrsn-isi-investigacion.github.io/hand-controller/">utnfrsn-isi-investigacion.github.io/hand-controller</a>
-              <p class="qr-hint">Escaneá el código o escribí la dirección. Ahí están esta presentación y las dos guías técnicas.</p>
-            </div>
+    <div class="cols-2u">
+      <div class="stack">
+        <div class="card">
+          <h3>Para empezar, tres que nos hicieron otras veces</h3>
+          <ul class="tick">
+            <li><strong>¿Cualquiera conectado al mismo Wi-Fi puede manejar el auto?</strong><br><span style="color:var(--ink-2)">Sí, a propósito. El hombre muerto limita a dos segundos lo que puede hacer un intruso. Si les parece poco, es un buen debate.</span></li>
+            <li><strong>¿Por qué la mano abierta es el freno y no el acelerador?</strong><br><span style="color:var(--ink-2)">Al principio era al revés. Lo cambiamos porque abrir la mano es el reflejo cuando algo sale mal.</span></li>
+            <li><strong>¿Se podría hacer con un celular en vez de una notebook?</strong><br><span style="color:var(--ink-2)">En principio sí: la cámara alcanza. Nadie lo hizo todavía.</span></li>
+          </ul>
+        </div>
+        <div class="callout">
+          <p style="margin:0"><strong>Quedaron ideas sin hacer, a propósito:</strong> que el auto acelere más cuanto más se incline el pulgar; un servo para la dirección, en lugar de tres posiciones; un sensor de distancia que ignore “acelerar” si hay algo adelante; una bocina o luces con un gesto nuevo. Si alguna les da curiosidad, esa es exactamente la conversación que queremos tener.</p>
+        </div>
+      </div>
+      <div class="stack">
+        <p class="big" style="max-width:24ch">El auto está en el stand.<br>Pasen a manejarlo.</p>
+        <div class="cta" style="margin-top:.4em">
+          <div class="qr-box"><svg class="qr" viewBox="0 0 43 43" role="img" aria-label="Codigo QR con el enlace a la presentacion"><rect width="43" height="43" fill="#ffffff"/><path d="M3 3h7v1h-7zM11 3h1v1h-1zM15 3h3v1h-3zM22 3h4v1h-4zM28 3h1v1h-1zM33 3h7v1h-7zM3 4h1v1h-1zM9 4h1v1h-1zM11 4h3v1h-3zM16 4h2v1h-2zM19 4h7v1h-7zM27 4h1v1h-1zM29 4h1v1h-1zM33 4h1v1h-1zM39 4h1v1h-1zM3 5h1v1h-1zM5 5h3v1h-3zM9 5h1v1h-1zM13 5h3v1h-3zM17 5h1v1h-1zM20 5h1v1h-1zM24 5h1v1h-1zM31 5h1v1h-1zM33 5h1v1h-1zM35 5h3v1h-3zM39 5h1v1h-1zM3 6h1v1h-1zM5 6h3v1h-3zM9 6h1v1h-1zM12 6h1v1h-1zM20 6h3v1h-3zM24 6h1v1h-1zM26 6h3v1h-3zM30 6h2v1h-2zM33 6h1v1h-1zM35 6h3v1h-3zM39 6h1v1h-1zM3 7h1v1h-1zM5 7h3v1h-3zM9 7h1v1h-1zM13 7h4v1h-4zM20 7h4v1h-4zM25 7h2v1h-2zM33 7h1v1h-1zM35 7h3v1h-3zM39 7h1v1h-1zM3 8h1v1h-1zM9 8h1v1h-1zM13 8h2v1h-2zM18 8h3v1h-3zM22 8h1v1h-1zM27 8h1v1h-1zM29 8h1v1h-1zM31 8h1v1h-1zM33 8h1v1h-1zM39 8h1v1h-1zM3 9h7v1h-7zM11 9h1v1h-1zM13 9h1v1h-1zM15 9h1v1h-1zM17 9h1v1h-1zM19 9h1v1h-1zM21 9h1v1h-1zM23 9h1v1h-1zM25 9h1v1h-1zM27 9h1v1h-1zM29 9h1v1h-1zM31 9h1v1h-1zM33 9h7v1h-7zM16 10h1v1h-1zM18 10h2v1h-2zM22 10h1v1h-1zM25 10h2v1h-2zM30 10h2v1h-2zM4 11h1v1h-1zM9 11h3v1h-3zM13 11h4v1h-4zM18 11h2v1h-2zM25 11h5v1h-5zM31 11h2v1h-2zM38 11h2v1h-2zM3 12h6v1h-6zM11 12h1v1h-1zM15 12h1v1h-1zM18 12h2v1h-2zM24 12h3v1h-3zM28 12h1v1h-1zM30 12h1v1h-1zM34 12h2v1h-2zM37 12h1v1h-1zM3 13h1v1h-1zM8 13h2v1h-2zM11 13h3v1h-3zM15 13h1v1h-1zM17 13h2v1h-2zM20 13h5v1h-5zM27 13h4v1h-4zM33 13h2v1h-2zM38 13h2v1h-2zM4 14h3v1h-3zM13 14h2v1h-2zM16 14h2v1h-2zM19 14h2v1h-2zM22 14h1v1h-1zM25 14h1v1h-1zM29 14h3v1h-3zM33 14h4v1h-4zM38 14h1v1h-1zM3 15h1v1h-1zM5 15h1v1h-1zM7 15h3v1h-3zM11 15h2v1h-2zM14 15h1v1h-1zM18 15h2v1h-2zM23 15h1v1h-1zM26 15h2v1h-2zM33 15h2v1h-2zM36 15h1v1h-1zM38 15h2v1h-2zM4 16h1v1h-1zM6 16h1v1h-1zM8 16h1v1h-1zM11 16h1v1h-1zM17 16h1v1h-1zM20 16h1v1h-1zM22 16h2v1h-2zM26 16h1v1h-1zM29 16h4v1h-4zM37 16h1v1h-1zM3 17h3v1h-3zM8 17h3v1h-3zM14 17h1v1h-1zM16 17h3v1h-3zM20 17h1v1h-1zM22 17h4v1h-4zM27 17h5v1h-5zM35 17h2v1h-2zM39 17h1v1h-1zM3 18h1v1h-1zM6 18h3v1h-3zM10 18h1v1h-1zM12 18h2v1h-2zM15 18h1v1h-1zM26 18h1v1h-1zM29 18h1v1h-1zM31 18h4v1h-4zM36 18h2v1h-2zM3 19h1v1h-1zM8 19h2v1h-2zM13 19h2v1h-2zM16 19h1v1h-1zM18 19h6v1h-6zM25 19h5v1h-5zM33 19h1v1h-1zM35 19h1v1h-1zM37 19h2v1h-2zM4 20h5v1h-5zM11 20h4v1h-4zM16 20h1v1h-1zM18 20h2v1h-2zM21 20h1v1h-1zM25 20h2v1h-2zM28 20h1v1h-1zM30 20h2v1h-2zM34 20h1v1h-1zM36 20h2v1h-2zM3 21h1v1h-1zM9 21h5v1h-5zM15 21h1v1h-1zM18 21h3v1h-3zM23 21h1v1h-1zM25 21h6v1h-6zM37 21h1v1h-1zM39 21h1v1h-1zM3 22h2v1h-2zM8 22h1v1h-1zM10 22h1v1h-1zM12 22h1v1h-1zM14 22h2v1h-2zM17 22h4v1h-4zM22 22h1v1h-1zM36 22h1v1h-1zM39 22h1v1h-1zM3 23h2v1h-2zM6 23h1v1h-1zM9 23h2v1h-2zM13 23h1v1h-1zM19 23h2v1h-2zM22 23h2v1h-2zM25 23h5v1h-5zM32 23h7v1h-7zM3 24h2v1h-2zM6 24h2v1h-2zM17 24h3v1h-3zM21 24h1v1h-1zM23 24h1v1h-1zM26 24h2v1h-2zM30 24h2v1h-2zM34 24h2v1h-2zM4 25h1v1h-1zM6 25h7v1h-7zM15 25h8v1h-8zM25 25h1v1h-1zM27 25h2v1h-2zM30 25h1v1h-1zM33 25h1v1h-1zM38 25h2v1h-2zM3 26h1v1h-1zM6 26h1v1h-1zM8 26h1v1h-1zM12 26h1v1h-1zM14 26h2v1h-2zM17 26h1v1h-1zM25 26h3v1h-3zM30 26h1v1h-1zM32 26h1v1h-1zM34 26h1v1h-1zM36 26h1v1h-1zM39 26h1v1h-1zM4 27h1v1h-1zM9 27h3v1h-3zM13 27h1v1h-1zM15 27h3v1h-3zM20 27h1v1h-1zM22 27h1v1h-1zM26 27h1v1h-1zM31 27h1v1h-1zM33 27h2v1h-2zM36 27h1v1h-1zM38 27h1v1h-1zM3 28h1v1h-1zM5 28h1v1h-1zM10 28h1v1h-1zM14 28h1v1h-1zM16 28h1v1h-1zM24 28h1v1h-1zM26 28h1v1h-1zM30 28h2v1h-2zM36 28h2v1h-2zM3 29h1v1h-1zM5 29h1v1h-1zM7 29h3v1h-3zM11 29h1v1h-1zM13 29h1v1h-1zM15 29h6v1h-6zM22 29h2v1h-2zM25 29h1v1h-1zM29 29h3v1h-3zM33 29h1v1h-1zM36 29h4v1h-4zM3 30h1v1h-1zM5 30h2v1h-2zM11 30h1v1h-1zM13 30h4v1h-4zM18 30h6v1h-6zM26 30h2v1h-2zM30 30h1v1h-1zM32 30h1v1h-1zM34 30h6v1h-6zM3 31h1v1h-1zM6 31h4v1h-4zM11 31h3v1h-3zM16 31h1v1h-1zM18 31h2v1h-2zM21 31h3v1h-3zM27 31h3v1h-3zM31 31h7v1h-7zM39 31h1v1h-1zM11 32h4v1h-4zM18 32h1v1h-1zM21 32h1v1h-1zM26 32h1v1h-1zM29 32h1v1h-1zM31 32h1v1h-1zM35 32h2v1h-2zM3 33h7v1h-7zM11 33h3v1h-3zM16 33h2v1h-2zM19 33h2v1h-2zM25 33h4v1h-4zM31 33h1v1h-1zM33 33h1v1h-1zM35 33h3v1h-3zM39 33h1v1h-1zM3 34h1v1h-1zM9 34h1v1h-1zM12 34h3v1h-3zM16 34h1v1h-1zM18 34h6v1h-6zM29 34h3v1h-3zM35 34h2v1h-2zM38 34h1v1h-1zM3 35h1v1h-1zM5 35h3v1h-3zM9 35h1v1h-1zM12 35h1v1h-1zM16 35h1v1h-1zM19 35h1v1h-1zM21 35h2v1h-2zM27 35h9v1h-9zM37 35h1v1h-1zM39 35h1v1h-1zM3 36h1v1h-1zM5 36h3v1h-3zM9 36h1v1h-1zM12 36h5v1h-5zM18 36h3v1h-3zM23 36h4v1h-4zM30 36h1v1h-1zM33 36h1v1h-1zM38 36h1v1h-1zM3 37h1v1h-1zM5 37h3v1h-3zM9 37h1v1h-1zM15 37h3v1h-3zM19 37h1v1h-1zM23 37h1v1h-1zM25 37h1v1h-1zM29 37h1v1h-1zM32 37h1v1h-1zM34 37h1v1h-1zM39 37h1v1h-1zM3 38h1v1h-1zM9 38h1v1h-1zM11 38h3v1h-3zM16 38h1v1h-1zM18 38h2v1h-2zM21 38h3v1h-3zM25 38h2v1h-2zM29 38h1v1h-1zM31 38h2v1h-2zM34 38h3v1h-3zM39 38h1v1h-1zM3 39h7v1h-7zM12 39h1v1h-1zM15 39h1v1h-1zM19 39h3v1h-3zM23 39h1v1h-1zM27 39h1v1h-1zM31 39h1v1h-1zM33 39h1v1h-1zM39 39h1v1h-1z" fill="#101010"/></svg></div>
+          <div>
+            <p class="eyebrow" style="margin-bottom:.3em">El proyecto, online</p>
+            <a class="url-cta" href="https://utnfrsn-isi-investigacion.github.io/hand-controller/">utnfrsn-isi-investigacion.github.io/hand-controller</a>
+            <p class="qr-hint">Escaneá el código o escribí la dirección. Ahí están esta presentación y dos guías que explican el proyecto desde cero.</p>
           </div>
         </div>
-        <dl class="kv">
-          <dt>Facultad</dt><dd>UTN — Facultad Regional San Nicolás</dd>
-          <dt>Carrera</dt><dd>Ingeniería en Sistemas de Información</dd>
-          <dt>Área</dt><dd>Investigación</dd>
-          <dt>Código</dt><dd>Repositorio público — <a class="lnk mono" href="https://github.com/utnfrsn-isi-investigacion/hand-controller" target="_blank" rel="noopener">https://github.com/utnfrsn-isi-investigacion/hand-controller</a></dd>
-          <dt>Guías</dt><dd><a class="lnk" href="vision-y-software.html">Visión y software</a> · <a class="lnk" href="electronica-y-mecanica.html">Electrónica y mecánica</a> — el proyecto por dentro, desde cero</dd>
-          <dt>Contacto</dt><dd><a class="lnk" href="mailto:alejandro.recalde@frsn.utn.edu.ar">alejandro.recalde@frsn.utn.edu.ar</a><br><a class="lnk" href="mailto:leandro.torcello@frsn.utn.edu.ar">leandro.torcello@frsn.utn.edu.ar</a></dd>
+        <dl class="kv rule-top" style="padding-top:.8em">
+          <dt>Código</dt><dd><a class="lnk mono" href="https://github.com/utnfrsn-isi-investigacion/hand-controller" target="_blank" rel="noopener">github.com/utnfrsn-isi-investigacion/hand-controller</a></dd>
+          <dt>Guías</dt><dd><a class="lnk" href="vision-y-software.html">Visión y software</a> · <a class="lnk" href="electronica-y-mecanica.html">Electrónica y mecánica</a></dd>
+          <dt>Contacto</dt><dd><a class="lnk" href="mailto:alejandro.recalde@frsn.utn.edu.ar">alejandro.recalde@frsn.utn.edu.ar</a> · <a class="lnk" href="mailto:leandro.torcello@frsn.utn.edu.ar">leandro.torcello@frsn.utn.edu.ar</a></dd>
         </dl>
       </div>
     </div>
@@ -1267,7 +883,7 @@ Action actions[] = {
   <button id="prev" type="button" aria-label="Hoja anterior">← Anterior</button>
   <button id="next" type="button" aria-label="Hoja siguiente">Siguiente →</button>
   <div class="bar"><i id="fill"></i></div>
-  <span class="count" id="count">01 / 20</span>
+  <span class="count" id="count">01 / 11</span>
 </nav>
 </div><!-- /app -->
 
@@ -1294,11 +910,24 @@ Action actions[] = {
     s.appendChild(tb);
   });
 
+  // Per-sheet time budget (data-t, seconds) accumulated into the moment the
+  // presenter should be leaving each sheet. Shown in the HUD so the talk
+  // fits its slot without anyone watching a separate clock.
+  var leaveAt = [];
+  sheets.reduce(function(acc, s){
+    acc += parseInt(s.dataset.t || '0', 10);
+    leaveAt.push(acc);
+    return acc;
+  }, 0);
+  function mmss(sec){ return Math.floor(sec / 60) + ':' + pad(sec % 60); }
+
   function show(n){
     i = Math.max(0, Math.min(total - 1, n));
     sheets.forEach(function(s, k){ s.classList.toggle('is-active', k === i); });
     fill.style.width = ((i + 1) / total * 100) + '%';
-    count.textContent = pad(i + 1) + ' / ' + pad(total);
+    var budget = sheets[i].dataset.t ? ' · salir a ' + mmss(leaveAt[i]) : '';
+    count.textContent = pad(i + 1) + ' / ' + pad(total) + budget;
+    count.title = budget ? 'Minuto en el que conviene pasar de hoja' : '';
     prevB.disabled = (i === 0);
     nextB.disabled = (i === total - 1);
     if (location.hash !== '#' + (i + 1)) {
