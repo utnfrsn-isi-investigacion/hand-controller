@@ -383,13 +383,12 @@ footer.doc a:hover{ color:var(--data-ink); }
 
   <h3>Entradas flotantes y resistencias de <i>pull</i></h3>
   <p>Un pin configurado como entrada y sin nada conectado no lee “0”: lee ruido. Está <strong>flotante</strong>, y capta hasta la radio. Por eso los botones llevan una resistencia de <em>pull-up</em> (que lo mantiene en 3,3 V hasta que el botón lo baja a masa) o de <em>pull-down</em>. El ESP32 las trae adentro: <code>pinMode(pin, INPUT_PULLUP)</code>.</p>
-  <p class="small dim">En este proyecto no hay entradas — los cinco pines son salidas — pero es lo primero que vas a necesitar el día que agregues el sensor de distancia de la diapositiva 11.</p>
+  <p class="small dim">En este proyecto no hay entradas — los cinco pines son salidas — pero es lo primero que vas a necesitar el día que agregues el sensor de distancia de la diapositiva 8.</p>
 </section>
 
 <section id="pin">
   <p class="eyebrow">Fundamentos <span class="sep">/</span> 3</p>
   <h2>Qué hace realmente un pin</h2>
-  <a class="slideref" href="presentacion-expo-carreras.html#7">Diapositiva 7 — “Esta línea de código no mueve un motor”</a>
   <p class="sec-lead">Un <span class="mono">digitalWrite</span> no “manda energía”. Cierra una llave microscópica. Entender qué llave es explica todos los límites.</p>
 
   <figure class="wide">
@@ -486,7 +485,7 @@ footer.doc a:hover{ color:var(--data-ink); }
     <h4>El detalle que conecta con el arranque del firmware</h4>
     <p>Entre que le das energía al ESP32 y que corre la primera línea de <span class="mono">setup()</span> pasan cientos de milisegundos. Durante todo ese rato <strong>los pines están como entradas, flotando</strong>. Si el puente H está alimentado, sus entradas ven ruido y el motor puede pegar un tirón antes de que tu código exista.</p>
     <p>Por eso <span class="mono">setup()</span> arranca poniendo los pines en salida y escribiendo el estado seguro, <em>antes</em> del puerto serie y del Wi-Fi. Todo lo que se ponga delante de esas líneas es tiempo con las entradas del puente al aire: hasta hace poco iban primero <span class="mono">Serial.begin()</span> y su espera de un segundo, y esa ventana duraba más de un segundo de más.</p>
-    <p style="margin-bottom:0">Reordenar <strong>acorta</strong> la ventana, no la cierra. Lo que queda es el arranque de la ROM y del gestor de arranque, que desde el firmware no se tocan. Cerrarla de verdad es cosa del hardware: resistencias de 10 kΩ a masa en las entradas del puente, para que mientras nadie mande nada manden ellas. <strong>En esta placa no están puestas</strong>: es la mejora recomendada, no algo que ya esté, y por eso el tirón al encender de la tabla de problemas es un síntoma real de este auto y no una hipótesis. Es la misma filosofía del hombre muerto de la diapositiva 9, pero resuelta con dos resistencias en vez de con código.</p>
+    <p style="margin-bottom:0">Reordenar <strong>acorta</strong> la ventana, no la cierra. Lo que queda es el arranque de la ROM y del gestor de arranque, que desde el firmware no se tocan. Cerrarla de verdad es cosa del hardware: resistencias de 10 kΩ a masa en las entradas del puente, para que mientras nadie mande nada manden ellas. <strong>En esta placa no están puestas</strong>: es la mejora recomendada, no algo que ya esté, y por eso el tirón al encender de la tabla de problemas es un síntoma real de este auto y no una hipótesis. Es la misma filosofía del hombre muerto de la diapositiva 6, pero resuelta con dos resistencias en vez de con código.</p>
   </div>
 </section>
 
@@ -594,7 +593,7 @@ footer.doc a:hover{ color:var(--data-ink); }
   <h3>Tres cosas que la mecánica le impone al software</h3>
   <ul class="tick">
     <li><strong>Arrancar cuesta más que seguir.</strong> El roce estático es mayor que el dinámico: hay un mínimo de empuje abajo del cual el auto no se mueve, y apenas arranca pega un salto. Eso, cuando pongas PWM, es una zona muerta que hay que saltear.</li>
-    <li><strong>Parar no es instantáneo.</strong> El auto tiene inercia: aunque el motor deje de empujar, sigue. Por eso importa que la orden de parar llegue rápido — es la latencia del filtro de la diapositiva 6 — y por eso el puente H tiene un estado de freno además de un estado de “soltar”.</li>
+    <li><strong>Parar no es instantáneo.</strong> El auto tiene inercia: aunque el motor deje de empujar, sigue. Por eso importa que la orden de parar llegue rápido — es la latencia del filtro de votación, contado en la guía de software — y por eso el puente H tiene un estado de freno además de un estado de “soltar”.</li>
     <li><strong>El motor no sabe a qué velocidad va.</strong> Sin un sensor en la rueda, el mismo comando da velocidades distintas en piso liso, en alfombra o con la batería a medio cargar. Todo lo que hace el firmware es lazo abierto: manda y confía.</li>
   </ul>
 
@@ -606,7 +605,7 @@ footer.doc a:hover{ color:var(--data-ink); }
     </div>
     <div class="card">
       <h4>Servo</h4>
-      <p style="margin:0" class="small">Tres cables. Adentro trae motor, reductora, potenciómetro y electrónica: le mandás un pulso de 1 a 2 ms cada 20 ms y <strong>se va a un ángulo y se queda ahí</strong>. Es lo que pide la dirección de la diapositiva 11.</p>
+      <p style="margin:0" class="small">Tres cables. Adentro trae motor, reductora, potenciómetro y electrónica: le mandás un pulso de 1 a 2 ms cada 20 ms y <strong>se va a un ángulo y se queda ahí</strong>. Es lo que pide la dirección de la diapositiva 8.</p>
     </div>
     <div class="card">
       <h4>Motor paso a paso</h4>
@@ -682,7 +681,7 @@ footer.doc a:hover{ color:var(--data-ink); }
     <figcaption>Fig. D — Llave de lado bajo. El transistor está entre el motor y masa</figcaption>
   </figure>
 
-  <p>Leelo siguiendo la corriente: sale del positivo de la batería, atraviesa el motor, entra al transistor y vuelve a masa. Cuando el pin pone 3,3 V en la puerta, el camino se cierra y el motor gira. Cuando pone 0 V, se corta. <strong>El pin nunca ve el amperio del motor</strong> — la energía sale de la batería, y el pin sólo decide. Es exactamente lo que dice la diapositiva 7: el pin es el interruptor, no la fuente.</p>
+  <p>Leelo siguiendo la corriente: sale del positivo de la batería, atraviesa el motor, entra al transistor y vuelve a masa. Cuando el pin pone 3,3 V en la puerta, el camino se cierra y el motor gira. Cuando pone 0 V, se corta. <strong>El pin nunca ve el amperio del motor</strong> — la energía sale de la batería, y el pin sólo decide. Es la idea que hay que llevarse: el pin es el interruptor, no la fuente.</p>
   <ul class="tick">
     <li>La resistencia de <strong>100 Ω</strong> limita el pico de corriente que pide la puerta al conmutar (una puerta se comporta como un capacitor chico).</li>
     <li>La de <strong>10 kΩ</strong> a masa mantiene el transistor apagado mientras el ESP32 arranca y el pin todavía está flotando.</li>
@@ -1012,7 +1011,7 @@ MOTOR_STOP_LEVEL_B = LOW;             <span class="cm">// IN3 = LOW → freno o 
 
   <div class="callout stop">
     <h4>Ese último LOW es un bug que estuvo ahí desde el principio</h4>
-    <p>Hasta hace poco <span class="mono">MOTOR_STOP_LEVEL_B</span> valía <span class="mono">HIGH</span>, heredado del firmware original. Y <span class="mono">IN4 = LOW</span> con <span class="mono">IN3 = HIGH</span> es la segunda fila de la tabla: <strong>gira al revés</strong>, en cualquiera de los tres chips. Si esos pines van a las entradas de un puente H, la acción “parar” estaba mandando marcha atrás, y el corte por hombre muerto de la diapositiva 9 hacía lo mismo.</p>
+    <p>Hasta hace poco <span class="mono">MOTOR_STOP_LEVEL_B</span> valía <span class="mono">HIGH</span>, heredado del firmware original. Y <span class="mono">IN4 = LOW</span> con <span class="mono">IN3 = HIGH</span> es la segunda fila de la tabla: <strong>gira al revés</strong>, en cualquiera de los tres chips. Si esos pines van a las entradas de un puente H, la acción “parar” estaba mandando marcha atrás, y el corte por hombre muerto de la diapositiva 6 hacía lo mismo.</p>
     <p>Lo que lo destapó fue agregar la marcha atrás de verdad: los niveles que hacían falta para <span class="mono">REVERSE</span> resultaron ser exactamente los que el firmware ya usaba para parar. Los dos no podían estar bien.</p>
     <p style="margin-bottom:0">La corrección son dos letras: <span class="mono">LOW/LOW</span> es el único par que no mueve el motor en ninguno de los tres chips — freno en el L298N con el <i>enable</i> del canal puesto (ENB para la tracción), libre en un DRV8833 o TB6612FNG — y es, además, lo que el canal de dirección ya usaba para “centrado”. Sigue haciendo falta <strong>verificarlo contra el cableado real</strong>, con las ruedas en el aire, antes de confiar en el failsafe.</p>
   </div>
@@ -1062,7 +1061,7 @@ MOTOR_STOP_LEVEL_B = LOW;             <span class="cm">// IN3 = LOW → freno o 
 <section id="pwm">
   <p class="eyebrow">Control <span class="sep">/</span> 9</p>
   <h2>PWM: velocidad sin desperdicio</h2>
-  <p class="sec-lead">Es la primera de las cuatro ideas pendientes de la diapositiva 11, y la más fácil de agregar: hoy el motor está en todo o nada.</p>
+  <p class="sec-lead">Es la primera de las cuatro ideas pendientes de la diapositiva 8, y la más fácil de agregar: hoy el motor está en todo o nada.</p>
 
   <p>La forma intuitiva de bajar la velocidad sería poner una resistencia en serie. Funciona, y es una mala idea: esa resistencia se come la potencia que le sacás al motor y la convierte en calor. Para andar a media velocidad tirarías la mitad de la batería a la basura, calentando una resistencia.</p>
   <p>La solución real es <strong>prender y apagar muy rápido</strong>. Si el motor está conectado la mitad del tiempo, recibe la mitad de la energía — y en los ratos de apagado no se disipa nada, porque la llave está abierta. Eso es <em>modulación por ancho de pulso</em>, PWM. La proporción de tiempo encendido se llama <strong>ciclo de trabajo</strong>.</p>
@@ -1305,7 +1304,7 @@ MOTOR_STOP_LEVEL_B = LOW;             <span class="cm">// IN3 = LOW → freno o 
     <li><strong>Un módulo de puente H</strong>: DRV8833 si podés elegir, L298N si es lo que hay.</li>
     <li><strong>Un portapilas de 4 AA</strong> y pilas recargables NiMH, que aguantan la corriente mucho mejor que las alcalinas.</li>
     <li><strong>Capacitores</strong> de 100 nF y de 470 µF, que salen centavos y resuelven los problemas raros.</li>
-    <li><strong>Un servo SG90</strong>, para cuando quieras hacer la dirección de la diapositiva 11.</li>
+    <li><strong>Un servo SG90</strong>, para cuando quieras hacer la dirección de la diapositiva 8.</li>
   </ul>
 
   <div class="callout go" style="margin-top:2em">
