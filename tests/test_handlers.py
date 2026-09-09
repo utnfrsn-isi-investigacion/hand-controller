@@ -201,7 +201,7 @@ class TestCarHandler(unittest.TestCase):
         Without the clear, the buffer is still saturated with the action from
         before the hand left: the first REVERSE frames lose the vote to
         ACCELERATE and the car pulls forward at a user already signalling
-        reverse -- which also re-arms the firmware's lastDriveDirection, so
+        reverse -- which also re-arms the firmware's last driven direction, so
         the real reversal then pays the full REVERSAL_DWELL_MS.
         """
         right = self._right()

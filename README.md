@@ -235,7 +235,10 @@ not the client — enforces the direction change:
 
 It lives in the firmware because the ESP32 serves whatever TCP client connects,
 and because the gesture smoothing above can only promise a stop of a few frames.
-`tests/test_firmware_safety.py` guards it.
+The state machine is `_esp32/lib/DriveControl/`, kept free of Arduino so it runs on
+your machine: `make test-firmware` exercises the dwell, its latch and the `millis()`
+wrap against the real `config.h` values, and CI does the same on every push.
+`tests/test_firmware_safety.py` only guards the sketch wiring around it.
 
 ## 🎮 Usage
 
@@ -367,8 +370,10 @@ hand-controller/
 ├── config.example.json  # Example configuration template
 ├── requirements.txt     # Python dependencies
 ├── _esp32/              # ESP32 firmware (PlatformIO project)
-│   ├── Makefile         # build / upload / monitor / secrets targets
-│   ├── platformio.ini   # PlatformIO configuration
+│   ├── Makefile         # build / test / upload / monitor / secrets targets
+│   ├── platformio.ini   # PlatformIO configuration (esp32dev + native test env)
+│   ├── lib/DriveControl/  # Drive state machine + reversal interlock (Arduino-free)
+│   ├── test/test_drive/   # Unity tests for it, run on the host
 │   └── main/
 │       ├── main.ino     # Firmware entry point (TCP server + actions)
 │       ├── config.h     # Pins, TCP port, action codes, timeouts
@@ -446,6 +451,20 @@ python -m unittest tests.test_hand -v
 python -m unittest tests.test_handlers -v
 ```
 
+### Firmware Tests
+
+The ESP32 drive state machine (the reversal interlock) runs on your machine,
+no board needed. It needs PlatformIO; the first run downloads the Unity
+framework.
+
+```bash
+make test-firmware          # from the repo root
+cd _esp32 && make test      # same thing, from the firmware directory
+```
+
+The tests live in `_esp32/test/test_drive/` and include the real `config.h`,
+so they exercise the pins, levels and `REVERSAL_DWELL_MS` that get flashed.
+
 ### Code Quality Checks
 
 **Run linting with flake8:**
@@ -477,6 +496,7 @@ This project uses GitHub Actions for CI. On every push and pull request, the fol
 - ✅ Unit tests on Ubuntu (Python 3.12)
 - ✅ Code linting with flake8
 - ✅ Security scans with Bandit and pip-audit
+- ✅ Firmware: the drive state-machine tests on the native platform, then an ESP32 compile check
 
 See the [CI workflow](.github/workflows/ci.yml) for details.
 

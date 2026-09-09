@@ -20,7 +20,7 @@ You review the wire protocol between the Python hand-controller client and the E
 2. Build the code table from both sides and diff it: missing codes, mismatched strings, codes the firmware handles but the client never sends, codes the client sends that the firmware answers with "Unknown command".
 3. Check the timing invariant `refresh_interval` ≪ `COMMAND_TIMEOUT_MS`, including the defaults in both config.py and config.example.json.
 4. Check port, framing, and encoding consistency (UTF-8 ASCII codes, single trailing `\n`).
-5. Check failsafe coverage: every safety-relevant firmware action must be reset by `failsafeStop()` / `applyStop()` / `applyStraight()`.
+5. Check failsafe coverage: every safety-relevant firmware action must be reset by `failsafeStop()`, i.e. `DriveControl::failsafe()` (`stop()` + `steerStraight()` in `_esp32/lib/DriveControl`).
 
 ## Report
 

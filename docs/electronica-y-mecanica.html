@@ -1001,13 +1001,13 @@ footer.doc a:hover{ color:var(--data-ink); }
   <h3>Qué escribe el firmware de este repositorio</h3>
   <p>De <span class="mono">_esp32/main/config.h</span>: <code>MOTOR_PIN_A = 16</code> y <code>MOTOR_PIN_B = 17</code>. Suponiendo que van a IN1 e IN2, las tres órdenes de tracción quedan así:</p>
   <pre class="code"><span class="cm">// accelerate() — main.ino</span>
-<span class="kw">engageDrive</span>(DRIVE_FORWARD, HIGH, LOW);  <span class="cm">// IN1 = HIGH, IN2 = LOW → adelante</span>
+<span class="kw">drive.engage</span>(DRIVE_FORWARD, HIGH, LOW, millis());  <span class="cm">// IN1 = HIGH, IN2 = LOW → adelante</span>
 
 <span class="cm">// reverse() — los niveles salen de config.h</span>
 MOTOR_REVERSE_LEVEL_A = LOW;          <span class="cm">// IN1 = LOW</span>
 MOTOR_REVERSE_LEVEL_B = HIGH;         <span class="cm">// IN2 = HIGH → atrás</span>
 
-<span class="cm">// applyStop() — ídem</span>
+<span class="cm">// DriveControl::stop() — ídem</span>
 MOTOR_STOP_LEVEL_A = LOW;             <span class="cm">// IN1 = LOW</span>
 MOTOR_STOP_LEVEL_B = LOW;             <span class="cm">// IN2 = LOW → freno o libre</span></pre>
 

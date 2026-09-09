@@ -93,10 +93,10 @@ class Handler(abc.ABC):
 
         What actually protects the motor is downstream, in the firmware:
         REVERSAL_DWELL_MS holds off a drive command that opposes the current
-        direction until the motor has sat stopped for seconds (see engageDrive
-        in _esp32/main/main.ino). The vote only makes the gesture feel right;
-        it is not, and cannot be, the safety guarantee -- the ESP32 serves
-        whatever client connects.
+        direction until the motor has sat stopped for seconds (see
+        DriveControl::engage in _esp32/lib/DriveControl). The vote only makes
+        the gesture feel right; it is not, and cannot be, the safety guarantee
+        -- the ESP32 serves whatever client connects.
         """
         hand_type = hand.get_hand_type()
         if hand_type not in self._action_buffers:
@@ -169,8 +169,8 @@ class CarHandler(Handler):
             # default: a buffer left saturated with the pre-loss action would
             # outvote the first frames of whatever gesture comes back, so the
             # car would replay ACCELERATE for a few frames at a user already
-            # signalling REVERSE -- and that burst re-arms the firmware's
-            # lastDriveDirection, making the real reversal pay the full dwell.
+            # signalling REVERSE -- and that burst re-arms the firmware's last
+            # driven direction, making the real reversal pay the full dwell.
             # The cost is that the frame after reacquisition is unsmoothed,
             # since a one-entry buffer is its own majority, so a misread there
             # reaches the wire. What it cannot do is invert a spinning motor:
