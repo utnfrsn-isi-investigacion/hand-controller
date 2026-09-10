@@ -4,7 +4,7 @@ PYTHON        := $(VENV)/bin/python
 PIP           := $(VENV)/bin/pip
 DECK          := docs/presentacion-expo-carreras.html
 
-.PHONY: help install run test lint security venv clean config present
+.PHONY: help install run test test-firmware lint security venv clean config present
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -22,6 +22,11 @@ run: ## Run the hand controller
 
 test: ## Run unit tests
 	$(PYTHON) -m unittest discover -s tests -p "test_*.py" -v
+
+# Separate from `test` on purpose: PlatformIO is its own toolchain, not part
+# of the .venv, and its first run downloads the Unity framework. CI runs both.
+test-firmware: ## Run the ESP32 drive-logic tests natively (needs PlatformIO)
+	$(MAKE) -C _esp32 test
 
 lint: ## Run flake8 linter
 	$(VENV)/bin/flake8 . --count --max-complexity=10 --max-line-length=127 \

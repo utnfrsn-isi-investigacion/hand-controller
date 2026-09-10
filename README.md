@@ -133,7 +133,9 @@ Edit `config.json` to customize settings:
     "min_detection_confidence": 0.5,
     "min_tracking_confidence": 0.5,
     "open_threshold_ratio": 0.6,    // Finger extension ratio for "open hand"
-    "index_orientation_threshold": 0.05  // X offset for left/right pointing
+    "index_orientation_threshold": 0.05, // X offset for left/right pointing
+    "thumb_up_threshold_deg": 70.0,  // At or below this, a closed hand accelerates
+    "thumb_down_threshold_deg": 135.0 // At or above this, a closed hand reverses
   },
   "display": {
     "show_overlays": true,          // Master toggle for all overlays
@@ -173,11 +175,26 @@ Edit `config.json` to customize settings:
 - **index_orientation_threshold**: How far (in normalized image coordinates) the index
   fingertip must deviate horizontally from its knuckle to count as pointing
   left/right instead of straight (default: 0.05). Lower = more sensitive steering.
+- **thumb_up_threshold_deg** / **thumb_down_threshold_deg**: Where the thumb has
+  to point for a closed left hand to accelerate or reverse, measured as the angle
+  of the index-knuckle-to-thumb-tip vector away from straight up — 0 is thumb up,
+  90 is sideways, 180 is thumb down (defaults: 70 and 135). Anything between the
+  two is the neutral band and stops the car. Held poses measure about 33 degrees
+  (thumbs up), 112 (plain fist) and 158 (thumbs down), so the defaults centre the
+  fist with roughly 23 degrees of margin either side. Widen the band to make the
+  forward/reverse interlock more reliable, narrow it to make both drive gestures
+  easier to reach.
 
 #### Handler Settings
 - **buffer_size**: Number of frames to buffer for action smoothing (default: 10)
   - Higher values = smoother transitions but slower response — including a slower stop
   - Lower values = faster response but more jittery
+  - It also sets how readily the car stops on its own between forward and
+    reverse. A hand rotating from accelerate to reverse has to spend about a
+    quarter of the buffer in the neutral band for STOP to win the vote — 4
+    frames at the default, roughly 0.13s at 30 FPS. Flick faster than that and
+    the client sends ACCELERATE then REVERSE back to back; the firmware's
+    reversal dwell (below) is what keeps that from reaching the motor.
   - Recommended range: 8-20 frames
   - Example: At 30 FPS, buffer_size=10 smooths over about a third of a second
 - **refresh_interval**: Seconds between keepalive resends of the current action (default: 0.5)
@@ -186,7 +203,42 @@ Edit `config.json` to customize settings:
     so the client reconnects instead of talking to a socket nobody is reading
   - Must stay well below the firmware timeout
 
-The handler uses a majority voting system across the buffer to determine the most consistent action, reducing noise and false detections in hand gesture recognition. Every action votes, STOP included, so `buffer_size` is what sets stop latency: flipping a saturated buffer takes about half the buffer in frames (~0.2s at the default 10 frames / 30 FPS). The fast paths that do not vote are the undetected-hand default (STOP) and the firmware's dead-man timeout.
+The handler uses a majority voting system across the buffer to determine the most consistent action, reducing noise and false detections in hand gesture recognition. Every action votes, STOP included, so `buffer_size` is what sets stop latency: flipping a saturated buffer takes about half the buffer in frames (~0.2s at the default 10 frames / 30 FPS). The fast paths that do not vote are the undetected-hand default (STOP) and the firmware's dead-man timeout. Losing a hand also clears its buffer, so the gesture you come back with wins its own vote instead of being outvoted by whatever you were doing before the hand left the frame.
+
+#### Reversal Dwell (firmware)
+
+Driving a motor the other way while it is still spinning puts the supply across
+the winding on top of its own back-EMF, and the current spike takes out the
+H-bridge, the motor, or the regulator the ESP32 runs off. So the firmware —
+not the client — enforces the direction change:
+
+- `REVERSAL_DWELL_MS` in `_esp32/main/config.h` (default 3000) is how long the
+  motor must sit stopped before the opposite direction is engaged.
+- An opposing drive command **brakes the motor and is refused**, not queued.
+  The client's keepalive resend retries it every `refresh_interval`, so the
+  direction engages within half a second of the dwell expiring — hold the
+  gesture and it will go.
+- That brake **latches a deadline**, and until it passes every direction is
+  refused, not just the opposing one. The gesture vote emits a stray
+  same-direction action mid-flick; honouring it would re-energise the motor
+  during the spin-down and let the next opposing command restart the clock, so
+  a wavering hand could defer the reversal indefinitely. The price is that a
+  forward-flick user waits out the dwell too, which is the safe way to be
+  wrong.
+- Pulling away after a plain STOP, in the direction you were already going, is
+  immediate. Only a reversal starts the clock.
+- The one exception is boot: the latch starts at zero, so the firmware refuses
+  every drive command for the first `REVERSAL_DWELL_MS` of uptime. The Wi-Fi
+  join usually covers that, but a fast association can leave a connected
+  client's commands doing nothing until the next keepalive. It is deliberate —
+  the pins were floating moments earlier and the motor state is unknown.
+
+It lives in the firmware because the ESP32 serves whatever TCP client connects,
+and because the gesture smoothing above can only promise a stop of a few frames.
+The state machine is `_esp32/lib/DriveControl/`, kept free of Arduino so it runs on
+your machine: `make test-firmware` exercises the dwell, its latch and the `millis()`
+wrap against the real `config.h` values, and CI does the same on every push.
+`tests/test_firmware_safety.py` only guards the sketch wiring around it.
 
 ## 🎮 Usage
 
@@ -216,8 +268,15 @@ The handler uses a majority voting system across the buffer to determine the mos
 
 The preview is mirrored (like a selfie camera), so gestures behave intuitively:
 
-- **Accelerate**: Open your **left** hand
-- **Stop**: Close your **left** hand into a fist
+- **Accelerate**: **Left** hand closed, **thumbs up**
+- **Reverse**: **Left** hand closed, **thumbs down**
+- **Stop**: Open your **left** hand palm-out, or close it with the thumb
+  sideways (a plain fist). Anything the detector is unsure about stops the car,
+  and a thumb rotating between up and down has to cross the fist pose, so the
+  car normally stops before it reverses (see the note on `buffer_size` below
+  for how reliably). Switching between accelerate and reverse takes a few
+  seconds regardless: the firmware brakes first and waits out the
+  [reversal dwell](#reversal-dwell-firmware) before driving the other way
 - **Direction Left**: Point your **right** index finger to the left
 - **Direction Right**: Point your **right** index finger to the right
 - **Direction Straight**: Point your **right** index finger up
@@ -311,8 +370,10 @@ hand-controller/
 ├── config.example.json  # Example configuration template
 ├── requirements.txt     # Python dependencies
 ├── _esp32/              # ESP32 firmware (PlatformIO project)
-│   ├── Makefile         # build / upload / monitor / secrets targets
-│   ├── platformio.ini   # PlatformIO configuration
+│   ├── Makefile         # build / test / upload / monitor / secrets targets
+│   ├── platformio.ini   # PlatformIO configuration (esp32dev + native test env)
+│   ├── lib/DriveControl/  # Drive state machine + reversal interlock (Arduino-free)
+│   ├── test/test_drive/   # Unity tests for it, run on the host
 │   └── main/
 │       ├── main.ino     # Firmware entry point (TCP server + actions)
 │       ├── config.h     # Pins, TCP port, action codes, timeouts
@@ -390,6 +451,20 @@ python -m unittest tests.test_hand -v
 python -m unittest tests.test_handlers -v
 ```
 
+### Firmware Tests
+
+The ESP32 drive state machine (the reversal interlock) runs on your machine,
+no board needed. It needs PlatformIO; the first run downloads the Unity
+framework.
+
+```bash
+make test-firmware          # from the repo root
+cd _esp32 && make test      # same thing, from the firmware directory
+```
+
+The tests live in `_esp32/test/test_drive/` and include the real `config.h`,
+so they exercise the pins, levels and `REVERSAL_DWELL_MS` that get flashed.
+
 ### Code Quality Checks
 
 **Run linting with flake8:**
@@ -421,6 +496,7 @@ This project uses GitHub Actions for CI. On every push and pull request, the fol
 - ✅ Unit tests on Ubuntu (Python 3.12)
 - ✅ Code linting with flake8
 - ✅ Security scans with Bandit and pip-audit
+- ✅ Firmware: the drive state-machine tests on the native platform, then an ESP32 compile check
 
 See the [CI workflow](.github/workflows/ci.yml) for details.
 

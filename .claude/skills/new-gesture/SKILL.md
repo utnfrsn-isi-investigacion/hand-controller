@@ -35,7 +35,7 @@ Work through every step; skipping one is the usual source of "gesture detected b
 ## 4. Firmware (_esp32/main/) — only if a new action code was added
 
 - Declare the code in `config.h` (`ACTION_*` constants) — must match the Python enum value exactly.
-- Add a handler function and an `actions[]` table entry in `main.ino`.
+- Add a handler function and an `actions[]` table entry in `main.ino`. If it moves the traction motor it must go through `drive.engage()` — never a `digitalWrite` in the handler, which would bypass the reversal dwell and fail `tests/test_firmware_safety.py`.
 - Make sure the failsafe (`failsafeStop()`) still leaves the hardware in a safe state with the new action.
 
 ## 5. Overlay (draw.py)

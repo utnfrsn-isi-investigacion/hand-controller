@@ -3,8 +3,31 @@
 #include <WiFi.h>
 #include <ESPmDNS.h>
 #include <ArduinoOTA.h>
+#include <DriveControl.h>
 
 WiFiServer tcpServer(TCP_PORT);
+
+//////////////////////
+// DRIVE STATE
+//////////////////////
+// The traction and steering state machine lives in lib/DriveControl so it can
+// run on the host: the reversal dwell is what protects the H-bridge, and
+// `make test` exercises it against the values below without a board. This
+// file only wires it to the real clock and GPIOs -- the one digitalWrite in
+// the sketch is the adaptor right here.
+static void writePin(int pin, int level) {
+  digitalWrite(pin, level);
+}
+
+static const DriveConfig DRIVE_CONFIG = {
+  LED_PIN,
+  MOTOR_PIN_A, MOTOR_PIN_B,
+  MOTOR_STOP_LEVEL_A, MOTOR_STOP_LEVEL_B,
+  DIRECTION_PIN_LEFT, DIRECTION_PIN_RIGHT,
+  REVERSAL_DWELL_MS
+};
+
+DriveControl drive(DRIVE_CONFIG, writePin);
 
 //////////////////////
 // ACTIONS
@@ -14,60 +37,63 @@ struct Action {
   void (*handler)(WiFiClient&);
 };
 
-// Pin-level helpers, usable without a connected client (failsafe path)
-void applyStop() {
-  digitalWrite(LED_PIN, LOW);
-  // Stop levels are defined in config.h — verify them against the motor
-  // driver wiring (see the note there).
-  digitalWrite(MOTOR_PIN_B, MOTOR_STOP_LEVEL_B);
-  digitalWrite(MOTOR_PIN_A, MOTOR_STOP_LEVEL_A);
-}
-
-void applyStraight() {
-  digitalWrite(DIRECTION_PIN_RIGHT, LOW);
-  digitalWrite(DIRECTION_PIN_LEFT, LOW);
-}
-
 // Stop motors and center direction when the client is gone or silent
 void failsafeStop() {
-  applyStop();
-  applyStraight();
+  drive.failsafe(millis());
   Serial.println("Failsafe: stopping motors");
 }
 
-// Action handlers
+// The brake is the one refusal worth a serial line: it is the moment the
+// dwell starts, and the only one the client cannot tell apart from a held
+// retry by its own behaviour.
+static void replyDrive(WiFiClient& client, DriveResult result, const char* engaged, const char* held) {
+  if (result == DRIVE_BRAKED) {
+    Serial.printf("Reversal: braking first, holding for %lu ms\n", REVERSAL_DWELL_MS);
+  }
+  client.println(result == DRIVE_ENGAGED ? engaged : held);
+}
+
+// Action handlers. Both drive handlers go through drive.engage() -- writing
+// the motor pins directly here would bypass the reversal dwell.
 void accelerate(WiFiClient& client) {
-  digitalWrite(LED_PIN, HIGH);
-  digitalWrite(MOTOR_PIN_B, LOW);
-  digitalWrite(MOTOR_PIN_A, HIGH);
-  client.println("ACCELERATE (LED ON)");
+  // A = HIGH / B = LOW, i.e. IN4 high and IN3 low on the traction channel
+  // (see the wiring map in config.h). That this row is forward was settled
+  // on the bench, not read off the pins.
+  replyDrive(client, drive.engage(DRIVE_FORWARD, HIGH, LOW, millis()),
+             "ACCELERATE (LED ON)", "ACCELERATE held: reversal dwell");
+}
+
+void reverse(WiFiClient& client) {
+  // Levels come from config.h -- read the note there before trusting this on
+  // real hardware.
+  replyDrive(client, drive.engage(DRIVE_REVERSE, MOTOR_REVERSE_LEVEL_A, MOTOR_REVERSE_LEVEL_B, millis()),
+             "REVERSE (LED ON)", "REVERSE held: reversal dwell");
 }
 
 void stopAction(WiFiClient& client) {
-  applyStop();
+  drive.stop(millis());
   client.println("STOP (LED OFF)");
 }
 
 void directionLeft(WiFiClient& client) {
-  digitalWrite(DIRECTION_PIN_LEFT, HIGH);
-  digitalWrite(DIRECTION_PIN_RIGHT, LOW);
+  drive.steerLeft();
   client.println("DIRECTION LEFT");
 }
 
 void directionRight(WiFiClient& client) {
-  digitalWrite(DIRECTION_PIN_RIGHT, HIGH);
-  digitalWrite(DIRECTION_PIN_LEFT, LOW);
+  drive.steerRight();
   client.println("DIRECTION RIGHT");
 }
 
 void directionStraight(WiFiClient& client) {
-  applyStraight();
+  drive.steerStraight();
   client.println("DIRECTION STRAIGHT");
 }
 
 // Action mapping table
 Action actions[] = {
   {ACTION_ACCELERATE, accelerate},
+  {ACTION_REVERSE, reverse},
   {ACTION_STOP, stopAction},
   {ACTION_LEFT, directionLeft},
   {ACTION_RIGHT, directionRight},
@@ -116,9 +142,13 @@ void setupOTA() {
 // SETUP
 //////////////////////
 void setup() {
-  Serial.begin(SERIAL_BAUD);
-  delay(1000);
-
+  // Pins first, before the serial port and its settle delay. Every GPIO is an
+  // input until pinMode runs, so the H-bridge inputs float and the motor can
+  // twitch on whatever they pick up; anything ahead of these lines is time
+  // spent in that state. This only shortens the window to the boot ROM and
+  // bootloader we cannot touch -- it does not close it. Pull-downs on the
+  // driver inputs would hold the bridge off while nobody is driving it;
+  // this board does not have them, so the twitch at power-up is real.
   pinMode(LED_PIN, OUTPUT);
   pinMode(DIRECTION_PIN_LEFT, OUTPUT);
   pinMode(DIRECTION_PIN_RIGHT, OUTPUT);
@@ -126,8 +156,10 @@ void setup() {
   pinMode(MOTOR_PIN_B, OUTPUT);
 
   // Start from a known-safe output state
-  applyStop();
-  applyStraight();
+  drive.failsafe(millis());
+
+  Serial.begin(SERIAL_BAUD);
+  delay(1000);
 
   // Connect to Wi-Fi using secrets
   Serial.printf("Connecting to %s ...\n", WIFI_SSID);

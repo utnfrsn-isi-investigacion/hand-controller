@@ -5,7 +5,7 @@ from enum import Enum
 from typing import Dict, Optional, List
 
 from esp32 import Esp32
-from hand import Hand, HandType, IndexOrientation
+from hand import Hand, HandType, IndexOrientation, VerticalOrientation
 
 
 class Handler(abc.ABC):
@@ -79,6 +79,25 @@ class Handler(abc.ABC):
         return count / len(buffer)
 
     def _majority_action(self, hand: Hand) -> Optional[Enum]:
+        """Most common action in this hand's buffer, or None when it is empty.
+
+        This vote is also the client's half of the forward/reverse interlock,
+        and it only carries it so far. Starting from a buffer saturated with
+        one action, an intermediate action has to occupy enough of the buffer
+        to outvote both neighbours -- roughly a quarter of it, so ~4 frames at
+        the default buffer_size of 10 (~0.13s at 30 FPS), and it then holds the
+        majority for only ~2 more. A hand flicked from pointing up to pointing
+        down faster than that yields ACCELERATE followed directly by REVERSE,
+        with no STOP in between. Enlarging the NEUTRAL thumb band buys crossing
+        frames.
+
+        What actually protects the motor is downstream, in the firmware:
+        REVERSAL_DWELL_MS holds off a drive command that opposes the current
+        direction until the motor has sat stopped for seconds (see
+        DriveControl::engage in _esp32/lib/DriveControl). The vote only makes
+        the gesture feel right; it is not, and cannot be, the safety guarantee
+        -- the ESP32 serves whatever client connects.
+        """
         hand_type = hand.get_hand_type()
         if hand_type not in self._action_buffers:
             return None
@@ -95,6 +114,7 @@ class Handler(abc.ABC):
 
 class CarAction(Enum):
     ACCELERATE = "001"
+    REVERSE = "010"
     STOP = "000"
     DIRECTION_LEFT = "101"
     DIRECTION_RIGHT = "110"
@@ -145,7 +165,20 @@ class CarHandler(Handler):
             # Hand is detected - record it and use the buffered (smoothed) action
             return self._record_action(hand)  # type: ignore[return-value]
         else:
-            # Hand not detected - return default action without polluting the buffer
+            # Hand not detected. Drop the history as well as returning the
+            # default: a buffer left saturated with the pre-loss action would
+            # outvote the first frames of whatever gesture comes back, so the
+            # car would replay ACCELERATE for a few frames at a user already
+            # signalling REVERSE -- and that burst re-arms the firmware's last
+            # driven direction, making the real reversal pay the full dwell.
+            # The cost is that the frame after reacquisition is unsmoothed,
+            # since a one-entry buffer is its own majority, so a misread there
+            # reaches the wire. What it cannot do is invert a spinning motor:
+            # a reversal still brakes and waits out the firmware dwell. A
+            # misread in the direction already being driven is a twitch of a
+            # frame or two, which is the accepted trade against replaying the
+            # pre-loss action for six.
+            self._action_buffers[hand_type].clear()
             return self._default_actions[hand_type]
 
     def _get_action(self, hand: Hand) -> CarAction:
@@ -153,7 +186,30 @@ class CarHandler(Handler):
         hand_type = hand.get_hand_type()
 
         if hand_type == HandType.LEFT:
-            return CarAction.ACCELERATE if hand.is_open() else CarAction.STOP
+            # Landmarks too collapsed to measure are not a gesture at all, and
+            # the only safe reading of "no gesture" is STOP. Without this the
+            # hand falls through to the thumb angle, which on degenerate points
+            # cannot return NEUTRAL -- so garbage would read as ACCELERATE or
+            # REVERSE. This is the branch that keeps "every error path ends in
+            # a stop" true after the gesture set was inverted.
+            if not hand.has_usable_geometry():
+                return CarAction.STOP
+            # An open palm is the fast, unambiguous stop. Driving takes a
+            # closed hand, and then the thumb picks the direction.
+            if hand.is_open():
+                return CarAction.STOP
+            orientation = hand.get_thumb_orientation()
+            if orientation == VerticalOrientation.UP:
+                return CarAction.ACCELERATE
+            elif orientation == VerticalOrientation.DOWN:
+                return CarAction.REVERSE
+            else:
+                # Thumb sideways, i.e. a plain fist: the neutral pose a thumb
+                # crosses on its way between ACCELERATE and REVERSE. Makes the
+                # stop deliberate rather than guaranteed -- the firmware's
+                # reversal dwell is what enforces it (see
+                # Handler._majority_action).
+                return CarAction.STOP
 
         elif hand_type == HandType.RIGHT:
             orientation = hand.get_index_orientation()

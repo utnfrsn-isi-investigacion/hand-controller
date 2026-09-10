@@ -300,7 +300,7 @@ footer.doc a:hover{ color:var(--data-ink); }
     <li><a href="#pipeline">El recorrido de un cuadro</a></li>
     <li><a href="#modelo">Qué devuelve un modelo de visión</a></li>
     <li><a href="#espejo">El espejo, y por qué importa</a></li>
-    <li><a href="#abierta">Mano abierta o puño</a></li>
+    <li><a href="#abierta">La palma, el puño y el pulgar</a></li>
     <li><a href="#indice">El índice y la banda muerta</a></li>
     <li><a href="#descartar">Cuándo una mano no cuenta</a></li>
     <li><a href="#votacion">La votación por mayoría</a></li>
@@ -378,7 +378,7 @@ footer.doc a:hover{ color:var(--data-ink); }
       <thead><tr><th class="c">Archivo</th><th>De qué se ocupa</th><th>Qué <em>no</em> sabe</th></tr></thead>
       <tbody>
         <tr><td class="c">main.py</td><td>Armar todo y correr el bucle</td><td class="dim">Qué es un gesto</td></tr>
-        <tr><td class="c">hand.py</td><td>De píxeles a “mano abierta”, “índice a la izquierda”</td><td class="dim">Que exista un auto</td></tr>
+        <tr><td class="c">hand.py</td><td>De píxeles a “mano abierta”, “pulgar arriba”, “índice a la izquierda”</td><td class="dim">Que exista un auto</td></tr>
         <tr><td class="c">handlers.py</td><td>De gestos a acciones, y filtrarlas</td><td class="dim">Cómo se manda un mensaje</td></tr>
         <tr><td class="c">esp32.py</td><td>El socket TCP y la reconexión</td><td class="dim">Qué significa lo que manda</td></tr>
         <tr><td class="c">draw.py</td><td>Los dibujos sobre la imagen</td><td class="dim">Nada del control</td></tr>
@@ -396,7 +396,7 @@ footer.doc a:hover{ color:var(--data-ink); }
 <section id="modelo">
   <p class="eyebrow">La visión <span class="sep">/</span> 2</p>
   <h2>Qué devuelve un modelo de visión</h2>
-  <a class="slideref" href="presentacion-expo-carreras.html#5">Diapositiva 5 — “La computadora no ve una mano. Ve 21 números.”</a>
+  <a class="slideref" href="presentacion-expo-carreras.html#4">Diapositiva 4 — “La computadora no ve una mano. Ve 21 puntos.”</a>
   <p class="sec-lead">Acá está el malentendido más común del proyecto: <strong>MediaPipe no reconoce gestos.</strong> Ubica puntos. Los gestos los inventamos nosotros, con geometría de secundario.</p>
 
   <figure>
@@ -501,11 +501,18 @@ footer.doc a:hover{ color:var(--data-ink); }
 
 <section id="abierta">
   <p class="eyebrow">La geometría <span class="sep">/</span> 4</p>
-  <h2>Mano abierta o puño</h2>
-  <a class="slideref" href="presentacion-expo-carreras.html#6">Diapositiva 6 — “Se resuelve con una división”</a>
-  <p class="sec-lead">El acelerador del auto es esta cuenta. No hay red neuronal que diga “esto es un puño”: hay cinco divisiones y una comparación.</p>
+  <h2>La palma, el puño y el pulgar</h2>
+  <a class="slideref" href="presentacion-expo-carreras.html#4">Diapositiva 4 — “Es una división”</a>
+  <p class="sec-lead">El freno del auto es esta cuenta. No hay red neuronal que diga “esto es un puño”: hay cinco divisiones y una comparación. Para acelerar, o para ir marcha atrás, hace falta un ángulo más.</p>
 
-  <p>El problema a resolver: la misma seña tiene que valer con la mano cerca de la cámara y lejos, y con manos de distinto tamaño. Si midiéramos en píxeles, cada persona necesitaría su propio umbral.</p>
+  <p>La mano izquierda contesta <strong>dos</strong> preguntas, y en este orden:</p>
+  <ol class="steps">
+    <li><strong>¿Está abierta?</strong> La palma abierta es <strong>PARAR</strong>, y se decide con la división de acá abajo.</li>
+    <li><strong>Si no lo está, ¿a dónde apunta el pulgar?</strong> Arriba acelera; abajo va para atrás; de costado —el puño de toda la vida— para.</li>
+  </ol>
+  <p>O sea que manejar es tener la mano <em>cerrada</em>, y la palma abierta es el gesto de soltar todo. Es al revés de lo que este mismo proyecto hacía hasta hace poco, y el motivo es que abrir la mano de golpe es lo que hace cualquiera cuando algo sale mal: conviene que ese reflejo sea el freno y no el acelerador.</p>
+
+  <p>El problema a resolver en la primera pregunta: la misma seña tiene que valer con la mano cerca de la cámara y lejos, y con manos de distinto tamaño. Si midiéramos en píxeles, cada persona necesitaría su propio umbral.</p>
 
   <h3>La receta, en tres pasos</h3>
   <ol class="steps">
@@ -569,21 +576,48 @@ normalized_distances = [d / hand_size <span class="kw">for</span> d <span class=
 
   <h3>Tres decisiones que hay adentro de esas seis líneas</h3>
   <ul class="tick">
-    <li><strong>Es <span class="mono">all</span>, no una mayoría.</strong> Con que un dedo no llegue, la mano cuenta como puño. Es deliberadamente estricto y va para el lado seguro: el error barato es no acelerar cuando querías; el caro es acelerar cuando no.</li>
+    <li><strong>Es <span class="mono">all</span>, no una mayoría.</strong> Con que un dedo no llegue, la mano cuenta como cerrada. Cuando la mano abierta era el acelerador, eso iba para el lado seguro. Ahora la mano cerrada es la pose de manejar, así que la prudencia se mudó un paso más adelante: una mano cerrada todavía tiene que apuntar el pulgar bien arriba o bien abajo para que el auto se mueva, y en la duda queda el puño, que para.</li>
     <li><strong>La distancia es 3D</strong>, con <span class="mono">z</span> adentro de la raíz. Como <span class="mono">z</span> es el eje flojo del modelo, mete ruido — pero entra en <span class="mono">d</span> y en <span class="mono">H</span> a la vez, así que parte del error se cancela en la división. A cambio, un dedo apuntando <em>a la cámara</em> se distingue de uno doblado, cosa que en 2D no pasaría.</li>
     <li><strong><span class="mono">H</span> se calcula una vez por mano</strong> y queda en <span class="mono">_hand_size_cache</span>. El objeto <span class="mono">Hand</span> vive un solo cuadro, así que ese caché no puede quedar viejo: es una optimización sin la trampa que suelen tener los cachés.</li>
   </ul>
 
   <div class="callout">
     <h4>Y si <span class="mono">H</span> da cero</h4>
-    <p style="margin:0">Hay una guarda de <span class="mono">hand_size &lt; 1e-6</span> que devuelve “no está abierta”, o sea <strong>parar</strong>, y deja un aviso en el log. Pasa cuando el modelo devuelve algo degenerado. Es un caso rarísimo, y aun así el código elige qué hacer en vez de dividir por cero: <em>cada rama de error de este proyecto termina en parar</em>.</p>
+    <p>Pasa cuando el modelo devuelve algo degenerado: dos puntos que caen exactamente en el mismo lugar. Es rarísimo, y aun así el código elige qué hacer en vez de dividir por cero.</p>
+    <p style="margin-bottom:0">Lo interesante es que <strong>invertir el gesto casi se lleva puesta esa garantía</strong>. Antes alcanzaba con que <span class="mono">is_open()</span> devolviera “no está abierta”, porque no-abierta <em>era</em> parar. Con el gesto nuevo, no-abierta manda la decisión al pulgar… que se calcula con esos mismos puntos degenerados, y con dos puntos iguales el ángulo nunca cae en la banda del medio: sale acelerar o marcha atrás. Por eso hoy la pregunta está hecha aparte y antes que las otras dos — <span class="mono">has_usable_geometry()</span>, “¿esto se puede medir?” — y una mano que no se puede medir no es un puño: no es un gesto. <em>Cada rama de error de este proyecto termina en parar</em>, pero eso hay que volver a ganarlo cada vez que se cambia un gesto.</p>
+  </div>
+
+  <h3>La segunda pregunta: el ángulo del pulgar</h3>
+  <p>Si la mano no está abierta, hay que elegir entre acelerar, ir para atrás y parar. La cuenta vuelve a ser de secundario: el ángulo del vector que va del <strong>nudillo del índice</strong> (punto 5) a la <strong>yema del pulgar</strong> (punto 4), medido desde “derecho para arriba”.</p>
+
+  <pre class="code"><span class="cm"># 0 apunta arriba, 90 es horizontal, 180 apunta abajo</span>
+<span class="kw">return</span> math.<span class="kw">degrees</span>(math.<span class="kw">atan2</span>(<span class="kw">abs</span>(tip.x - origin.x), -(tip.y - origin.y)))</pre>
+
+  <p>Hay dos detalles chicos ahí que hacen que funcione. La <span class="mono">y</span> de la imagen crece <em>hacia abajo</em>, así que se la niega para que “arriba” dé positivo. Y la componente horizontal entra en <span class="mono">abs</span>: al ángulo no le importa si el pulgar se va para la izquierda o para la derecha, así que la medición <strong>sobrevive al espejado de la sección 3</strong> y da lo mismo para cualquiera de las dos manos. Una cuenta que no depende del espejo es una cuenta menos que se puede romper.</p>
+
+  <div class="tw">
+    <table class="d">
+      <thead><tr><th>Pose</th><th class="c">Ángulo medido</th><th class="c">Umbral</th><th>Acción</th></tr></thead>
+      <tbody>
+        <tr><td>Pulgar arriba</td><td class="c">~33°</td><td class="c">≤ 70°</td><td>ACELERAR <span class="mono dim">001</span></td></tr>
+        <tr><td>Puño, pulgar de costado</td><td class="c">~112°</td><td class="c">entre 70 y 135</td><td>PARAR <span class="mono dim">000</span></td></tr>
+        <tr><td>Pulgar abajo</td><td class="c">~158°</td><td class="c">≥ 135°</td><td>MARCHA ATRÁS <span class="mono dim">010</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="small dim">Los tres ángulos son medidos sobre poses sostenidas, y cada uno es estable dentro de un grado. Los umbrales de 70 y 135 dejan al puño con unos 23 grados de margen para cada lado: suficiente para que no se escape solo, y no tanto como para que cueste llegar a los otros dos.</p>
+
+  <div class="callout go">
+    <h4>La banda del medio es una pose, no una zona muerta</h4>
+    <p>La banda del índice de la sección 5 es una zona muerta de verdad: una franja por la que pasás, no un lugar donde te quedás. Ésta es lo contrario. Entre los 70 y los 135 grados está el puño de siempre, que es una pose cómoda de sostener, y por eso sirve como descanso: la mano se queda ahí sin esfuerzo mientras pensás.</p>
+    <p style="margin-bottom:0">Eso importa por una razón que no se ve en la tabla: para ir de acelerar a marcha atrás, el pulgar <strong>tiene que cruzarla</strong>. El auto pasa por PARAR sin que nadie se lo pida. Pero cruzar no es lo mismo que quedarse, y ahí es exactamente donde este truco se termina — la cuenta está en la sección 7.</p>
   </div>
 </section>
 
 <section id="indice">
   <p class="eyebrow">La geometría <span class="sep">/</span> 5</p>
   <h2>El índice y la banda muerta</h2>
-  <a class="slideref" href="presentacion-expo-carreras.html#7">Diapositiva 7 — “Una resta y una zona muerta”</a>
+  <a class="slideref" href="presentacion-expo-carreras.html#1">Diapositiva 1 — los gestos, en la portada</a>
   <p class="sec-lead">El volante es todavía más simple: una resta. Lo interesante no es la cuenta, es el número que la acompaña.</p>
 
   <pre class="code">index_tip  = landmark[HandLandmark.INDEX_FINGER_TIP]   <span class="cm"># 8</span>
@@ -669,14 +703,14 @@ both = HandType.LEFT <span class="kw">in</span> detected <span class="kw">and</s
 
   <div class="callout go">
     <h4>El camino rápido</h4>
-    <p style="margin:0">Cuando falta una mano, el valor por defecto se devuelve <strong>sin pasar por el filtro de la sección 7</strong>. Es a propósito: el filtro suaviza, y suavizar una parada es demorarla. Todo lo demás vota; perder la mano, no. Es el atajo que hace que el freno sea inmediato mientras el resto del sistema sigue siendo tranquilo.</p>
+    <p>Cuando falta una mano, el valor por defecto se devuelve <strong>sin pasar por el filtro de la sección 7</strong>. Es a propósito: el filtro suaviza, y suavizar una parada es demorarla. Todo lo demás vota; perder la mano, no. Es el atajo que hace que el freno sea inmediato mientras el resto del sistema sigue siendo tranquilo.</p>
+    <p style="margin:0">Y de paso <strong>se borra la cola de votos</strong> de esa mano. Si no, al volver ganaría unos cuadros el gesto de antes de perderla, que es justo cuando menos conviene — está contado en la sección 7.</p>
   </div>
 </section>
 
 <section id="votacion">
   <p class="eyebrow">Las decisiones <span class="sep">/</span> 7</p>
   <h2>La votación por mayoría</h2>
-  <a class="slideref" href="presentacion-expo-carreras.html#9">Diapositiva 9 — “La mano tiembla, y treinta veces por segundo alguna lectura sale mal”</a>
   <p class="sec-lead">Con treinta lecturas por segundo, algunas van a salir mal. Siempre. La pregunta no es cómo evitarlo, es qué hacer al respecto.</p>
 
   <p>Cada mano tiene su propia cola de las últimas diez acciones. En cada cuadro entra una lectura nueva, se cae la más vieja, y lo que se manda no es la lectura de ahora: es <strong>la que más se repite en la cola</strong>.</p>
@@ -707,7 +741,7 @@ counter = collections.<span class="kw">Counter</span>(self._action_buffers[hand_
 <path class="arw" d="M462 43 H502" marker-end="url(#v)"/>
 <text class="lbl" x="514" y="41" fill="var(--marcha)" font-size="13">ACELERAR</text>
 <text class="m sub" x="514" y="58">9 de 10 · se manda esto</text>
-<text class="cap" x="0" y="128">El precio: cerrás la mano y la orden tarda seis cuadros</text>
+<text class="cap" x="0" y="128">El precio: abrís la mano y la orden tarda seis cuadros</text>
 <rect x="60" y="142" width="34" height="26" fill="color-mix(in srgb, var(--marcha) 16%, transparent)" stroke="var(--marcha)" stroke-width="1.2"/><text class="m lbl" x="77" y="160" text-anchor="middle" fill="var(--marcha)" font-size="12">A</text>
 <rect x="100" y="142" width="34" height="26" fill="color-mix(in srgb, var(--marcha) 16%, transparent)" stroke="var(--marcha)" stroke-width="1.2"/><text class="m lbl" x="117" y="160" text-anchor="middle" fill="var(--marcha)" font-size="12">A</text>
 <rect x="140" y="142" width="34" height="26" fill="color-mix(in srgb, var(--marcha) 16%, transparent)" stroke="var(--marcha)" stroke-width="1.2"/><text class="m lbl" x="157" y="160" text-anchor="middle" fill="var(--marcha)" font-size="12">A</text>
@@ -747,14 +781,26 @@ counter = collections.<span class="kw">Counter</span>(self._action_buffers[hand_
   <p>Es el mismo antirrebote que se usa para leer un pulsador: no confiás en una sola lectura del contacto, leés varias y recién ahí decidís. La diferencia es que acá hay cinco opciones en vez de dos, y por eso se usa una votación en vez de un contador.</p>
 
   <h3>Lo que cuesta, en cuadros</h3>
-  <p>La cola tiene diez lugares. Si está llena de ACELERAR y cerrás la mano, PARAR necesita ganar la votación: hacen falta <strong>seis lecturas nuevas</strong> para dar vuelta un 10 a 0. A treinta cuadros por segundo, son unos <strong>0,2 segundos</strong>.</p>
+  <p>La cola tiene diez lugares. Si está llena de ACELERAR y abrís la mano, PARAR necesita ganar la votación: hacen falta <strong>seis lecturas nuevas</strong> para dar vuelta un 10 a 0. A treinta cuadros por segundo, son unos <strong>0,2 segundos</strong>.</p>
   <div class="eq">latencia del filtro &asymp; (buffer_size / 2) / fps<span class="an">Con 10 cuadros a 30 fps: 0,2 s. Con 30 cuadros: 0,5 s, y ya se siente pesado</span></div>
   <p>De ahí sale la regla para tocar ese número: <strong><span class="mono">buffer_size</span> no es “cuánto filtra”, es “cuánto tarda en frenar”.</strong> Subirlo hace el auto más estable y más lento en obedecer; bajarlo lo hace nervioso. Diez es el punto elegido.</p>
 
   <div class="callout warn">
     <h4>Dos detalles que sorprenden al leer el código</h4>
     <p><strong>Parar también vota.</strong> Podría parecer razonable dejar que PARAR se saltee la cola — es la acción segura. Pero entonces cualquier lectura basura frenaría el auto en seco a mitad de camino, treinta veces por segundo, y sería imposible manejarlo. El atajo existe, pero está un escalón más arriba: en la mano que desaparece (sección 6).</p>
-    <p style="margin-bottom:0"><strong>La cola nunca se vacía.</strong> Si bajás la mano y la volvés a subir, adentro quedaron las votaciones viejas. Durante los primeros cuadros del regreso, el gesto anterior todavía pesa. El efecto está acotado — a los seis cuadros el gesto nuevo ya ganó — pero es real, y es la clase de detalle que sólo aparece leyendo el código, no la documentación.</p>
+    <p><strong>La cola se vacía cuando se pierde la mano.</strong> Hasta hace poco no: si bajabas la mano y la volvías a subir, adentro quedaban las votaciones viejas y durante los primeros cuadros del regreso ganaba el gesto anterior. Con la cola llena de ACELERAR, volver mostrando el pulgar para abajo daba <strong>ACELERAR</strong> unos cuadros más — el auto tiraba para adelante mientras vos pedías marcha atrás, y de paso le avisaba al firmware que la dirección actual era “adelante”, así que la marcha atrás de verdad después pagaba la espera de inversión entera.</p>
+    <p style="margin-bottom:0">Justo en el momento en que las manos vuelven es cuando menos conviene repetir lo de antes, así que ahora la cola de esa mano se borra. El primer cuadro del regreso gana su propia votación, sin suavizar — una cola de un solo elemento es su propia mayoría — y si eso implica cambiar de dirección, quien pone el freno es la espera de inversión del firmware, que para eso está.</p>
+  </div>
+
+  <h3>El cruce de adelante a atrás</h3>
+  <p>La votación es también lo que hace que el auto pase por PARAR cuando girás el pulgar de arriba para abajo (sección 4). Conviene saber cuánto vale esa promesa, porque vale menos de lo que parece.</p>
+  <p>Partiendo de una cola llena de ACELERAR, para que PARAR llegue a mandarse tiene que ganarles a sus dos vecinos <em>a la vez</em>: le hacen falta unos <strong>cuatro cuadros</strong> de puño, un cuarto de la cola. Y cuando gana, gana poco — se sostiene <strong>dos cuadros</strong>, unos 65 milisegundos, antes de que MARCHA ATRÁS lo pase. Si girás la muñeca más rápido que eso, la cola pasa de ACELERAR a MARCHA ATRÁS sin ningún PARAR en el medio.</p>
+  <div class="eq">4 cuadros para ganar &middot; 2 cuadros de reinado &asymp; 65 ms de PARAR<span class="an">Con buffer_size = 10 a 30 fps. Agrandar la cola pide más cuadros de puño, no menos</span></div>
+
+  <div class="callout stop">
+    <h4>Por eso esto no es la protección</h4>
+    <p>Invertir un motor que todavía gira es lo que rompe el puente H, y la explicación está en la <a href="electronica-y-mecanica.html#proyecto">guía de electrónica</a>. Sesenta y cinco milisegundos no frenan nada: un motor con el auto encima tarda <em>segundos</em> en pararse.</p>
+    <p style="margin-bottom:0">La protección de verdad vive en el firmware, que <strong>rechaza</strong> toda orden contraria a la dirección que está girando hasta que el motor lleve <span class="mono">REVERSAL_DWELL_MS</span> —tres segundos— detenido. La orden no se encola: se descarta, y el reenvío periódico de la sección 9 hace de reintento, así que si sostenés el gesto la marcha atrás entra sola. Tenía que estar ahí y no acá, por lo mismo de siempre: <strong>el ESP32 le obedece a cualquiera que se conecte al puerto 1234</strong>, y este programa es sólo uno de los clientes posibles. El suavizado hace que el gesto se sienta bien; no es, y no puede ser, la garantía.</p>
   </div>
 </section>
 
@@ -786,7 +832,6 @@ counter = collections.<span class="kw">Counter</span>(self._action_buffers[hand_
 <section id="red">
   <p class="eyebrow">La red <span class="sep">/</span> 9</p>
   <h2>Qué viaja por la red</h2>
-  <a class="slideref" href="presentacion-expo-carreras.html#10">Diapositiva 10 — “Qué viaja realmente por el aire”</a>
   <p class="sec-lead">Después de todo el trabajo de visión y filtrado, lo que sale por el Wi-Fi son cuatro bytes.</p>
 
   <pre class="code" style="font-size:1.15em;text-align:center;padding:.8em">001\n</pre>
@@ -796,6 +841,7 @@ counter = collections.<span class="kw">Counter</span>(self._action_buffers[hand_
       <thead><tr><th>Acción</th><th class="c">Código</th><th>Qué hace del otro lado</th></tr></thead>
       <tbody>
         <tr><td>ACCELERATE</td><td class="c">001</td><td class="dim">Pines del motor en marcha</td></tr>
+        <tr><td>REVERSE</td><td class="c">010</td><td class="dim">Los mismos pines al revés, con la espera de inversión de por medio</td></tr>
         <tr><td>STOP</td><td class="c">000</td><td class="dim">Pines del motor al estado seguro</td></tr>
         <tr><td>DIRECTION_LEFT</td><td class="c">101</td><td class="dim">Pin 4 alto, pin 5 bajo</td></tr>
         <tr><td>DIRECTION_RIGHT</td><td class="c">110</td><td class="dim">Pin 5 alto, pin 4 bajo</td></tr>
@@ -807,7 +853,8 @@ counter = collections.<span class="kw">Counter</span>(self._action_buffers[hand_
   <p>Sin JSON, sin librerías, sin negociación. La ventaja no es el ahorro de bytes — a esta escala no le importa a nadie — sino que <strong>cada pieza se puede probar sola</strong>. Sin cámara y sin Python:</p>
   <pre class="code">$ nc esp32.local 1234
 001            <span class="cm"># el motor arranca</span>
-000            <span class="cm"># y para</span></pre>
+000            <span class="cm"># y para</span>
+010            <span class="cm"># y para atrás… recién tres segundos después de haber parado</span></pre>
   <p>Cuando algo no anda, poder partir el sistema al medio vale más que cualquier optimización. Si <span class="mono">nc</span> mueve el auto, el problema está en la computadora; si no, está en el firmware o en el cableado — y ahí seguís por la <a href="electronica-y-mecanica.html#medir">guía de hardware</a>.</p>
 
   <h3>El detalle que no se ve: hay que leer las respuestas</h3>
@@ -823,9 +870,12 @@ counter = collections.<span class="kw">Counter</span>(self._action_buffers[hand_
         <span class="kw">return</span>   <span class="cm"># no hay más datos pendientes</span></pre>
   <p>Si nadie lee, esos bytes se acumulan en los buffers de los dos lados; cuando se llenan, TCP frena al que escribe — y el que escribe es el ESP32, en medio de su <span class="mono">loop()</span>. El auto se congela sin que haya fallado nada. <strong>En TCP, no leer es una forma de romper.</strong> El <span class="mono">settimeout(0)</span> hace que ese vaciado no bloquee el bucle ni un milisegundo.</p>
 
-  <div class="callout stop">
-    <h4>El riesgo que sigue abierto</h4>
-    <p style="margin:0">Los cinco códigos están escritos <strong>dos veces</strong>: en <span class="mono">handlers.py</span> y en <span class="mono">_esp32/main/config.h</span>. Nada verifica que coincidan. Si alguien cambia uno solo, el auto deja de responder a ese gesto y <em>no hay error en ningún lado</em>: el mensaje viaja, llega, y el firmware no lo encuentra en su tabla. Es el precio de tener dos programas en dos lenguajes hablando por un cable. Hoy lo único que lo cuida es la revisión — el repositorio tiene hasta un revisor dedicado en <span class="mono">.claude/agents/</span> que compara los dos lados — pero <strong>ninguna prueba automática lo verifica</strong>. Un test que abra los dos archivos y compare las cinco constantes entraría en veinte líneas, y sería un primer aporte excelente.</p>
+  <div class="callout warn">
+    <h4>El riesgo que estaba abierto, y lo que quedó</h4>
+    <p>Los seis códigos están escritos <strong>dos veces</strong>: en <span class="mono">handlers.py</span> y en <span class="mono">_esp32/main/config.h</span>. Si alguien cambia uno solo, el auto deja de responder a ese gesto y <em>no hay error en ningún lado</em>: el mensaje viaja, llega, y el firmware no lo encuentra en su tabla. Es el precio de tener dos programas en dos lenguajes hablando por un cable.</p>
+    <p>Esa parte ya está cubierta. <span class="mono">tests/test_protocol.py</span> abre los dos archivos, saca las constantes con una expresión regular y compara: que los códigos coincidan, que no haya dos iguales, que cada uno tenga su función en la tabla de acciones y que no haya dos acciones compartiendo función. Entró en setenta líneas y corre en cada cambio.</p>
+    <p>La espera de inversión va un paso más lejos. La máquina de estados del motor vive en <span class="mono">_esp32/lib/DriveControl</span>, sin nada de Arduino adentro: el reloj le llega como un número y los pines salen por una función que se le inyecta. Por eso <span class="mono">_esp32/test/test_drive</span> la puede <strong>ejecutar en la computadora</strong>, con los pines, los niveles y los tres segundos reales de <span class="mono">config.h</span> — incluido el desborde del reloj a los 49 días, que en un simulador de 64 bits no pasaría nunca. <span class="mono">tests/test_firmware_safety.py</span> sólo vigila el cableado del <i>sketch</i> alrededor: que las acciones pasen por la máquina de estados y que <span class="mono">setup()</span> ponga los pines antes que nada.</p>
+    <p style="margin-bottom:0">Lo que sigue abierto es más de fondo, y conviene decirlo: la tabla de códigos y el orden de <span class="mono">setup()</span> todavía se revisan leyendo el <i>sketch</i> <strong>como texto</strong>, porque esa parte necesita la placa para correr. Y ninguna prueba puede decidir si <span class="mono">MOTOR_PIN_A</span> está soldado a IN3 o a IN4 — está en IN4, y eso se supo mirando la placa, no leyendo el código. <strong>El código y el cable siguen siendo dos verdades distintas</strong>, y la segunda sólo se verifica con las ruedas en el aire.</p>
   </div>
 </section>
 
@@ -867,7 +917,7 @@ counter = collections.<span class="kw">Counter</span>(self._action_buffers[hand_
 <section id="latencia">
   <p class="eyebrow">El sistema <span class="sep">/</span> 11</p>
   <h2>Dónde se va el tiempo</h2>
-  <p class="sec-lead">Entre que cerrás la mano y el motor se entera pasa un cuarto de segundo. Vale la pena saber en qué se gasta, porque el reparto no es el que uno esperaría.</p>
+  <p class="sec-lead">Entre que abrís la mano y el motor se entera pasa un cuarto de segundo. Vale la pena saber en qué se gasta, porque el reparto no es el que uno esperaría.</p>
 
   <figure class="wide">
 <svg viewBox="0 0 600 210" role="img" aria-label="Presupuesto de latencia: la votacion se lleva la mayor parte">
@@ -885,7 +935,7 @@ counter = collections.<span class="kw">Counter</span>(self._action_buffers[hand_
 <text class="m sub" x="331" y="42" text-anchor="middle" fill="var(--power)">votación · 200 ms</text>
 <path class="arw" d="M537 108 V124"/>
 <text class="m sub" x="537" y="138" text-anchor="middle" fill="var(--marcha)">red · 3 ms</text>
-<text class="lbl" x="20" y="18" font-size="13">De cerrar la mano a que el motor se entere: ~256 ms</text>
+<text class="lbl" x="20" y="18" font-size="13">De abrir la mano a que el motor se entere: ~256 ms</text>
 <line x1="20" y1="160" x2="580" y2="160" stroke="var(--parada)" stroke-width="2" marker-end="url(#l)"/>
 <text class="m sub" x="20" y="180" fill="var(--parada)">el hombre muerto del firmware corta a los 2.000 ms — ocho veces más lejos, fuera de escala</text>
 </svg>
@@ -893,7 +943,7 @@ counter = collections.<span class="kw">Counter</span>(self._action_buffers[hand_
   </figure>
 
   <p>La conclusión es incómoda y útil: <strong>la parte lenta no es la inteligencia artificial, es nuestro filtro.</strong> MediaPipe resuelve una mano en unos milisegundos; la votación se toma 0,2 segundos por diseño. Si alguna vez el auto se siente pesado, el número que hay que tocar es <span class="mono">buffer_size</span>, no la cámara ni el modelo.</p>
-  <p>Y hay dos latencias más que no están en el dibujo porque no son del software: el motor tarda en arrancar, y el auto tarda en detenerse por inercia. Eso está contado en la <a href="electronica-y-mecanica.html#mecanica">sección de mecánica</a> de la otra guía.</p>
+  <p>Y hay tres latencias más que no están en el dibujo. Dos no son del software: el motor tarda en arrancar, y el auto tarda en detenerse por inercia — eso está contado en la <a href="electronica-y-mecanica.html#mecanica">sección de mecánica</a> de la otra guía. La tercera es deliberada: pasar de adelante a atrás se toma <strong>tres segundos</strong>, la espera de inversión del firmware. No es tiempo perdido; es el motor frenando, y es la única latencia del proyecto que alguien agregó a propósito.</p>
 
   <div class="tw">
     <table class="d">
@@ -902,7 +952,8 @@ counter = collections.<span class="kw">Counter</span>(self._action_buffers[hand_
         <tr><td>Que responda más rápido</td><td class="c">buffer_size ↓</td><td class="dim">Más temblor, más órdenes espurias</td></tr>
         <tr><td>Que sea más estable</td><td class="c">buffer_size ↑</td><td class="dim">Frenadas más lentas</td></tr>
         <tr><td>Más margen ante cortes de red</td><td class="c">refresh_interval ↓</td><td class="dim">Más tráfico (que igual es despreciable)</td></tr>
-        <tr><td>Que acelere con menos esfuerzo</td><td class="c">open_threshold_ratio ↓</td><td class="dim">Más aceleradas por accidente</td></tr>
+        <tr><td>Que la palma frene con menos esfuerzo</td><td class="c">open_threshold_ratio ↓</td><td class="dim">Frenadas por accidente, con la mano a medio cerrar</td></tr>
+        <tr><td>Llegar más fácil a acelerar y a marcha atrás</td><td class="c">umbrales del pulgar, más juntos</td><td class="dim">Menos puño en el medio, y el cruce de adelante a atrás se vuelve más brusco</td></tr>
         <tr><td>Un volante menos nervioso</td><td class="c">index_orientation_threshold ↑</td><td class="dim">Hay que inclinar más el dedo para doblar</td></tr>
       </tbody>
     </table>
@@ -958,6 +1009,8 @@ $ make security      <span class="cm"># bandit + pip-audit</span></pre>
       <thead><tr><th class="c">Parámetro</th><th class="c">Valor</th><th>Qué controla</th></tr></thead>
       <tbody>
         <tr><td class="c">open_threshold_ratio</td><td class="c">0.6</td><td>Cuánto hay que estirar los dedos para que cuente como mano abierta</td></tr>
+        <tr><td class="c">thumb_up_threshold_deg</td><td class="c">70</td><td>Hasta qué ángulo el pulgar cuenta como “arriba”, y acelera</td></tr>
+        <tr><td class="c">thumb_down_threshold_deg</td><td class="c">135</td><td>Desde qué ángulo cuenta como “abajo”, y va para atrás. Entre los dos queda el puño, que para</td></tr>
         <tr><td class="c">index_orientation_threshold</td><td class="c">0.05</td><td>El ancho de la banda muerta del volante</td></tr>
         <tr><td class="c">buffer_size</td><td class="c">10</td><td>Cuántas lecturas votan. <strong>Es la latencia de la frenada</strong></td></tr>
         <tr><td class="c">refresh_interval</td><td class="c">0.5</td><td>Cada cuánto se repite la orden. Debe quedar muy por debajo de los 2 s del firmware</td></tr>
@@ -974,7 +1027,8 @@ $ make security      <span class="cm"># bandit + pip-audit</span></pre>
   <ol class="steps">
     <li><strong>Poné <span class="mono">show_fps</span> en <span class="mono">true</span></strong> y mirá cuántos cuadros por segundo da tu máquina. Ese número es el divisor de todas las cuentas de latencia de la sección 11: si te da 15 y no 30, tu filtro tarda el doble.</li>
     <li><strong>Subí <span class="mono">buffer_size</span> a 30</strong> y tratá de manejar. Después bajalo a 3. Vas a sentir en las manos el intercambio entre estable y obediente, que es el mismo de cualquier filtro.</li>
-    <li><strong>Bajá <span class="mono">open_threshold_ratio</span> a 0,45</strong> y fijate cuántas veces acelera sin que quieras. Después subilo a 0,8 y contá cuántas veces tenés que insistir.</li>
+    <li><strong>Bajá <span class="mono">open_threshold_ratio</span> a 0,45</strong> y fijate cuántas veces frena sola una mano a medio cerrar. Después subilo a 0,8 y contá cuántas veces tenés que insistir con la palma para que pare.</li>
+    <li><strong>Angostá la banda del pulgar</strong> —<span class="mono">thumb_up_threshold_deg</span> a 100 y <span class="mono">thumb_down_threshold_deg</span> a 105— y girá la muñeca de arriba para abajo, <em>con las ruedas en el aire</em>. Vas a ver salir ACELERAR y MARCHA ATRÁS casi sin PARAR en el medio, y al firmware negándose igual: es la sección 7 y la espera de inversión, las dos en vivo. Volvé a 70 y 135 antes de bajar el auto al piso.</li>
     <li><strong>Sacá el <span class="mono">cv2.flip</span></strong> de <span class="mono">main.py</span> y probá manejar treinta segundos. Es la mejor forma de entender la sección 3.</li>
   </ol>
 
@@ -987,7 +1041,7 @@ $ make security      <span class="cm"># bandit + pip-audit</span></pre>
         <tr><td class="c">hand.py</td><td>La geometría que reconoce el gesto — otra distancia, otra comparación</td></tr>
         <tr><td class="c">handlers.py</td><td>Un valor nuevo en <span class="mono">CarAction</span> y la rama que lo elige</td></tr>
         <tr><td class="c">config.example.json</td><td>El umbral, si lo tiene, con su comentario en <span class="mono">config.py</span></td></tr>
-        <tr><td class="c">_esp32/main/config.h</td><td>El mismo código de tres caracteres, <strong>idéntico</strong>, y su función en la tabla de acciones</td></tr>
+        <tr><td class="c">_esp32/main/config.h</td><td>El mismo código de tres caracteres, <strong>idéntico</strong>, y su función en la tabla de acciones. Si el gesto mueve el motor de tracción, esa función tiene que pasar por <span class="mono">drive.engage()</span> y no escribir los pines a mano</td></tr>
         <tr><td class="c">tests/</td><td>Un test con manos falsas que verifique que sale el código correcto</td></tr>
       </tbody>
     </table>

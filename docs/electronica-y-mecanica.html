@@ -377,19 +377,18 @@ footer.doc a:hover{ color:var(--data-ink); }
   </div>
 
   <h3>Divisor de tensión: el truco de los 5 V a 3,3 V</h3>
-  <p>La diapositiva 11 dice que el ESP32 trabaja a 3,3 V y que meterle 5 V en una entrada lo arruina. La solución más barata es un divisor: dos resistencias en serie entre la señal de 5 V y masa, y la señal se toma del punto del medio.</p>
+  <p>El ESP32 trabaja a 3,3 V, y meterle 5 V en una entrada lo arruina. La solución más barata es un divisor: dos resistencias en serie entre la señal de 5 V y masa, y la señal se toma del punto del medio.</p>
   <div class="eq">V<sub>salida</sub> = 5 V &times; R2 / (R1 + R2) = 5 &times; 2k2 / (3k3 + 2k2) = 2 V<span class="an">Con R1 = 3,3 k&Omega; y R2 = 2,2 k&Omega;, los 5 V quedan en 2 V — dentro de lo tolerable</span></div>
   <p>Es la misma idea de “la tensión se reparte entre lo que está en serie”. Sirve para entradas lentas (un botón, un sensor). Para señales rápidas o bidireccionales se usa un adaptador de nivel (<em>level shifter</em>), que es un chip que hace lo mismo pero bien.</p>
 
   <h3>Entradas flotantes y resistencias de <i>pull</i></h3>
   <p>Un pin configurado como entrada y sin nada conectado no lee “0”: lee ruido. Está <strong>flotante</strong>, y capta hasta la radio. Por eso los botones llevan una resistencia de <em>pull-up</em> (que lo mantiene en 3,3 V hasta que el botón lo baja a masa) o de <em>pull-down</em>. El ESP32 las trae adentro: <code>pinMode(pin, INPUT_PULLUP)</code>.</p>
-  <p class="small dim">En este proyecto no hay entradas — los cinco pines son salidas — pero es lo primero que vas a necesitar el día que agregues el sensor de distancia de la diapositiva 19.</p>
+  <p class="small dim">En este proyecto no hay entradas — los cinco pines son salidas — pero es lo primero que vas a necesitar el día que agregues el sensor de distancia de la diapositiva 8.</p>
 </section>
 
 <section id="pin">
   <p class="eyebrow">Fundamentos <span class="sep">/</span> 3</p>
   <h2>Qué hace realmente un pin</h2>
-  <a class="slideref" href="presentacion-expo-carreras.html#12">Diapositiva 12 — “Esta línea de código no mueve un motor”</a>
   <p class="sec-lead">Un <span class="mono">digitalWrite</span> no “manda energía”. Cierra una llave microscópica. Entender qué llave es explica todos los límites.</p>
 
   <figure class="wide">
@@ -452,7 +451,7 @@ footer.doc a:hover{ color:var(--data-ink); }
   </figure>
 
   <p>Adentro del chip, cada pin tiene dos transistores diminutos: uno lo conecta a 3,3 V, el otro a masa. <code>digitalWrite(pin, HIGH)</code> cierra el de arriba. <code>LOW</code> cierra el de abajo. <code>pinMode(pin, INPUT)</code> los abre a los dos y el pin queda flotando, sin conectar a nada — eso es lo que en las hojas de datos llaman <em>alta impedancia</em>.</p>
-  <p>Fijate que esas dos llaves nunca se cierran juntas: sería unir 3,3 V con masa por adentro del chip. Guardá esa idea, porque en la diapositiva 13 vuelve, en grande y con nombre propio.</p>
+  <p>Fijate que esas dos llaves nunca se cierran juntas: sería unir 3,3 V con masa por adentro del chip. Guardá esa idea, porque en la sección del puente H vuelve, en grande y con nombre propio.</p>
 
   <h3>Los límites reales del pin</h3>
   <div class="tw">
@@ -483,9 +482,10 @@ footer.doc a:hover{ color:var(--data-ink); }
     <li><strong>Los pines de <i>strapping</i> (0, 2, 5, 12 y 15)</strong> se leen durante el arranque para decidir cómo bootea. Se pueden usar igual — este proyecto usa el 2 y el 5 — pero conviene no colgarles nada que los fuerce a un valor en el encendido, o la placa puede no bootear.</li>
   </ul>
   <div class="callout stop">
-    <h4>El detalle que conecta con la diapositiva 14</h4>
+    <h4>El detalle que conecta con el arranque del firmware</h4>
     <p>Entre que le das energía al ESP32 y que corre la primera línea de <span class="mono">setup()</span> pasan cientos de milisegundos. Durante todo ese rato <strong>los pines están como entradas, flotando</strong>. Si el puente H está alimentado, sus entradas ven ruido y el motor puede pegar un tirón antes de que tu código exista.</p>
-    <p style="margin-bottom:0">Por eso <span class="mono">setup()</span> pone todo en estado seguro <em>antes</em> de conectarse al Wi-Fi, y por eso en el hardware van resistencias de 10 kΩ a masa en las entradas del puente: mientras nadie mande nada, mandan ellas. Es la misma filosofía del hombre muerto de la diapositiva 15, pero resuelta con dos resistencias en vez de con código.</p>
+    <p>Por eso <span class="mono">setup()</span> arranca poniendo los pines en salida y escribiendo el estado seguro, <em>antes</em> del puerto serie y del Wi-Fi. Todo lo que se ponga delante de esas líneas es tiempo con las entradas del puente al aire: hasta hace poco iban primero <span class="mono">Serial.begin()</span> y su espera de un segundo, y esa ventana duraba más de un segundo de más.</p>
+    <p style="margin-bottom:0">Reordenar <strong>acorta</strong> la ventana, no la cierra. Lo que queda es el arranque de la ROM y del gestor de arranque, que desde el firmware no se tocan. Cerrarla de verdad es cosa del hardware: resistencias de 10 kΩ a masa en las entradas del puente, para que mientras nadie mande nada manden ellas. <strong>En esta placa no están puestas</strong>: es la mejora recomendada, no algo que ya esté, y por eso el tirón al encender de la tabla de problemas es un síntoma real de este auto y no una hipótesis. Es la misma filosofía del hombre muerto de la diapositiva 6, pero resuelta con dos resistencias en vez de con código.</p>
   </div>
 </section>
 
@@ -593,7 +593,7 @@ footer.doc a:hover{ color:var(--data-ink); }
   <h3>Tres cosas que la mecánica le impone al software</h3>
   <ul class="tick">
     <li><strong>Arrancar cuesta más que seguir.</strong> El roce estático es mayor que el dinámico: hay un mínimo de empuje abajo del cual el auto no se mueve, y apenas arranca pega un salto. Eso, cuando pongas PWM, es una zona muerta que hay que saltear.</li>
-    <li><strong>Parar no es instantáneo.</strong> El auto tiene inercia: aunque el motor deje de empujar, sigue. Por eso importa que la orden de parar llegue rápido — es la latencia del filtro de la diapositiva 9 — y por eso el puente H tiene un estado de freno además de un estado de “soltar”.</li>
+    <li><strong>Parar no es instantáneo.</strong> El auto tiene inercia: aunque el motor deje de empujar, sigue. Por eso importa que la orden de parar llegue rápido — es la latencia del filtro de votación, contado en la guía de software — y por eso el puente H tiene un estado de freno además de un estado de “soltar”.</li>
     <li><strong>El motor no sabe a qué velocidad va.</strong> Sin un sensor en la rueda, el mismo comando da velocidades distintas en piso liso, en alfombra o con la batería a medio cargar. Todo lo que hace el firmware es lazo abierto: manda y confía.</li>
   </ul>
 
@@ -605,7 +605,7 @@ footer.doc a:hover{ color:var(--data-ink); }
     </div>
     <div class="card">
       <h4>Servo</h4>
-      <p style="margin:0" class="small">Tres cables. Adentro trae motor, reductora, potenciómetro y electrónica: le mandás un pulso de 1 a 2 ms cada 20 ms y <strong>se va a un ángulo y se queda ahí</strong>. Es lo que pide la dirección de la diapositiva 19.</p>
+      <p style="margin:0" class="small">Tres cables. Adentro trae motor, reductora, potenciómetro y electrónica: le mandás un pulso de 1 a 2 ms cada 20 ms y <strong>se va a un ángulo y se queda ahí</strong>. Es lo que pide la dirección de la diapositiva 8.</p>
     </div>
     <div class="card">
       <h4>Motor paso a paso</h4>
@@ -618,7 +618,7 @@ footer.doc a:hover{ color:var(--data-ink); }
 <section id="transistor">
   <p class="eyebrow">La solución <span class="sep">/</span> 6</p>
   <h2>El transistor: una llave sin partes móviles</h2>
-  <p class="sec-lead">Es la pieza que le falta al pin. Un transistor deja que una señal chiquita comande una corriente grande — y es de lo que están hechas las cuatro llaves de la diapositiva 13.</p>
+  <p class="sec-lead">Es la pieza que le falta al pin. Un transistor deja que una señal chiquita comande una corriente grande — y es de lo que están hechas las cuatro llaves del puente H de la sección 7.</p>
 
   <p>Un transistor tiene tres patas. Dos son el camino de potencia, por donde puede pasar mucha corriente. La tercera es el control: según qué tensión le pongas, ese camino queda abierto o cerrado. Es un relé sin partes móviles, capaz de conmutar miles de veces por segundo y sin desgastarse.</p>
 
@@ -681,7 +681,7 @@ footer.doc a:hover{ color:var(--data-ink); }
     <figcaption>Fig. D — Llave de lado bajo. El transistor está entre el motor y masa</figcaption>
   </figure>
 
-  <p>Leelo siguiendo la corriente: sale del positivo de la batería, atraviesa el motor, entra al transistor y vuelve a masa. Cuando el pin pone 3,3 V en la puerta, el camino se cierra y el motor gira. Cuando pone 0 V, se corta. <strong>El pin nunca ve el amperio del motor</strong> — la energía sale de la batería, y el pin sólo decide. Es exactamente lo que dice la diapositiva 12 con la imagen de la bobina del contactor.</p>
+  <p>Leelo siguiendo la corriente: sale del positivo de la batería, atraviesa el motor, entra al transistor y vuelve a masa. Cuando el pin pone 3,3 V en la puerta, el camino se cierra y el motor gira. Cuando pone 0 V, se corta. <strong>El pin nunca ve el amperio del motor</strong> — la energía sale de la batería, y el pin sólo decide. Es la idea que hay que llevarse: el pin es el interruptor, no la fuente.</p>
   <ul class="tick">
     <li>La resistencia de <strong>100 Ω</strong> limita el pico de corriente que pide la puerta al conmutar (una puerta se comporta como un capacitor chico).</li>
     <li>La de <strong>10 kΩ</strong> a masa mantiene el transistor apagado mientras el ESP32 arranca y el pin todavía está flotando.</li>
@@ -700,7 +700,6 @@ footer.doc a:hover{ color:var(--data-ink); }
 <section id="puenteh">
   <p class="eyebrow">La solución <span class="sep">/</span> 7</p>
   <h2>El puente H</h2>
-  <a class="slideref" href="presentacion-expo-carreras.html#13">Diapositiva 13 — “Cuatro llaves y un motor en el medio”</a>
   <p class="sec-lead">Cuatro llaves, dos ramas y el motor cruzado en el medio. Se llama así porque el dibujo tiene forma de H: las dos ramas son los palos verticales y el motor es el travesaño.</p>
 
   <p>La idea completa es ésta: si el motor está colgado entre dos ramas y cada rama puede conectarse arriba (al positivo) o abajo (a masa), entonces <strong>eligiendo qué llaves cerrás elegís en qué sentido lo atraviesa la corriente</strong>. Y como vimos en la sección 4, el sentido de la corriente es el sentido de giro.</p>
@@ -998,21 +997,40 @@ footer.doc a:hover{ color:var(--data-ink); }
   <p class="small dim">Moraleja general: la tabla de verdad está en la hoja de datos de <em>tu</em> chip, y es media página. Vale la pena leerla una vez.</p>
 
   <h3>Qué escribe el firmware de este repositorio</h3>
-  <p>De <span class="mono">_esp32/main/config.h</span>: <code>MOTOR_PIN_A = 16</code> y <code>MOTOR_PIN_B = 17</code>. Suponiendo que van a IN1 e IN2:</p>
+  <p>De <span class="mono">_esp32/main/config.h</span>: <code>MOTOR_PIN_A = 16</code> y <code>MOTOR_PIN_B = 17</code>. Van a <strong>IN4 e IN3</strong> — el canal B del módulo, y en ese orden cruzado, que es la trampa — así que las tres órdenes de tracción quedan así (la tabla de verdad es la misma, fila por fila, en cualquiera de los dos canales):</p>
   <pre class="code"><span class="cm">// accelerate() — main.ino</span>
-<span class="kw">digitalWrite</span>(MOTOR_PIN_B, LOW);   <span class="cm">// IN2 = LOW</span>
-<span class="kw">digitalWrite</span>(MOTOR_PIN_A, HIGH);  <span class="cm">// IN1 = HIGH  → adelante</span>
+<span class="kw">drive.engage</span>(DRIVE_FORWARD, HIGH, LOW, millis());  <span class="cm">// IN4 = HIGH, IN3 = LOW → adelante</span>
 
-<span class="cm">// applyStop() — usa las constantes de config.h</span>
-MOTOR_STOP_LEVEL_A = LOW;             <span class="cm">// IN1 = LOW</span>
-MOTOR_STOP_LEVEL_B = HIGH;            <span class="cm">// IN2 = HIGH → ...</span></pre>
+<span class="cm">// reverse() — los niveles salen de config.h</span>
+MOTOR_REVERSE_LEVEL_A = LOW;          <span class="cm">// IN4 = LOW</span>
+MOTOR_REVERSE_LEVEL_B = HIGH;         <span class="cm">// IN3 = HIGH → atrás</span>
+
+<span class="cm">// DriveControl::stop() — ídem</span>
+MOTOR_STOP_LEVEL_A = LOW;             <span class="cm">// IN4 = LOW</span>
+MOTOR_STOP_LEVEL_B = LOW;             <span class="cm">// IN3 = LOW → freno o libre</span></pre>
 
   <div class="callout stop">
-    <h4>Mirá esas dos últimas líneas contra la tabla</h4>
-    <p><span class="mono">IN1 = LOW</span> con <span class="mono">IN2 = HIGH</span> es la segunda fila: <strong>gira al revés</strong>. En cualquiera de los tres chips. Si esos pines van a las entradas de un puente H, la acción “parar” estaría mandando marcha atrás, no parada — y el corte por hombre muerto de la diapositiva 15 haría lo mismo.</p>
-    <p style="margin-bottom:0">El propio <span class="mono">config.h</span> lo advierte en un comentario: esos valores conservan el comportamiento del firmware original, y hay que <strong>verificarlos contra el cableado real antes de confiar en el failsafe</strong>. Para frenar habría que poner los dos pines iguales; para soltar, los dos en bajo (o bajar ENA, en el L298N). Son dos constantes en un archivo de configuración.</p>
+    <h4>Ese último LOW es un bug que estuvo ahí desde el principio</h4>
+    <p>Hasta hace poco <span class="mono">MOTOR_STOP_LEVEL_B</span> valía <span class="mono">HIGH</span>, heredado del firmware original. Y <span class="mono">IN4 = LOW</span> con <span class="mono">IN3 = HIGH</span> es la segunda fila de la tabla: <strong>gira al revés</strong>, en cualquiera de los tres chips. Si esos pines van a las entradas de un puente H, la acción “parar” estaba mandando marcha atrás, y el corte por hombre muerto de la diapositiva 6 hacía lo mismo.</p>
+    <p>Lo que lo destapó fue agregar la marcha atrás de verdad: los niveles que hacían falta para <span class="mono">REVERSE</span> resultaron ser exactamente los que el firmware ya usaba para parar. Los dos no podían estar bien.</p>
+    <p style="margin-bottom:0">La corrección son dos letras: <span class="mono">LOW/LOW</span> es el único par que no mueve el motor en ninguno de los tres chips — freno en el L298N con el <i>enable</i> del canal puesto (ENB para la tracción), libre en un DRV8833 o TB6612FNG — y es, además, lo que el canal de dirección ya usaba para “centrado”. Sigue haciendo falta <strong>verificarlo contra el cableado real</strong>, con las ruedas en el aire, antes de confiar en el failsafe.</p>
   </div>
   <p>Es un buen ejemplo de algo que en el software no se ve: el código está bien escrito, tiene tests, y la lógica es correcta. Pero <strong>“parar” no es una propiedad del código, es una propiedad del circuito</strong>. El mismo programa, con el motor cableado al revés, hace exactamente lo contrario de lo que dice su nombre. Eso sólo se cierra midiendo en el banco, con las ruedas en el aire.</p>
+
+  <h3>Lo otro que trajo la marcha atrás</h3>
+  <p>Con el cable puesto y los niveles corregidos, el auto ya puede ir para atrás. Falta lo que no aparece en ninguna tabla de verdad: <strong>no se puede pasar de adelante a atrás de golpe</strong>.</p>
+  <p>La razón es la fuerza contraelectromotriz de la <a href="#motor">sección 4</a>. Mientras el motor gira genera una tensión que se opone a la que le estás dando — por eso la corriente baja sola apenas arranca. Si invertís el puente con el motor todavía girando, esa tensión deja de restar y <strong>pasa a sumar</strong>:</p>
+  <div class="eq">6 V de la fuente + ~4 V de fcem = ~10 V sobre el bobinado<span class="an">Contra los 6 V del arranque: casi el doble de la corriente de rotor bloqueado</span></div>
+  <p>Dura un instante, pero son varios amperes, y encima con el motor frenando mecánicamente al mismo tiempo. Lo que cede es el puente, el motor, o el regulador del que cuelga el ESP32. De los tres el peor es el motor: es el que está encastrado en el chasis.</p>
+
+  <div class="callout warn">
+    <h4>La espera va en el firmware, no en la computadora</h4>
+    <p>Antes de invertir hay que frenar <em>y esperar a que el motor pare de verdad</em>. No milisegundos: la parada es mecánica, así que son segundos. En el repo es <span class="mono">REVERSAL_DWELL_MS = 3000</span>, y la orden que llega durante la espera se <strong>rechaza, no se encola</strong> — la computadora reenvía la orden actual cada medio segundo, así que si seguís con el pulgar para abajo la marcha atrás entra sola apenas se cumple el tiempo.</p>
+    <p>Mientras corre esa espera el firmware rechaza <em>cualquier</em> dirección, no sólo la contraria. Suena exagerado y no lo es: la votación de gestos suelta alguna orden hacia el lado viejo mientras la mano gira, y si el firmware la aceptara volvería a darle corriente al motor justo cuando está frenando — y la siguiente orden de inversión frenaría otra vez y volvería a arrancar el reloj. Con la mano temblando, la marcha atrás no entraría nunca. Se paga con que volver a arrancar para el mismo lado, después de haber pedido una inversión, también espera los tres segundos. Es el lado sano para equivocarse.</p>
+    <p style="margin-bottom:0">Arrancar de cero, o después de un PARAR común hacia el mismo lado, sigue siendo inmediato: el reloj lo arranca la inversión, no cualquier parada.</p>
+    <p style="margin-bottom:0">Podría haber ido del lado de Python, al lado del suavizado de gestos, y habría estado mal por dos motivos: el ESP32 le obedece a cualquiera que se conecte al puerto 1234, y la <a href="vision-y-software.html#votacion">votación por mayoría</a> sólo llega a producir unos 65 ms de parada entre un gesto y el otro. <strong>Una protección que salva un motor no puede depender de que el cliente se porte bien.</strong></p>
+  </div>
+  <p class="small dim">Es la misma idea que el hombre muerto: el firmware es el que tiene el motor en la mano, así que es el que decide. El software de arriba propone.</p>
 
   <h3>El L298N es viejo, y se nota</h3>
   <p>Está hecho con transistores bipolares, y cada uno de esos “casi 0,7 V” de la sección 6 se paga dos veces, una por cada llave del camino:</p>
@@ -1033,9 +1051,9 @@ MOTOR_STOP_LEVEL_B = HIGH;            <span class="cm">// IN2 = HIGH → ...</sp
   <ol class="steps">
     <li>Negativo de la batería &rarr; GND del módulo &rarr; GND del ESP32. <strong>Los tres unidos.</strong></li>
     <li>Positivo de la batería &rarr; +12V / Vs del módulo. Nunca al ESP32.</li>
-    <li>GPIO 16 &rarr; IN1, GPIO 17 &rarr; IN2.</li>
-    <li>ENA con el <i>jumper</i> puesto (todo o nada), o a un pin con PWM si vas a regular velocidad.</li>
-    <li>OUT1 y OUT2 &rarr; los dos cables del motor. Si gira al revés de lo que esperabas, dalos vuelta — o cambiá el HIGH por el LOW en el firmware, que es gratis.</li>
+    <li>GPIO 16 &rarr; IN4, GPIO 17 &rarr; IN3: tracción, canal B. GPIO 4 &rarr; IN1, GPIO 5 &rarr; IN2: dirección, canal A. El mapa completo está en <span class="mono">config.h</span>; fijate que el orden A/B del firmware va cruzado respecto de IN3/IN4.</li>
+    <li>ENA y ENB con el <i>jumper</i> puesto (todo o nada), o el ENB a un pin con PWM si vas a regular la velocidad de tracción.</li>
+    <li>OUT3 y OUT4 &rarr; los dos cables del motor de tracción; OUT1 y OUT2 &rarr; los del de dirección. Si la tracción gira al revés de lo que esperabas, dalos vuelta — o cambiá el HIGH por el LOW en el firmware, que es gratis.</li>
     <li>El ESP32 se alimenta aparte: por USB, o por su pin VIN con 5 V. <strong>Nunca del pin de 3,3 V hacia afuera.</strong></li>
   </ol>
 </section>
@@ -1043,7 +1061,7 @@ MOTOR_STOP_LEVEL_B = HIGH;            <span class="cm">// IN2 = HIGH → ...</sp
 <section id="pwm">
   <p class="eyebrow">Control <span class="sep">/</span> 9</p>
   <h2>PWM: velocidad sin desperdicio</h2>
-  <p class="sec-lead">Es la primera de las cuatro ideas pendientes de la diapositiva 19, y la más fácil de agregar: hoy el motor está en todo o nada.</p>
+  <p class="sec-lead">Es la primera de las cuatro ideas pendientes de la diapositiva 8, y la más fácil de agregar: hoy el motor está en todo o nada.</p>
 
   <p>La forma intuitiva de bajar la velocidad sería poner una resistencia en serie. Funciona, y es una mala idea: esa resistencia se come la potencia que le sacás al motor y la convierte en calor. Para andar a media velocidad tirarías la mitad de la batería a la basura, calentando una resistencia.</p>
   <p>La solución real es <strong>prender y apagar muy rápido</strong>. Si el motor está conectado la mitad del tiempo, recibe la mitad de la energía — y en los ratos de apagado no se disipa nada, porque la llave está abierta. Eso es <em>modulación por ancho de pulso</em>, PWM. La proporción de tiempo encendido se llama <strong>ciclo de trabajo</strong>.</p>
@@ -1082,7 +1100,7 @@ MOTOR_STOP_LEVEL_B = HIGH;            <span class="cm">// IN2 = HIGH → ...</sp
 <span class="kw">ledcSetup</span>(0, 5000, 8);
 <span class="kw">ledcAttachPin</span>(ENA_PIN, 0);
 <span class="kw">ledcWrite</span>(0, 160);</pre>
-  <p>El PWM va al pin <span class="mono">ENA</span> del puente, no a IN1/IN2: el sentido lo siguen decidiendo los dos bits de siempre, y el <i>enable</i> decide cuánta potencia pasa. Sentido y velocidad quedan separados, que es justo lo que querés.</p>
+  <p>El PWM va al pin de <i>enable</i> del canal (<span class="mono">ENB</span> para la tracción), no a IN3/IN4: el sentido lo siguen decidiendo los dos bits de siempre, y el <i>enable</i> decide cuánta potencia pasa. Sentido y velocidad quedan separados, que es justo lo que querés.</p>
 
   <div class="callout warn">
     <h4>La zona muerta, que te va a morder</h4>
@@ -1153,7 +1171,7 @@ MOTOR_STOP_LEVEL_B = HIGH;            <span class="cm">// IN2 = HIGH → ...</sp
     <li><strong>¿Prende el LED del pin 2 cuando hacés el gesto?</strong> Si prende, la cámara, la red, el TCP y el firmware están bien: el problema es del pin para adelante. Si no prende, el problema es del pin para atrás, y se depura con <span class="mono">print</span>.</li>
     <li><strong>Medí GPIO 16 y GPIO 17 contra masa</strong> mientras alguien hace el gesto. Tienen que cambiar entre 0 y 3,3 V. Si no cambian, el firmware no está haciendo lo que creés.</li>
     <li><strong>Medí la entrada de potencia del puente</strong> (Vs contra GND). Si ahí no hay 6 V, no hay nada que discutir más adelante: batería, llave o cable.</li>
-    <li><strong>Medí entre OUT1 y OUT2</strong>, con el gesto puesto. Tiene que aparecer la tensión de batería menos la caída del puente. Si las entradas cambian y las salidas no, el puente está muerto o le falta el <i>jumper</i> de ENA.</li>
+    <li><strong>Medí entre OUT3 y OUT4</strong>, con el gesto puesto. Tiene que aparecer la tensión de batería menos la caída del puente. Si las entradas cambian y las salidas no, el puente está muerto o le falta el <i>jumper</i> de ENB.</li>
     <li><strong>Conectá el motor directo a la batería</strong> un segundo. Si no gira, el problema es el motor o la mecánica, y estuviste dos horas mirando el circuito equivocado.</li>
     <li><strong>Verificá las masas con el continuímetro</strong>, sin alimentar: ESP32 contra módulo, y módulo contra negativo de batería. Tiene que pitar.</li>
     <li><strong>Mirá el monitor serie</strong> a 115200. Un <span class="mono">Brownout detector was triggered</span> ahí cambia todo el diagnóstico: no es de señal, es de alimentación.</li>
@@ -1176,9 +1194,9 @@ MOTOR_STOP_LEVEL_B = HIGH;            <span class="cm">// IN2 = HIGH → ...</sp
         <tr><td>Gira al revés</td><td>OUT1 y OUT2 invertidos</td><td>Dar vuelta los cables, o los <span class="mono">HIGH</span> del firmware</td></tr>
         <tr><td>El puente quema, y quema mucho</td><td>Caída del L298N, o motor exigido</td><td>Disipador; o cambiar a DRV8833</td></tr>
         <tr><td>Se rompió un pin, y sólo uno</td><td>5 V en una entrada de 3,3 V, o consumo excesivo</td><td>Divisor o adaptador de nivel; transistor para cargas</td></tr>
-        <tr><td>Da un tirón al encender</td><td>Pines flotando antes de <span class="mono">setup()</span></td><td>Resistencias de 10 kΩ a masa en las entradas del puente</td></tr>
+        <tr><td>Da un tirón al encender</td><td>Pines flotando antes de <span class="mono">setup()</span></td><td>Resistencias de 10 kΩ a masa en las entradas del puente — esta placa no las tiene</td></tr>
         <tr><td>Anda un rato y se cuelga</td><td>Ruido de escobillas o cables largos como antena</td><td>Capacitores de 100 nF en el motor; cables cortos</td></tr>
-        <tr><td>Todo parece bien y no pasa nada</td><td>El <i>jumper</i> de ENA, que nadie mira</td><td>Ponerlo, o mandarle PWM a ese pin</td></tr>
+        <tr><td>Todo parece bien y no pasa nada</td><td>El <i>jumper</i> de ENB (tracción) o ENA (dirección), que nadie mira</td><td>Ponerlo, o mandarle PWM a ese pin</td></tr>
       </tbody>
     </table>
   </div>
@@ -1286,7 +1304,7 @@ MOTOR_STOP_LEVEL_B = HIGH;            <span class="cm">// IN2 = HIGH → ...</sp
     <li><strong>Un módulo de puente H</strong>: DRV8833 si podés elegir, L298N si es lo que hay.</li>
     <li><strong>Un portapilas de 4 AA</strong> y pilas recargables NiMH, que aguantan la corriente mucho mejor que las alcalinas.</li>
     <li><strong>Capacitores</strong> de 100 nF y de 470 µF, que salen centavos y resuelven los problemas raros.</li>
-    <li><strong>Un servo SG90</strong>, para cuando quieras hacer la dirección de la diapositiva 19.</li>
+    <li><strong>Un servo SG90</strong>, para cuando quieras hacer la dirección de la diapositiva 8.</li>
   </ul>
 
   <div class="callout go" style="margin-top:2em">
